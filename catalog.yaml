@@ -10,7 +10,7 @@ br_tse_urna_logs:
     source: urna log (logd.dat inside <name>-log.jez) per section, results site
     grain: one row per log line
     partition: [ano, turno, sigla_uf]
-    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, linha]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, arquivo_membro, linha]
     columns:
       ano: INTEGER
       turno: INTEGER
@@ -19,6 +19,8 @@ br_tse_urna_logs:
       zona: VARCHAR
       secao: VARCHAR          # section that owns the files (principal of an aggregation)
       arquivo_hash: VARCHAR   # hash folder from aux.json; a replaced urna gives a second hash
+      arquivo_membro: VARCHAR # "logd.dat" (the closing urna) or "<id>.jez/logd.dat" (an urna
+                              # replaced during the day, whose log is nested in the archive)
       linha: INTEGER          # 1-based line number in logd.dat
       data_hora: TIMESTAMP    # urna local clock, no time zone
       nivel: VARCHAR          # INFO, ALERTA, ERRO ...

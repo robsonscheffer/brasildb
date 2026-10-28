@@ -23,6 +23,25 @@ EVENT_TYPES: list[tuple[str, re.Pattern[str]]] = [
     ("correcao", re.compile(r"Eleitor corrigiu")),
     ("digital_capturada", re.compile(r"Capturada a digital")),
     ("contingencia", re.compile(r"Modo de carga da UE - Urna de contingência")),
+    # The day's shape. Added for secao_dia (P2); untyped before the 2026-10-28 reparse.
+    ("urna_pronta", re.compile(r"Urna pronta para receber votos")),
+    ("encerramento", re.compile(r"Operador selecionou: Encerrar votação")),
+    ("energia", re.compile(r"(?:Urna operando|Operando) (?:na|com|com a) (bateria|rede)")),
+    ("urna_desligada", re.compile(r"Desligando a urna|Urna desligada pela chave")),
+    ("modelo_urna", re.compile(r"Identificação do Modelo de Urna: (UE\d+)")),
+    ("versao_aplicacao", re.compile(r"Versão da aplicação: (\S+)")),
+    # The voter's path through habilitação.
+    ("solicita_digital", re.compile(r"Solicita digital\. Tentativa \[(\d+)\]")),
+    ("timeout_digital", re.compile(r"Timeout de reconhecimento do dedo")),
+    ("score_digital", re.compile(r"Batimento de digitais retornou o score (\d+)")),
+    ("habilitacao_manual", re.compile(r"Solicitação de dado pessoal do eleitor para habilitação manual")),
+    ("identificador", re.compile(r"Identificador digitado pelo mesário foi: \((.+?)\)")),
+    ("sem_atividade", re.compile(r"Eleitor sem atividade por (\d+) segundos")),
+    ("tecla_indevida", re.compile(r"Tecla indevida pressionada")),
+    ("tecla", re.compile(r"Tecla pressionada: (.+)")),
+    ("justificativa", re.compile(r"Justificativa recebida")),
+    ("mesario_registrado", re.compile(r"Mesário (\d+) registrado")),
+    ("relatorio", re.compile(r"Imprimindo relatório \[(.+?)\]")),
 ]
 
 _FIELDS = 6
@@ -30,12 +49,34 @@ _TIMESTAMP = "%d/%m/%Y %H:%M:%S"
 
 
 def extract_logd(jez: bytes) -> bytes:
-    """Return the logd.dat member of a log archive. The name match is case-insensitive."""
+    """Return the outer logd.dat member of a log archive. The name match is case-insensitive."""
     with zipfile.ZipFile(io.BytesIO(jez)) as zf:
         for name in zf.namelist():
             if PurePosixPath(name).name.lower() == "logd.dat":
                 return zf.read(name)
     raise KeyError("logd.dat not found in log archive")
+
+
+def extract_logds(jez: bytes) -> list[tuple[str, bytes]]:
+    """Every logd.dat in a log archive as (member path, bytes), nested archives first.
+
+    When an urna is replaced during the day, the closing urna's archive carries the replaced
+    urna's whole log as a nested <id>.jez member; its member path is "<id>.jez/logd.dat".
+    The outer logd.dat is the last item. Raises KeyError when the outer one is missing."""
+    found: list[tuple[str, bytes]] = []
+    outer: bytes | None = None
+    with zipfile.ZipFile(io.BytesIO(jez)) as zf:
+        for name in zf.namelist():
+            leaf = PurePosixPath(name).name.lower()
+            if leaf == "logd.dat":
+                outer = zf.read(name)
+            elif leaf.endswith(".jez"):
+                for inner, data in extract_logds(zf.read(name)):
+                    found.append((f"{name}/{inner}", data))
+    if outer is None:
+        raise KeyError("logd.dat not found in log archive")
+    found.append(("logd.dat", outer))
+    return found
 
 
 def _classify(mensagem: str) -> tuple[str | None, str | None]:
