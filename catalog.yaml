@@ -25,7 +25,8 @@ br_tse_urna_logs:
       id_urna: VARCHAR        # 3rd field, e.g. "02299969"
       componente: VARCHAR     # LOGD, SCUE, VOTA, GAP ...
       mensagem: VARCHAR       # 5th field, verbatim (latin-1 decoded)
-      autenticador: VARCHAR   # 6th field, 16 hex chars
+      # the 6th field (per-line authenticator, 16 hex) is not stored: it is 72% of the
+      # Parquet size; verify integrity from the kept raw .jez instead
       tipo_evento: VARCHAR    # see brasildb/tse/logparse.py EVENT_TYPES; NULL if none matches
       valor: VARCHAR          # bracket content for typed events, e.g. "biométrica", "Presidente"
 
