@@ -16,6 +16,9 @@ from brasildb.tse.sections import SectionEntry
 
 # Sleep before each retry. One attempt, then one retry per value: 5 attempts in all.
 RETRY_DELAYS: tuple[float, ...] = (1, 2, 4, 8)
+# Network errors (no route, DNS, reset) wait about 5 minutes in all, so a short outage
+# pauses the run instead of marking every section it reaches as erro.
+NETWORK_RETRY_DELAYS: tuple[float, ...] = (2, 5, 10, 20, 30, 60, 60, 60, 60)
 REQUEST_TIMEOUT = 30.0
 DONE_STATUSES = ("ok", "agregada", "sem_log")
 
@@ -52,21 +55,26 @@ class _Failed(Exception):
 
 
 async def _get(client: httpx.AsyncClient, limiter: RateLimiter, url: str) -> httpx.Response:
-    """GET under the shared limiter. Timeouts and 5xx are retried; any other status is returned."""
-    attempts = len(RETRY_DELAYS) + 1
-    for n in range(attempts):
+    """GET under the shared limiter. Timeouts, 5xx and network errors are retried; any other
+    status is returned."""
+    retries = {"server": 0, "network": 0}
+    while True:
         await limiter.acquire()
         try:
             response = await client.get(url)
         except httpx.TimeoutException as e:
-            problema = f"timeout ({type(e).__name__})"
+            kind, problema = "server", f"timeout ({type(e).__name__})"
+        except httpx.TransportError as e:
+            kind, problema = "network", f"network ({type(e).__name__})"
         else:
             if response.status_code < 500:
                 return response
-            problema = f"HTTP {response.status_code}"
-        if n < len(RETRY_DELAYS):
-            await asyncio.sleep(RETRY_DELAYS[n])
-    raise _Failed(f"{problema} after {attempts} attempts: {url}")
+            kind, problema = "server", f"HTTP {response.status_code}"
+        delays = RETRY_DELAYS if kind == "server" else NETWORK_RETRY_DELAYS
+        if retries[kind] == len(delays):
+            raise _Failed(f"{problema} after {sum(retries.values()) + 1} attempts: {url}")
+        await asyncio.sleep(delays[retries[kind]])
+        retries[kind] += 1
 
 
 def _log_files(aux: dict) -> list[tuple[str, str]]:

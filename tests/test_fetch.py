@@ -130,6 +130,31 @@ async def test_persistent_503_gives_erro_after_five_attempts_with_backoff(monkey
     assert slept == [1, 2, 4, 8]
 
 
+async def test_network_error_waits_then_ok(monkeypatch):
+    slept = no_sleep(monkeypatch)
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(AUX_URL).mock(
+            side_effect=[httpx.ConnectError("no route"), httpx.Response(200, json=AUX)]
+        )
+        router.get(LOG_URL).mock(return_value=httpx.Response(200, content=LOG_BYTES))
+        async with httpx.AsyncClient() as client:
+            result = await fetch_section(client, NoLimit(), BASE, ELECTION, ENTRY)
+    assert result.status == "ok"
+    assert slept == [2]
+
+
+async def test_long_outage_gives_erro_after_network_backoff(monkeypatch):
+    slept = no_sleep(monkeypatch)
+    with respx.mock(assert_all_mocked=True) as router:
+        route = router.get(AUX_URL).mock(side_effect=httpx.ConnectError("no route"))
+        async with httpx.AsyncClient() as client:
+            result = await fetch_section(client, NoLimit(), BASE, ELECTION, ENTRY)
+    assert result.status == "erro"
+    assert "network (ConnectError)" in result.erro
+    assert route.call_count == len(fetch.NETWORK_RETRY_DELAYS) + 1
+    assert slept == list(fetch.NETWORK_RETRY_DELAYS)
+
+
 async def test_two_hashes_give_two_logs(monkeypatch):
     no_sleep(monkeypatch)
     second = "ab" * 32
