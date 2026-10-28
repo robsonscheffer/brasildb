@@ -148,8 +148,8 @@ def cmd_load_municipios(a) -> None:
 def open_db(settings=None):
     s = settings or config.load()
     con = lake.connect(s.lake)
-    sqlrun.apply(con, ROOT / "sql" / "views")
-    sqlrun.apply(con, ROOT / "sql" / "checks")
+    sqlrun.apply(con, ROOT / "sql" / "views", skip_missing=True)
+    sqlrun.apply(con, ROOT / "sql" / "checks", skip_missing=True)
     return con
 
 

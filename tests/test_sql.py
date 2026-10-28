@@ -198,3 +198,11 @@ def test_apply_runs_files_in_name_order(tmp_path):
 def test_apply_missing_folder_raises(tmp_path):
     with pytest.raises(NotADirectoryError):
         sqlrun.apply(duckdb.connect(":memory:"), tmp_path / "nope")
+
+
+def test_apply_skip_missing(tmp_path):
+    (tmp_path / "a.sql").write_text("CREATE VIEW v AS SELECT * FROM nope.missing;")
+    con = duckdb.connect()
+    with pytest.raises(duckdb.CatalogException):
+        sqlrun.apply(con, tmp_path)
+    sqlrun.apply(con, tmp_path, skip_missing=True)
