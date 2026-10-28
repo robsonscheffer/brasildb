@@ -63,7 +63,7 @@ uv run brasildb sql "SELECT status, count(*) FROM main.check_comparecimento WHER
 
 | Name | What it holds |
 | --- | --- |
-| `br_tse_urna_logs.eventos` | one row per log line, typed (`tipo_evento`: `voto_computado`, `urna_ligada`, `contingencia`, ...) |
+| `br_tse_urna_logs.eventos` | one row per log line, typed (`tipo_evento`: `voto_computado`, `urna_pronta`, `encerramento`, `energia`, `solicita_digital`, `contingencia`, ...; the list is `EVENT_TYPES` in `brasildb/tse/logparse.py`) |
 | `br_tse_urna_logs.secoes_coleta` | one row per section collected: status, number of logs, error |
 | `br_tse_eleicoes.detalhes_votacao_secao` | official turnout per section and office |
 | `br_bd_diretorios_brasil.municipio` | municipality codes and names |
@@ -77,9 +77,24 @@ To read a vote time in Brasilia time: `e.data_hora - to_hours(f.fuso)`, joining
 
 ## What to expect in the turnout check
 
-Round 2, whole country: 496,464 sections `ok`. A replacement urna (`contingencia`) misses the
-votes cast on the failed urna, so its section shows `diferente`; 1,429 sections did. A handful
-differ by one vote, and a section with no published log shows `sem_log`.
+Round 2, whole country: 496,464 sections `ok` before the nested-archive fix. When an urna is
+replaced during the day (`contingencia`), the closing urna's `-log.jez` carries the replaced
+urna's whole log as a nested `<id>.jez`; the parser reads both, and `arquivo_membro` tells them
+apart (`logd.dat` is the closing urna). A lake collected before that fix shows those 1,429
+sections as `diferente`; rebuild it with `reparse`. A handful differ by one vote, and a section
+with no published log shows `sem_log`.
+
+## Reparse after a parser change
+
+```sh
+uv run brasildb reparse --turno 2 --out data/lake-v2          # all states, about 45 sections/s
+uv run brasildb reparse --turno 2 --ufs rr --out data/lake-v2  # one state
+```
+
+It reads `raw/<ano>/<turno>/<uf>/*-log.jez`, no network, and writes only
+`br_tse_urna_logs.eventos` under `--out`. Copy the other tables over (`secoes_coleta`,
+`br_tse_eleicoes`, `br_bd_diretorios_brasil`), then point `BRASILDB_LAKE` at the new lake. After
+a reparse `arquivo_hash` is the 12-hex prefix kept in the raw file name.
 
 ## Docker
 

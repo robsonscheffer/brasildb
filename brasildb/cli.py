@@ -5,8 +5,11 @@ import argparse
 import asyncio
 import functools
 import json
+import os
+import re
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -65,10 +68,18 @@ def parse_section(res: fetch.SectionResult, raw_dir: str | None) -> list[dict]:
             d = Path(raw_dir) / res.entry.key.sigla_uf
             d.mkdir(parents=True, exist_ok=True)
             (d / f"{hash_[:12]}-{name}").write_bytes(jez)
-        rows, _ = logparse.parse_logd_stats(logparse.extract_logd(jez))
+        out.extend(parse_archive(hash_, jez))
+    return out
+
+
+def parse_archive(hash_: str, jez: bytes) -> list[dict]:
+    """Event rows of every logd.dat in one -log.jez (a replaced urna's log is nested inside)."""
+    out = []
+    for membro, logd in logparse.extract_logds(jez):
+        rows, _ = logparse.parse_logd_stats(logd)
         for r in rows:
             r.pop("autenticador", None)
-            out.append({"arquivo_hash": hash_, **r})
+            out.append({"arquivo_hash": hash_, "arquivo_membro": membro, **r})
     return out
 
 
@@ -156,6 +167,62 @@ def cmd_collect_logs(a) -> None:
                       "sections_per_s": round(len(todo) / dt, 2) if dt else None}))
 
 
+# ---------------------------------------------------------------------------- reparse
+
+# A raw file name: the first 12 hex of its aux.json hash, then the TSE name
+# o0{pleito}{uf}{municipio}{zona}{secao}-log.jez.
+RAW_NAME = re.compile(
+    r"^(?P<hash>[0-9a-f]{12})-o0(?P<pleito>\d{4})(?P<uf>[a-z]{2})(?P<mun>\d{5})"
+    r"(?P<zona>\d{4})(?P<secao>\d{4})-log\.jez$"
+)
+
+
+def reparse_file(path: str) -> tuple[dict, list[dict]]:
+    """Section key and event rows of one raw archive. Module-level: runs in a worker process."""
+    m = RAW_NAME.match(os.path.basename(path))
+    if not m:
+        raise ValueError(f"not a raw log name: {path}")
+    key = dict(sigla_uf=m["uf"].upper(), id_municipio_tse=m["mun"], zona=m["zona"], secao=m["secao"])
+    return key, parse_archive(m["hash"], Path(path).read_bytes())
+
+
+def cmd_reparse(a) -> None:
+    """Rebuild eventos from the raw archives on disk into another lake, no network.
+
+    Use after a parser change. Writes only br_tse_urna_logs.eventos under --out; copy or move
+    the other tables yourself, then point BRASILDB_LAKE at the new lake. arquivo_hash holds the
+    12-hex prefix kept in the raw file name."""
+    s = config.load()
+    e = config.ELECTIONS[(a.ano, a.turno)]
+    ufs = [u.lower() for u in a.ufs] or list(config.UFS)
+    run_id = f"p{int(time.time())}"
+    schema = arrow_schema("br_tse_urna_logs", "eventos")
+    t0, total = time.time(), 0
+    with ProcessPoolExecutor(s.parse_workers) as pool:
+        for uf in ufs:
+            raw_dir = Path(s.raw) / str(e.ano) / str(e.turno) / uf
+            files = sorted(str(p) for p in raw_dir.glob("*-log.jez"))
+            rows, n_batch, n_sec = [], 0, 0
+            base = dict(ano=e.ano, turno=e.turno)
+
+            def flush() -> None:
+                nonlocal rows, n_batch
+                if rows:
+                    lake.write_table(a.out, "br_tse_urna_logs", "eventos",
+                                     pa.Table.from_pylist(rows, schema), f"{run_id}-{uf}-{n_batch:05d}")
+                rows, n_batch = [], n_batch + 1
+
+            for key, evs in pool.map(reparse_file, files, chunksize=4):
+                rows.extend({**base, **key, **r} for r in evs)
+                n_sec += 1
+                if n_sec % a.batch == 0:
+                    flush()
+            flush()
+            total += n_sec
+            dt = time.time() - t0
+            print(f"{uf}: {n_sec} sections; {total} total at {total / dt:.1f}/s", flush=True)
+
+
 # ---------------------------------------------------------------------------- loaders
 
 def cmd_load_turnout(a) -> None:
@@ -211,6 +278,14 @@ def main(argv=None) -> None:
     c.add_argument("--seed", type=int, default=1)
     c.add_argument("--batch", type=int, default=200, help="sections per Parquet write")
     c.set_defaults(fn=cmd_collect_logs)
+
+    r = sub.add_parser("reparse", help="rebuild eventos from the raw archives into another lake")
+    r.add_argument("--ano", type=int, default=2026)
+    r.add_argument("--turno", type=int, required=True)
+    r.add_argument("--ufs", nargs="*", default=[], help="states to reparse; default all")
+    r.add_argument("--out", required=True, help="lake to write; a path or s3://bucket/prefix")
+    r.add_argument("--batch", type=int, default=200, help="sections per Parquet write")
+    r.set_defaults(fn=cmd_reparse)
 
     t = sub.add_parser("load-turnout", help="load detalhe_votacao_secao from CKAN")
     t.add_argument("--ano", type=int, default=2026)

@@ -9,13 +9,13 @@ import pytest
 from brasildb import lake
 
 EVENTO_COLUMNS = [
-    "ano", "turno", "sigla_uf", "id_municipio_tse", "zona", "secao", "arquivo_hash", "linha",
+    "ano", "turno", "sigla_uf", "id_municipio_tse", "zona", "secao", "arquivo_hash", "arquivo_membro", "linha",
     "data_hora", "nivel", "id_urna", "componente", "mensagem", "tipo_evento", "valor",
 ]
 
 
 def _eventos(uf: str, turno: int, n: int) -> pa.Table:
-    """n synthetic urna log lines for one state and round, all 16 catalog columns."""
+    """n synthetic urna log lines for one state and round, all 17 catalog columns."""
     rows = {c: [] for c in EVENTO_COLUMNS}
     for i in range(n):
         values = {
@@ -26,6 +26,7 @@ def _eventos(uf: str, turno: int, n: int) -> pa.Table:
             "zona": "0008",
             "secao": "0001",
             "arquivo_hash": "h1",
+            "arquivo_membro": "logd.dat",
             "linha": i + 1,
             "data_hora": datetime(2026, 10, 25, 8, 0, i % 60),
             "nivel": "INFO",
