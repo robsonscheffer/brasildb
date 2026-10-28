@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from concurrent.futures import ProcessPoolExecutor
 import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -48,6 +49,7 @@ class SectionResult:
     status: str  # ok | agregada | sem_log | erro
     logs: list[tuple[str, str, bytes]] = field(default_factory=list)  # (hash, file name, bytes)
     erro: str | None = None
+    parsed: object = None  # what collect's parse returned for this section, if one was given
 
 
 class _Failed(Exception):
@@ -193,12 +195,16 @@ async def collect(
     entries: list[SectionEntry],
     on_result: Callable[[SectionResult], None],
     resume_from_state: bool = True,
+    parse: Callable[[SectionResult], object] | None = None,
 ) -> dict[str, int]:
     """Fetch every section not yet done. Returns the count of each status seen in this run.
 
     Pass resume_from_state=False when the caller already filtered entries against a more
-    durable record (the CLI uses the lake, since buffered rows are lost if a run dies)."""
+    durable record (the CLI uses the lake, since buffered rows are lost if a run dies).
+    parse, if given, runs on each section with logs in settings.parse_workers processes and
+    its return goes to result.parsed. It must be picklable (a module-level function)."""
     store = StateStore(settings.state)
+    pool = ProcessPoolExecutor(settings.parse_workers) if parse else None
     try:
         done = store.done(election.ano, election.turno) if resume_from_state else set()
         todo = iter([e for e in entries if e.key not in done])
@@ -212,8 +218,11 @@ async def collect(
 
             async def worker() -> None:
                 # next() on a plain iterator does not yield to the loop, so workers never race.
+                loop = asyncio.get_running_loop()
                 for entry in todo:
                     result = await fetch_section(client, limiter, settings.results_base, election, entry)
+                    if pool and result.logs:
+                        result.parsed = await loop.run_in_executor(pool, parse, result)
                     on_result(result)
                     store.record(election.ano, election.turno, result)
                     counts[result.status] = counts.get(result.status, 0) + 1
@@ -221,4 +230,6 @@ async def collect(
             await asyncio.gather(*(worker() for _ in range(settings.concurrency)))
         return counts
     finally:
+        if pool:
+            pool.shutdown()
         store.close()

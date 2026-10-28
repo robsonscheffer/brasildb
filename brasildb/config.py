@@ -35,6 +35,7 @@ class Settings:
     rps: float  # global request budget per second to resultados.tse.jus.br
     concurrency: int
     keep_raw: bool
+    parse_workers: int = 1  # processes that unzip and parse logs, off the download loop
 
 
 def load() -> Settings:
@@ -49,4 +50,5 @@ def load() -> Settings:
         rps=float(os.environ.get("BRASILDB_RPS", "20")),
         concurrency=int(os.environ.get("BRASILDB_CONCURRENCY", "20")),
         keep_raw=os.environ.get("BRASILDB_KEEP_RAW", "1") == "1",
+        parse_workers=int(os.environ.get("BRASILDB_PARSE_WORKERS", max(1, (os.cpu_count() or 2) - 1))),
     )

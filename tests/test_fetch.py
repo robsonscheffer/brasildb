@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 from pathlib import Path
 
 import httpx
 import respx
 
+from brasildb import cli
 from brasildb.config import ELECTIONS, Settings
 from brasildb.tse import fetch
 from brasildb.tse.fetch import RateLimiter, StateStore, SectionResult, collect, fetch_section
@@ -241,3 +243,18 @@ async def test_collect_counts_skips_done_and_records(tmp_path, monkeypatch):
         again = await collect(cfg, ELECTION, entries, seen.append)
         assert router.calls.call_count == 0
     assert again == {}
+
+
+async def test_collect_parses_in_worker_processes(tmp_path, monkeypatch):
+    no_sleep(monkeypatch)
+    cfg = settings(tmp_path, parse_workers=2)
+    seen: list[SectionResult] = []
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(AUX_URL).mock(return_value=httpx.Response(200, json=AUX))
+        router.get(LOG_URL).mock(return_value=httpx.Response(200, content=LOG_BYTES))
+        parse = functools.partial(cli.parse_section, raw_dir=str(tmp_path / "raw"))
+        await collect(cfg, ELECTION, [ENTRY], seen.append, parse=parse)
+    [result] = seen
+    assert result.parsed == cli.parse_section(result, None)
+    assert result.parsed and {r["arquivo_hash"] for r in result.parsed} == {HASH}
+    assert (tmp_path / "raw" / "rr" / f"{HASH[:12]}-{LOG_NAME}").read_bytes() == LOG_BYTES
