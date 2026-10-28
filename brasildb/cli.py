@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import functools
 import json
 import sys
 import time
@@ -55,6 +56,22 @@ def _collected_in_lake(settings, election) -> set[paths.SectionKey]:
     return {paths.SectionKey(*r) for r in rows}
 
 
+def parse_section(res: fetch.SectionResult, raw_dir: str | None) -> list[dict]:
+    """Event rows of one section's logs. Saves each raw archive under raw_dir/<uf> when given.
+    Runs in a worker process during collection, so it is a module-level function."""
+    out = []
+    for hash_, name, jez in res.logs:
+        if raw_dir:
+            d = Path(raw_dir) / res.entry.key.sigla_uf
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{hash_[:12]}-{name}").write_bytes(jez)
+        rows, _ = logparse.parse_logd_stats(logparse.extract_logd(jez))
+        for r in rows:
+            r.pop("autenticador", None)
+            out.append({"arquivo_hash": hash_, **r})
+    return out
+
+
 class BatchWriter:
     """Buffers parsed sections and writes them to the lake every `size` sections."""
 
@@ -62,21 +79,15 @@ class BatchWriter:
         self.s, self.e, self.run_id, self.size = settings, election, run_id, size
         self.eventos, self.secoes, self.n_batch, self.pending = [], [], 0, 0
         self.bytes_in = 0
+        self.raw_dir = str(Path(settings.raw) / f"{election.ano}" / f"{election.turno}") if settings.keep_raw else None
 
     def on_result(self, res: fetch.SectionResult) -> None:
         k = res.entry.key
         base = dict(ano=self.e.ano, turno=self.e.turno, sigla_uf=k.sigla_uf.upper(),
                     id_municipio_tse=k.id_municipio_tse, zona=k.zona, secao=k.secao)
-        for hash_, name, jez in res.logs:
-            self.bytes_in += len(jez)
-            if self.s.keep_raw:
-                d = Path(self.s.raw) / f"{self.e.ano}" / f"{self.e.turno}" / k.sigla_uf
-                d.mkdir(parents=True, exist_ok=True)
-                (d / f"{hash_[:12]}-{name}").write_bytes(jez)
-            rows, _ = logparse.parse_logd_stats(logparse.extract_logd(jez))
-            for r in rows:
-                r.pop("autenticador", None)
-                self.eventos.append({**base, "arquivo_hash": hash_, **r})
+        rows = res.parsed if res.parsed is not None else parse_section(res, self.raw_dir)
+        self.bytes_in += sum(len(jez) for _, _, jez in res.logs)
+        self.eventos.extend({**base, **r} for r in rows)
         self.secoes.append({**base, "secao_principal": res.entry.principal, "status": res.status,
                             "n_hashes": len(res.logs), "erro": res.erro,
                             "coletado_em": datetime.now(timezone.utc).replace(tzinfo=None)})
@@ -137,7 +148,8 @@ def cmd_collect_logs(a) -> None:
     todo = [x for x in entries if x.key not in done]
     print(f"{len(entries)} sections in scope, {len(todo)} to collect")
     w = BatchWriter(s, e, run_id=f"r{int(time.time())}", size=a.batch)
-    counts = asyncio.run(fetch.collect(s, e, todo, w.on_result, resume_from_state=False))
+    parse = functools.partial(parse_section, raw_dir=w.raw_dir)
+    counts = asyncio.run(fetch.collect(s, e, todo, w.on_result, resume_from_state=False, parse=parse))
     w.flush()
     dt = time.time() - t0
     print(json.dumps({"counts": counts, "seconds": round(dt, 1), "log_bytes": w.bytes_in,

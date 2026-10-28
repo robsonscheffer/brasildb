@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from concurrent.futures import ProcessPoolExecutor
 import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -16,6 +17,9 @@ from brasildb.tse.sections import SectionEntry
 
 # Sleep before each retry. One attempt, then one retry per value: 5 attempts in all.
 RETRY_DELAYS: tuple[float, ...] = (1, 2, 4, 8)
+# Network errors (no route, DNS, reset) wait about 5 minutes in all, so a short outage
+# pauses the run instead of marking every section it reaches as erro.
+NETWORK_RETRY_DELAYS: tuple[float, ...] = (2, 5, 10, 20, 30, 60, 60, 60, 60)
 REQUEST_TIMEOUT = 30.0
 DONE_STATUSES = ("ok", "agregada", "sem_log")
 
@@ -45,6 +49,7 @@ class SectionResult:
     status: str  # ok | agregada | sem_log | erro
     logs: list[tuple[str, str, bytes]] = field(default_factory=list)  # (hash, file name, bytes)
     erro: str | None = None
+    parsed: object = None  # what collect's parse returned for this section, if one was given
 
 
 class _Failed(Exception):
@@ -52,21 +57,26 @@ class _Failed(Exception):
 
 
 async def _get(client: httpx.AsyncClient, limiter: RateLimiter, url: str) -> httpx.Response:
-    """GET under the shared limiter. Timeouts and 5xx are retried; any other status is returned."""
-    attempts = len(RETRY_DELAYS) + 1
-    for n in range(attempts):
+    """GET under the shared limiter. Timeouts, 5xx and network errors are retried; any other
+    status is returned."""
+    retries = {"server": 0, "network": 0}
+    while True:
         await limiter.acquire()
         try:
             response = await client.get(url)
         except httpx.TimeoutException as e:
-            problema = f"timeout ({type(e).__name__})"
+            kind, problema = "server", f"timeout ({type(e).__name__})"
+        except httpx.TransportError as e:
+            kind, problema = "network", f"network ({type(e).__name__})"
         else:
             if response.status_code < 500:
                 return response
-            problema = f"HTTP {response.status_code}"
-        if n < len(RETRY_DELAYS):
-            await asyncio.sleep(RETRY_DELAYS[n])
-    raise _Failed(f"{problema} after {attempts} attempts: {url}")
+            kind, problema = "server", f"HTTP {response.status_code}"
+        delays = RETRY_DELAYS if kind == "server" else NETWORK_RETRY_DELAYS
+        if retries[kind] == len(delays):
+            raise _Failed(f"{problema} after {sum(retries.values()) + 1} attempts: {url}")
+        await asyncio.sleep(delays[retries[kind]])
+        retries[kind] += 1
 
 
 def _log_files(aux: dict) -> list[tuple[str, str]]:
@@ -185,12 +195,16 @@ async def collect(
     entries: list[SectionEntry],
     on_result: Callable[[SectionResult], None],
     resume_from_state: bool = True,
+    parse: Callable[[SectionResult], object] | None = None,
 ) -> dict[str, int]:
     """Fetch every section not yet done. Returns the count of each status seen in this run.
 
     Pass resume_from_state=False when the caller already filtered entries against a more
-    durable record (the CLI uses the lake, since buffered rows are lost if a run dies)."""
+    durable record (the CLI uses the lake, since buffered rows are lost if a run dies).
+    parse, if given, runs on each section with logs in settings.parse_workers processes and
+    its return goes to result.parsed. It must be picklable (a module-level function)."""
     store = StateStore(settings.state)
+    pool = ProcessPoolExecutor(settings.parse_workers) if parse else None
     try:
         done = store.done(election.ano, election.turno) if resume_from_state else set()
         todo = iter([e for e in entries if e.key not in done])
@@ -204,8 +218,11 @@ async def collect(
 
             async def worker() -> None:
                 # next() on a plain iterator does not yield to the loop, so workers never race.
+                loop = asyncio.get_running_loop()
                 for entry in todo:
                     result = await fetch_section(client, limiter, settings.results_base, election, entry)
+                    if pool and result.logs:
+                        result.parsed = await loop.run_in_executor(pool, parse, result)
                     on_result(result)
                     store.record(election.ano, election.turno, result)
                     counts[result.status] = counts.get(result.status, 0) + 1
@@ -213,4 +230,6 @@ async def collect(
             await asyncio.gather(*(worker() for _ in range(settings.concurrency)))
         return counts
     finally:
+        if pool:
+            pool.shutdown()
         store.close()
