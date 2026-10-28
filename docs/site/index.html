@@ -18,33 +18,31 @@
     --muted: #9a9ca6;
     --line: #262a38;
     --accent: #ffb43c;
-    --card: rgba(7,10,18,.82);
+    --card: rgba(7,10,18,.84);
+    --feed-h: 172px;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
   html, body { margin: 0; background: var(--bg); color: var(--fg); }
   body { font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.45; }
   a { color: var(--accent); }
   button { font: inherit; }
   .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
-  /* The map stays on screen while the chapters scroll over it. */
-  .stage { position: relative; }
-  .sticky { position: sticky; top: 0; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
+  /* The stage is one screen: map, clock, feed. The method text lives below it. */
+  .stage { position: relative; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
   canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
-  .hud { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; pointer-events: none; }
-  .hud > * { pointer-events: auto; }
-  .clock { font-size: clamp(44px, 10vw, 84px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .hud { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); top: max(18px, env(safe-area-inset-top, 0px)); display: grid; gap: 4px; }
+  .clock { font-size: clamp(44px, 9vw, 92px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
   .clock small { font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-left: 10px; vertical-align: middle; }
   .total { font-size: clamp(14px, 3.2vw, 18px); color: var(--muted); font-variant-numeric: tabular-nums; }
   .total b { color: var(--fg); font-weight: 600; }
-  canvas#curve { width: 260px; height: 44px; display: block; margin-top: 6px; }
+  canvas#curve { width: 340px; max-width: calc(100vw - 36px); height: 54px; display: block; margin-top: 8px; cursor: ew-resize; touch-action: none; }
   .copy { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0; cursor: pointer; text-align: left; justify-self: start; }
   .copy:hover { color: var(--accent); }
   .play {
-    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px));
-    width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
+    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(18px, env(safe-area-inset-top, 0px));
+    width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
     color: var(--fg); cursor: pointer; display: grid; place-items: center; padding: 0;
   }
   .play svg { width: 22px; height: 22px; fill: currentColor; }
@@ -62,26 +60,35 @@
   .tip span { color: var(--muted); }
   .tip i { font-style: normal; color: var(--accent); }
 
-  /* Chapter dots. */
-  .dots { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); display: grid; gap: 10px; z-index: 3; }
-  .dots button { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--muted); background: transparent; padding: 0; cursor: pointer; }
-  .dots button.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
-
-  .steps { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100dvh; }
-  .step { min-height: 100vh; min-height: 100dvh; display: flex; align-items: flex-start; padding-block: 12vh 20vh; }
-  .step:first-child { padding-top: max(20px, env(safe-area-inset-top, 0px)); }
-  .card {
-    max-width: 380px; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 18px 20px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  /* The feed: one row of cards, the card at "now" in the centre. Drag it to seek. */
+  .feed {
+    position: absolute; left: 0; right: 0; bottom: 0; height: var(--feed-h);
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: flex-end;
+    background: linear-gradient(to top, rgba(7,10,18,.95), rgba(7,10,18,.6) 70%, rgba(7,10,18,0));
   }
-  .card .k { color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 6px; }
-  .card p { margin: 0; }
-  .card p + p { margin-top: 10px; }
-  h1 { font-size: clamp(36px, 8vw, 64px); font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px; line-height: 1; text-wrap: balance; }
-  .lede { font-size: clamp(17px, 2.4vw, 21px); margin: 0; max-width: 34ch; }
-  .lede + p { color: var(--muted); font-size: 15px; margin-top: 12px; }
+  .rail {
+    display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    padding-inline: calc(50% - 170px); width: 100%; -webkit-overflow-scrolling: touch;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .ev {
+    flex: 0 0 340px; scroll-snap-align: center; background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 12px 16px; cursor: pointer; opacity: .55; transition: opacity .3s, border-color .3s;
+    display: grid; gap: 4px; align-content: start; min-height: 112px;
+  }
+  .ev.on { opacity: 1; border-color: var(--accent); }
+  .ev .k { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .ev h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+  .ev h2.big { font-size: 26px; }
+  .ev p { margin: 0; font-size: 14px; line-height: 1.35; color: #cfccc3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .ev.on p { -webkit-line-clamp: 5; }
+  .ev .bar { height: 2px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .ev .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .more { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(var(--feed-h) + 6px); font-size: 13px; color: var(--muted); text-decoration: none; }
+  .more:hover { color: var(--accent); }
 
-  .after { position: relative; z-index: 2; background: var(--bg); border-top: 1px solid var(--line); padding-block: 40px 60px; }
+  .after { position: relative; background: var(--bg); border-top: 1px solid var(--line); padding-block: 40px 60px; }
   .after .in { max-width: 62ch; margin: 0 auto; display: grid; gap: 12px; }
   .after h2 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
   .after p { margin: 0; }
@@ -92,104 +99,47 @@
   .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
   footer { color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 12px; }
 
-  /* Phone: the map takes the top half, the clock sits under it, the cards come up from the bottom. */
+  /* Phone: map on top, clock in the middle, the feed at the bottom with one card in view. */
   @media (max-width: 600px) {
-    .card { max-width: 100%; padding: 14px 16px; }
-    .step { align-items: flex-end; padding-block: 62vh 4vh; }
-    .step:first-child { padding-top: 62vh; }
-    .hud { bottom: auto; top: 52vh; top: 52dvh; }
-    canvas#curve { width: 200px; height: 36px; }
-    .play { bottom: auto; top: 52vh; top: 52dvh; width: 44px; height: 44px; }
-    .dots { top: 26vh; transform: none; gap: 8px; }
-    .dots button { width: 8px; height: 8px; }
+    :root { --feed-h: 190px; }
+    .hud { top: auto; bottom: calc(var(--feed-h) + 4px); }
+    .clock { font-size: 40px; }
     .clock small { display: none; }
+    canvas#curve { width: 220px; height: 40px; margin-top: 4px; }
+    .play { top: auto; bottom: calc(var(--feed-h) + 10px); width: 44px; height: 44px; }
+    .rail { padding-inline: calc(50% - 150px); }
+    .ev { flex-basis: 300px; min-height: 124px; }
+    .ev h2.big { font-size: 22px; }
+    .more { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="sticky">
-    <canvas id="c"></canvas>
-    <div class="loading" id="loading">carregando o dia…</div>
-    <div class="tip" id="tip"></div>
-    <div class="hud">
-      <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
-      <div class="total"><b id="total">0</b> votos até agora</div>
-      <canvas id="curve"></canvas>
-      <button class="copy" id="copy">copiar o link deste minuto</button>
-    </div>
-    <nav class="dots" id="dots" aria-label="Capítulos"></nav>
-    <button class="play" id="play" aria-label="Pausar">
-      <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
-    </button>
+<div class="stage" id="stage">
+  <canvas id="c"></canvas>
+  <div class="loading" id="loading">carregando o dia…</div>
+  <div class="tip" id="tip"></div>
+  <div class="hud">
+    <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
+    <div class="total"><b id="total">0</b> votos até agora</div>
+    <canvas id="curve" aria-label="Votos por minuto ao longo do dia; arraste para mudar a hora"></canvas>
+    <button class="copy" id="copy">copiar o link deste minuto</button>
   </div>
-
-  <div class="steps gutter">
-    <section class="step" data-from="470" data-to="1150">
-      <div class="card">
-        <h1>O Brasil votando</h1>
-        <p class="lede">127 milhões de votos, minuto a minuto. O segundo turno de 25 de outubro de 2026,
-          visto pelo relógio das urnas.</p>
-        <p>Cada ponto é uma cidade. Ele acende quando as urnas dela registram votos naquele minuto.
-          Quanto mais perto do ritmo máximo daquela cidade, mais forte a luz. O tamanho é o eleitorado.
-          Toque numa cidade para ver os números dela. Role a página para seguir o dia.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="470" data-to="500">
-      <div class="card">
-        <p class="k">8h</p>
-        <p>Tudo abre ao mesmo tempo. Desde 2022 o horário de votação é o de Brasília no país inteiro.
-          No Acre, as urnas abrem às 6h da manhã local.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="495" data-to="560">
-      <div class="card">
-        <p class="k">8h30</p>
-        <p>O pico do dia. Mais de 350 mil votos por minuto. Quem acorda cedo vota cedo.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="710" data-to="790" data-view="-48.5,-24.5,1.9">
-      <div class="card">
-        <p class="k">Meio-dia</p>
-        <p>O ritmo cai para 240 mil votos por minuto. Hora do almoço. O Sul e o Sudeste apagam
-          mais que o Nordeste.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="745" data-to="840" data-view="-44.2,-19.9,3.4">
-      <div class="card">
-        <p class="k">Início da tarde</p>
-        <p>Temporal em Minas. A energia cai em Belo Horizonte e em cidades vizinhas. Mais de 3 mil seções
-          seguem votando na bateria da urna. A luz da cidade não apaga.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="985" data-to="1035">
-      <div class="card">
-        <p class="k">17h</p>
-        <p>Os portões fecham. Em dez minutos, 473 mil seções encerram. O país apaga quase de uma vez.</p>
-      </div>
-    </section>
-
-    <section class="step" data-from="1015" data-to="1150" data-view="-40.5,-9.5,1.8">
-      <div class="card">
-        <p class="k">Depois das 17h</p>
-        <p>O STF estende a votação até as 19h. Vale só para as 24 mil seções que ainda estavam abertas.
-          Elas registram cerca de 34 mil votos, 0,03% do total. O último, às 19h06.</p>
-      </div>
-    </section>
-  </div>
+  <button class="play" id="play" aria-label="Pausar">
+    <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+  </button>
+  <a class="more" href="#como">como foi feito ↓</a>
+  <div class="feed"><div class="rail" id="rail"></div></div>
 </div>
 
-<section class="after gutter">
+<section class="after gutter" id="como">
   <div class="in">
     <h2>Como foi feito</h2>
     <p>Cada urna grava um log com a hora de cada voto. O TSE publica esses arquivos. Lemos os logs de
       497.896 seções do segundo turno, convertemos cada relógio para o horário de Brasília e contamos
       os votos por minuto, cidade por cidade.</p>
+    <p>O brilho de uma cidade é o quanto suas urnas registraram naquele minuto, comparado com o minuto
+      mais movimentado dela no dia. O tamanho é o eleitorado.</p>
     <p>O log diz quando a urna registrou um voto. Não diz em quem. Nada aqui identifica eleitor ou
       candidato.</p>
     <div class="legend">
@@ -207,13 +157,15 @@
 (async function () {
   const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0;
   const KX = Math.cos(15 * Math.PI / 180);
-  const SPEED = 10;                 // replay minutes per real second in the full loop
+  const FAST = 10, SLOW = 3;         // replay minutes per second, between beats and inside one
+  const HOLD = 3;                    // seconds of dark before the loop restarts
   const $ = id => document.getElementById(id);
   const canvas = $("c"), ctx = canvas.getContext("2d");
-  const [towns, totals, borders, img] = await Promise.all([
+  const [towns, totals, borders, events, img] = await Promise.all([
     fetch("data/towns.json").then(r => r.json()),
     fetch("data/totals.json").then(r => r.json()),
     fetch("data/borders.json").then(r => r.json()),
+    fetch("data/events.json").then(r => r.json()),
     new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "data/frames.png"; }),
   ]);
   const N = towns.id.length, M = totals.minutes, START = totals.start, END = START + M - 1;
@@ -228,27 +180,30 @@
   for (let k = 0; k < N * M; k++) { raw[k] = rgba[k * 4]; lit[k] = Math.pow(rgba[k * 4] / 255, 1.4); }
   const cumul = []; let acc = 0;
   for (const v of totals.national) { acc += v; cumul.push(acc); }
-  // Curve scale: the peak of a 3-minute mean, so the 08:00 burst does not flatten the day.
   const nat = totals.national;
   const maxPerMin = Math.max(...nat.map((v, m) => (nat[Math.max(0, m - 1)] + v + nat[Math.min(M - 1, m + 1)]) / 3));
 
-  // Base projection (equirectangular, longitude scaled for 15 degrees south) plus a camera.
+  // Base projection (equirectangular, longitude scaled for 15 degrees south) plus a camera
+  // whose focus is a map coordinate, so a resize keeps the view.
   let W = 0, H = 0, sx = 1, sy = 1, ox = 0, oy = 0, dpr = 1, ax = 0, ay = 0;
   const px = new Float32Array(N), py = new Float32Array(N), pr = new Float32Array(N);
-  const HOME = { lon: (LON0 + LON1) / 2, lat: (LAT0 + LAT1) / 2 };
-  const cam = { ...HOME, z: 1 }, camTo = { ...HOME, z: 1 };   // focus in map coordinates, zoom
+  const HOME = { lon: (LON0 + LON1) / 2, lat: (LAT0 + LAT1) / 2, z: 1 };
+  const cam = { ...HOME }, camA = { ...HOME }, camB = { ...HOME };
+  let camT0 = 0, camDur = 2.2;
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = Math.round(canvas.clientWidth * dpr); H = Math.round(canvas.clientHeight * dpr);
     canvas.width = W; canvas.height = H;
+    const feed = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--feed-h")) * dpr;
     const mw = (LON1 - LON0) * KX, mh = LAT0 - LAT1;
     const wide = W > H;
-    const s = Math.min((W * (wide ? 0.62 : 0.94)) / mw, (H * (wide ? 0.92 : 0.50)) / mh);
+    const avail = H - feed;
+    const s = Math.min((W * (wide ? 0.60 : 0.94)) / mw, (avail * (wide ? 0.94 : 0.62)) / mh);
     sx = s * KX; sy = s;
-    ox = wide ? W - mw * s - 0.03 * W : (W - mw * s) / 2;
-    oy = wide ? (H - mh * s) / 2 : H * 0.03;
-    ax = ox + mw * s / 2; ay = oy + mh * s / 2;          // the anchor: where the focus is drawn
-    const rmax = 0.022 * Math.min(W, H * 1.2), amax = Math.sqrt(towns.aptos[0]);
+    ox = wide ? W - mw * s - 0.04 * W : (W - mw * s) / 2;
+    oy = wide ? (avail - mh * s) / 2 : avail * 0.02;
+    ax = ox + mw * s / 2; ay = oy + mh * s / 2;
+    const rmax = 0.022 * Math.min(W, avail * 1.2), amax = Math.sqrt(towns.aptos[0]);
     for (let i = 0; i < N; i++) {
       px[i] = ox + (towns.lon[i] - LON0) * sx;
       py[i] = oy + (LAT0 - towns.lat[i]) * sy;
@@ -256,10 +211,16 @@
     }
   }
   const X = lon => ox + (lon - LON0) * sx, Y = lat => oy + (LAT0 - lat) * sy;
-  function setView(spec) {
-    if (!spec) { Object.assign(camTo, HOME, { z: 1 }); return; }
-    const [lon, lat, z] = spec.split(",").map(Number);
-    Object.assign(camTo, { lon, lat, z });
+  function setView(view, now) {
+    const to = view ? { lon: view[0], lat: view[1], z: view[2] } : { ...HOME };
+    if (to.lon === camB.lon && to.lat === camB.lat && to.z === camB.z) return;
+    Object.assign(camA, cam); Object.assign(camB, to); camT0 = now;
+  }
+  function moveCamera(now) {
+    const u = Math.min(1, (now - camT0) / 1000 / camDur), e = u * u * (3 - 2 * u);   // ease in and out
+    cam.lon = camA.lon + (camB.lon - camA.lon) * e;
+    cam.lat = camA.lat + (camB.lat - camA.lat) * e;
+    cam.z = Math.exp(Math.log(camA.z) + (Math.log(camB.z) - Math.log(camA.z)) * e);
   }
 
   // Sky: a faint dawn band at the start, night after sunset (18:10 in Brasilia that day).
@@ -273,14 +234,14 @@
 
   const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS + 1 }, () => []);
-  let lastMinute = -1, shown = 0, flash = 0;
+  let lastMinute = -1, shown = 0, picked = -1;
   function draw(t) {                // t: minute of the day, fractional
     const m0 = Math.max(0, Math.min(M - 1, Math.floor(t - START))), m1 = Math.min(M - 1, m0 + 1), f = Math.min(1, Math.max(0, t - START - m0));
     sky(t);
     ctx.save();
     const fx = X(cam.lon), fy = Y(cam.lat);
     ctx.translate(ax, ay); ctx.scale(cam.z, cam.z); ctx.translate(-fx, -fy);
-    const rz = 1 / Math.sqrt(cam.z);        // dots grow slower than the map
+    const rz = 1 / Math.sqrt(cam.z);
     ctx.lineWidth = 1 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.10)";
     ctx.beginPath();
     for (const ring of borders) {
@@ -317,7 +278,6 @@
       ctx.beginPath(); ctx.arc(px[picked], py[picked], r, 0, 6.2832); ctx.stroke();
     }
     ctx.restore();
-    if (flash > 0) { ctx.fillStyle = `rgba(7,10,18,${flash})`; ctx.fillRect(0, 0, W, H); }
 
     const minute = Math.floor(t);
     if (minute !== lastMinute) { lastMinute = minute; $("clock").textContent = hhmm(minute); }
@@ -328,7 +288,7 @@
     if (picked >= 0) placeTip();
   }
 
-  // The day's curve under the clock: national votes per minute, with the playhead.
+  // The day's curve under the clock: national votes per minute, with the playhead. Drag to seek.
   const curve = $("curve"), cctx = curve.getContext("2d");
   let curveBase = null;
   function buildCurve() {
@@ -336,17 +296,17 @@
     curve.width = cw; curve.height = ch;
     curveBase = document.createElement("canvas"); curveBase.width = cw; curveBase.height = ch;
     const c = curveBase.getContext("2d");
-    c.beginPath(); c.moveTo(0, ch);
     const yOf = m => ch - Math.min(1, nat[m] / maxPerMin) * (ch - 2 * dpr);
+    c.beginPath(); c.moveTo(0, ch);
     for (let m = 0; m < M; m++) c.lineTo(m / (M - 1) * cw, yOf(m));
     c.lineTo(cw, ch); c.closePath();
     c.fillStyle = "rgba(255,180,60,0.22)"; c.fill();
     c.beginPath();
     for (let m = 0; m < M; m++) c[m ? "lineTo" : "moveTo"](m / (M - 1) * cw, yOf(m));
     c.strokeStyle = "rgba(255,180,60,0.9)"; c.lineWidth = 1.2 * dpr; c.stroke();
-    for (const h of [8, 10, 12, 14, 16, 18]) {
-      const x = (h * 60 - START) / (M - 1) * cw;
-      c.fillStyle = "rgba(255,255,255,0.18)"; c.fillRect(x, ch - 4 * dpr, dpr, 4 * dpr);
+    for (const ev of events) {
+      const x = (ev.t - START) / (M - 1) * cw;
+      c.fillStyle = "rgba(236,232,220,0.5)"; c.fillRect(x, ch - 6 * dpr, dpr, 6 * dpr);
     }
   }
   function drawCurve(t) {
@@ -355,11 +315,14 @@
     const x = (t - START) / (M - 1) * cw;
     cctx.fillStyle = "rgba(236,232,220,0.9)"; cctx.fillRect(x - dpr / 2, 0, dpr, ch);
   }
+  let scrubbing = false;
+  const curveSeek = e => { const r = curve.getBoundingClientRect(); seek(START + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (M - 1)); };
+  curve.addEventListener("pointerdown", e => { scrubbing = true; curve.setPointerCapture(e.pointerId); curveSeek(e); });
+  curve.addEventListener("pointermove", e => { if (scrubbing) curveSeek(e); });
+  curve.addEventListener("pointerup", () => { scrubbing = false; });
 
   // Tap or hover a town: its numbers up to this minute.
-  let picked = -1;
   function townAt(cx, cy) {
-    // screen (CSS px) -> base px
     const bx = (cx * dpr - ax) / cam.z + X(cam.lon), by = (cy * dpr - ay) / cam.z + Y(cam.lat);
     let best = -1, bd = Infinity;
     for (let i = 0; i < N; i++) {
@@ -388,19 +351,53 @@
   canvas.addEventListener("pointerdown", e => { const i = townAt(e.clientX, e.clientY); pick(i === picked ? -1 : i); });
   canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); } });
 
-  // Playback: the chapter in view sets the window [from, to] and the camera; the window loops.
-  let from = START, to = END, t = START, playing = true, last = performance.now();
-  function setWindow(a, b) { if (a === from && b === to) return; from = a; to = b; t = a; flash = 0.9; }
+  // The feed: one card per event, in time order. The card at "now" is centred; dragging the
+  // rail to another card seeks the clock to it.
+  const rail = $("rail");
+  const cards = events.map((ev, k) => {
+    const el = document.createElement("article"); el.className = "ev"; el.dataset.k = k;
+    el.innerHTML = `<div class="k">${ev.k}</div><h2 class="${k === 0 ? "big" : ""}">${ev.title}</h2><p>${ev.text}</p><div class="bar"><i></i></div>`;
+    el.addEventListener("click", () => seek(ev.t));
+    rail.appendChild(el); return el;
+  });
+  const bars = cards.map(c => c.querySelector(".bar i"));
+  let active = -1, railBusy = 0, userScroll = false;
+  function eventAt(t) { let k = 0; for (let i = 0; i < events.length; i++) if (t >= events[i].t) k = i; return k; }
+  function showEvent(k, now) {
+    if (k === active) return;
+    active = k;
+    cards.forEach((c, j) => c.classList.toggle("on", j === k));
+    railBusy = now + 900;
+    rail.scrollTo({ left: cards[k].offsetLeft - (rail.clientWidth - cards[k].offsetWidth) / 2, behavior: "smooth" });
+    setView(events[k].view, now);
+  }
+  let scrollTimer = 0;
+  rail.addEventListener("scroll", () => {
+    if (performance.now() < railBusy) return;           // our own smooth scroll
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const mid = rail.scrollLeft + rail.clientWidth / 2;
+      let best = 0, bd = Infinity;
+      cards.forEach((c, k) => { const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = k; } });
+      if (best !== active) seek(events[best].t);
+    }, 120);
+  }, { passive: true });
+
+  // Playback. One clock drives the map, the feed and the camera.
+  let t = START, playing = true, last = performance.now(), holdUntil = 0;
+  function seek(min) { t = Math.max(START, Math.min(END, min)); holdUntil = 0; showEvent(eventAt(t), performance.now()); draw(t); }
+  function speedAt(t) { const ev = events[eventAt(t)]; return t < ev.t + ev.dur ? SLOW : FAST; }
   function tick(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    const k = 1 - Math.pow(0.02, dt);          // camera eases in about a second
-    cam.lon += (camTo.lon - cam.lon) * k; cam.lat += (camTo.lat - cam.lat) * k; cam.z += (camTo.z - cam.z) * k;
-    flash = Math.max(0, flash - dt * 2.5);
-    if (playing) {
-      const span = to - from, speed = span > 300 ? SPEED : Math.max(2.5, span / 14);
-      t += dt * speed;
-      if (t > to) t = from;
+    if (playing && !scrubbing && now >= holdUntil) {
+      t += dt * speedAt(t);
+      if (t > END) { t = END; holdUntil = now + HOLD * 1000; }
+      else if (holdUntil && now >= holdUntil) { t = START; holdUntil = 0; }
     }
+    if (holdUntil && now >= holdUntil) { t = START; holdUntil = 0; }
+    const k = eventAt(t); if (k !== active) showEvent(k, now);
+    const ev = events[k]; bars[k].style.width = `${Math.min(100, (t - ev.t) / ev.dur * 100)}%`;
+    moveCamera(now);
     draw(t);
     requestAnimationFrame(tick);
   }
@@ -414,36 +411,16 @@
     setTimeout(() => { $("copy").textContent = "copiar o link deste minuto"; }, 2500);
   });
 
-  // The chapter whose card sits in the middle of the screen owns the window and the camera.
-  const steps = [...document.querySelectorAll(".step")];
-  const dots = steps.map((s, k) => {
-    const b = document.createElement("button"); b.setAttribute("aria-label", `Capítulo ${k + 1}`);
-    b.addEventListener("click", () => s.scrollIntoView({ block: "start" }));
-    $("dots").appendChild(b); return b;
-  });
-  let active = -1;
-  function sync() {
-    const mid = scrollY + innerHeight / 2;
-    steps.forEach((s, k) => {
-      if (mid >= s.offsetTop && mid < s.offsetTop + s.offsetHeight && k !== active) {
-        active = k; setWindow(+s.dataset.from, +s.dataset.to); setView(s.dataset.view);
-        dots.forEach((d, j) => d.classList.toggle("on", j === k));
-      }
-    });
-  }
-  addEventListener("scroll", sync, { passive: true });
-
   // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
   window.replay = {
-    seek(min) { setPlaying(false); t = min; Object.assign(cam, camTo); flash = 0; draw(t); },
-    sync, pick, get t() { return t; }, get playing() { return playing; }, get window() { return [from, to]; }, get cam() { return { ...cam }; },
+    seek(min) { setPlaying(false); seek(min); Object.assign(cam, camB); draw(t); },
+    pick, get t() { return t; }, get playing() { return playing; }, get active() { return active; }, get cam() { return { ...cam }; },
   };
 
-  // ?t=13:30 opens paused at that time.
   const q = new URLSearchParams(location.search).get("t");
   if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); setPlaying(false); }
 
-  layout(); buildCurve(); sync(); draw(t); $("loading").remove();
+  layout(); buildCurve(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t); $("loading").remove();
   new ResizeObserver(() => { layout(); buildCurve(); draw(t); }).observe(canvas);
   requestAnimationFrame(tick);
 })();
