@@ -7,6 +7,8 @@
 <meta name="description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas. Dados: TSE, logs das urnas.">
 <meta property="og:title" content="O Brasil votando">
 <meta property="og:description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas.">
+<meta property="og:image" content="https://robsonscheffer.github.io/brasildb/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
 <style>
@@ -24,16 +26,22 @@
   html, body { margin: 0; background: var(--bg); color: var(--fg); }
   body { font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.45; }
   a { color: var(--accent); }
+  button { font: inherit; }
   .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
   /* The map stays on screen while the chapters scroll over it. */
   .stage { position: relative; }
   .sticky { position: sticky; top: 0; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
   .hud { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; pointer-events: none; }
+  .hud > * { pointer-events: auto; }
   .clock { font-size: clamp(44px, 10vw, 84px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .clock small { font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-left: 10px; vertical-align: middle; }
   .total { font-size: clamp(14px, 3.2vw, 18px); color: var(--muted); font-variant-numeric: tabular-nums; }
   .total b { color: var(--fg); font-weight: 600; }
+  canvas#curve { width: 260px; height: 44px; display: block; margin-top: 6px; }
+  .copy { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0; cursor: pointer; text-align: left; justify-self: start; }
+  .copy:hover { color: var(--accent); }
   .play {
     position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px));
     width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
@@ -42,6 +50,22 @@
   .play svg { width: 22px; height: 22px; fill: currentColor; }
   .play:hover { border-color: var(--accent); }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+
+  /* Town tooltip. */
+  .tip {
+    position: absolute; z-index: 3; pointer-events: none; min-width: 180px; max-width: 240px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    font-size: 14px; line-height: 1.35; opacity: 0; transition: opacity .15s; transform: translate(-50%, calc(-100% - 14px));
+  }
+  .tip.on { opacity: 1; }
+  .tip b { display: block; font-size: 16px; }
+  .tip span { color: var(--muted); }
+  .tip i { font-style: normal; color: var(--accent); }
+
+  /* Chapter dots. */
+  .dots { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); display: grid; gap: 10px; z-index: 3; }
+  .dots button { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--muted); background: transparent; padding: 0; cursor: pointer; }
+  .dots button.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
   .steps { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100dvh; }
   .step { min-height: 100vh; min-height: 100dvh; display: flex; align-items: flex-start; padding-block: 12vh 20vh; }
@@ -67,13 +91,18 @@
   .legend .lit::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
   .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
   footer { color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 12px; }
+
   /* Phone: the map takes the top half, the clock sits under it, the cards come up from the bottom. */
   @media (max-width: 600px) {
     .card { max-width: 100%; padding: 14px 16px; }
     .step { align-items: flex-end; padding-block: 62vh 4vh; }
     .step:first-child { padding-top: 62vh; }
-    .hud { bottom: auto; top: 54vh; top: 54dvh; }
-    .play { bottom: auto; top: 54vh; top: 54dvh; width: 44px; height: 44px; }
+    .hud { bottom: auto; top: 52vh; top: 52dvh; }
+    canvas#curve { width: 200px; height: 36px; }
+    .play { bottom: auto; top: 52vh; top: 52dvh; width: 44px; height: 44px; }
+    .dots { top: 26vh; transform: none; gap: 8px; }
+    .dots button { width: 8px; height: 8px; }
+    .clock small { display: none; }
   }
 </style>
 </head>
@@ -82,10 +111,14 @@
   <div class="sticky">
     <canvas id="c"></canvas>
     <div class="loading" id="loading">carregando o dia…</div>
+    <div class="tip" id="tip"></div>
     <div class="hud">
-      <div class="clock" id="clock">07:50</div>
+      <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
       <div class="total"><b id="total">0</b> votos até agora</div>
+      <canvas id="curve"></canvas>
+      <button class="copy" id="copy">copiar o link deste minuto</button>
     </div>
+    <nav class="dots" id="dots" aria-label="Capítulos"></nav>
     <button class="play" id="play" aria-label="Pausar">
       <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
     </button>
@@ -99,7 +132,7 @@
           visto pelo relógio das urnas.</p>
         <p>Cada ponto é uma cidade. Ele acende quando as urnas dela registram votos naquele minuto.
           Quanto mais perto do ritmo máximo daquela cidade, mais forte a luz. O tamanho é o eleitorado.
-          Role a página.</p>
+          Toque numa cidade para ver os números dela. Role a página para seguir o dia.</p>
       </div>
     </section>
 
@@ -118,7 +151,7 @@
       </div>
     </section>
 
-    <section class="step" data-from="710" data-to="790">
+    <section class="step" data-from="710" data-to="790" data-view="-48.5,-24.5,1.9">
       <div class="card">
         <p class="k">Meio-dia</p>
         <p>O ritmo cai para 240 mil votos por minuto. Hora do almoço. O Sul e o Sudeste apagam
@@ -126,7 +159,7 @@
       </div>
     </section>
 
-    <section class="step" data-from="745" data-to="840">
+    <section class="step" data-from="745" data-to="840" data-view="-44.2,-19.9,3.4">
       <div class="card">
         <p class="k">Início da tarde</p>
         <p>Temporal em Minas. A energia cai em Belo Horizonte e em cidades vizinhas. Mais de 3 mil seções
@@ -141,7 +174,7 @@
       </div>
     </section>
 
-    <section class="step" data-from="1015" data-to="1150">
+    <section class="step" data-from="1015" data-to="1150" data-view="-40.5,-9.5,1.8">
       <div class="card">
         <p class="k">Depois das 17h</p>
         <p>O STF estende a votação até as 19h. Vale só para as 24 mil seções que ainda estavam abertas.
@@ -183,20 +216,27 @@
     fetch("data/borders.json").then(r => r.json()),
     new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "data/frames.png"; }),
   ]);
-  const N = towns.id.length, M = totals.minutes, START = totals.start;
+  const N = towns.id.length, M = totals.minutes, START = totals.start, END = START + M - 1;
+  const hhmm = min => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
 
   const off = document.createElement("canvas");
   off.width = N; off.height = M;
   const octx = off.getContext("2d"); octx.drawImage(img, 0, 0);
   const rgba = octx.getImageData(0, 0, N, M).data;
-  const lit = new Float32Array(N * M);
-  for (let k = 0; k < N * M; k++) lit[k] = Math.pow(rgba[k * 4] / 255, 1.4);
+  const raw = new Uint8Array(N * M), lit = new Float32Array(N * M);
+  for (let k = 0; k < N * M; k++) { raw[k] = rgba[k * 4]; lit[k] = Math.pow(rgba[k * 4] / 255, 1.4); }
   const cumul = []; let acc = 0;
   for (const v of totals.national) { acc += v; cumul.push(acc); }
+  // Curve scale: the peak of a 3-minute mean, so the 08:00 burst does not flatten the day.
+  const nat = totals.national;
+  const maxPerMin = Math.max(...nat.map((v, m) => (nat[Math.max(0, m - 1)] + v + nat[Math.min(M - 1, m + 1)]) / 3));
 
-  // Equirectangular, longitude scaled for 15 degrees south. The map fills the viewport.
-  let W = 0, H = 0, sx = 1, sy = 1, ox = 0, oy = 0, dpr = 1;
+  // Base projection (equirectangular, longitude scaled for 15 degrees south) plus a camera.
+  let W = 0, H = 0, sx = 1, sy = 1, ox = 0, oy = 0, dpr = 1, ax = 0, ay = 0;
   const px = new Float32Array(N), py = new Float32Array(N), pr = new Float32Array(N);
+  const HOME = { lon: (LON0 + LON1) / 2, lat: (LAT0 + LAT1) / 2 };
+  const cam = { ...HOME, z: 1 }, camTo = { ...HOME, z: 1 };   // focus in map coordinates, zoom
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = Math.round(canvas.clientWidth * dpr); H = Math.round(canvas.clientHeight * dpr);
@@ -207,6 +247,7 @@
     sx = s * KX; sy = s;
     ox = wide ? W - mw * s - 0.03 * W : (W - mw * s) / 2;
     oy = wide ? (H - mh * s) / 2 : H * 0.03;
+    ax = ox + mw * s / 2; ay = oy + mh * s / 2;          // the anchor: where the focus is drawn
     const rmax = 0.022 * Math.min(W, H * 1.2), amax = Math.sqrt(towns.aptos[0]);
     for (let i = 0; i < N; i++) {
       px[i] = ox + (towns.lon[i] - LON0) * sx;
@@ -215,14 +256,32 @@
     }
   }
   const X = lon => ox + (lon - LON0) * sx, Y = lat => oy + (LAT0 - lat) * sy;
+  function setView(spec) {
+    if (!spec) { Object.assign(camTo, HOME, { z: 1 }); return; }
+    const [lon, lat, z] = spec.split(",").map(Number);
+    Object.assign(camTo, { lon, lat, z });
+  }
+
+  // Sky: a faint dawn band at the start, night after sunset (18:10 in Brasilia that day).
+  function sky(t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const dawn = Math.max(0, 1 - (t - START) / 90), night = Math.min(1, Math.max(0, (t - 1070) / 60));
+    g.addColorStop(0, `rgb(${7 + 4 * dawn - 3 * night},${10 + 6 * dawn - 4 * night},${18 + 14 * dawn - 8 * night})`);
+    g.addColorStop(1, `rgb(${7 + 18 * dawn - 3 * night},${10 + 8 * dawn - 4 * night},${18 + 4 * dawn - 8 * night})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
 
   const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS + 1 }, () => []);
-  let lastMinute = -1;
+  let lastMinute = -1, shown = 0, flash = 0;
   function draw(t) {                // t: minute of the day, fractional
     const m0 = Math.max(0, Math.min(M - 1, Math.floor(t - START))), m1 = Math.min(M - 1, m0 + 1), f = Math.min(1, Math.max(0, t - START - m0));
-    ctx.clearRect(0, 0, W, H);
-    ctx.lineWidth = 1 * dpr; ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    sky(t);
+    ctx.save();
+    const fx = X(cam.lon), fy = Y(cam.lat);
+    ctx.translate(ax, ay); ctx.scale(cam.z, cam.z); ctx.translate(-fx, -fy);
+    const rz = 1 / Math.sqrt(cam.z);        // dots grow slower than the map
+    ctx.lineWidth = 1 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.10)";
     ctx.beginPath();
     for (const ring of borders) {
       ring.forEach(([lon, lat], k) => k ? ctx.lineTo(X(lon), Y(lat)) : ctx.moveTo(X(lon), Y(lat)));
@@ -235,13 +294,12 @@
       const v = lit[m0 * N + i] * (1 - f) + lit[m1 * N + i] * f;
       buckets[Math.min(LEVELS, Math.round(v * LEVELS))].push(i);
     }
-    // Halo pass for the lit towns, then the dots; big towns come first in towns.json.
     for (let L = Math.ceil(LEVELS * 0.3); L <= LEVELS; L++) {
       const ids = buckets[L]; if (!ids.length) continue;
       const v = L / LEVELS;
       ctx.fillStyle = `rgba(255,170,50,${0.10 * v})`;
       ctx.beginPath();
-      for (const i of ids) { const r = pr[i] * (1.8 + 1.6 * v) + 2 * dpr; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      for (const i of ids) { const r = (pr[i] * (1.8 + 1.6 * v) + 2 * dpr) * rz; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
       ctx.fill();
     }
     for (let L = 0; L <= LEVELS; L++) {
@@ -250,59 +308,143 @@
       ctx.fillStyle = v === 0 ? "rgba(255,180,60,0.13)"
         : `rgba(255,${Math.round(165 + 70 * v)},${Math.round(45 + 170 * v)},${0.22 + 0.78 * v})`;
       ctx.beginPath();
-      for (const i of ids) { const r = pr[i] * (0.85 + 0.45 * v); ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      for (const i of ids) { const r = pr[i] * (0.85 + 0.45 * v) * rz; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
       ctx.fill();
     }
+    if (picked >= 0) {
+      const r = pr[picked] * 1.3 * rz + 3 * dpr;
+      ctx.lineWidth = 1.5 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath(); ctx.arc(px[picked], py[picked], r, 0, 6.2832); ctx.stroke();
+    }
+    ctx.restore();
+    if (flash > 0) { ctx.fillStyle = `rgba(7,10,18,${flash})`; ctx.fillRect(0, 0, W, H); }
 
     const minute = Math.floor(t);
-    if (minute !== lastMinute) {
-      lastMinute = minute;
-      $("clock").textContent = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-      $("total").textContent = cumul[Math.max(0, Math.min(M - 1, minute - START))].toLocaleString("pt-BR");
-    }
+    if (minute !== lastMinute) { lastMinute = minute; $("clock").textContent = hhmm(minute); }
+    const target = cumul[Math.max(0, Math.min(M - 1, minute - START))];
+    shown += (target - shown) * 0.18; if (Math.abs(target - shown) < 2) shown = target;
+    $("total").textContent = fmt(shown);
+    drawCurve(t);
+    if (picked >= 0) placeTip();
   }
 
-  // Playback: the chapter in view sets the window [from, to]; the window loops.
-  let from = START, to = START + M - 1, t = START, playing = true, last = performance.now();
-  function setWindow(a, b) { if (a === from && b === to) return; from = a; to = b; t = a; }
+  // The day's curve under the clock: national votes per minute, with the playhead.
+  const curve = $("curve"), cctx = curve.getContext("2d");
+  let curveBase = null;
+  function buildCurve() {
+    const cw = Math.round(curve.clientWidth * dpr), ch = Math.round(curve.clientHeight * dpr);
+    curve.width = cw; curve.height = ch;
+    curveBase = document.createElement("canvas"); curveBase.width = cw; curveBase.height = ch;
+    const c = curveBase.getContext("2d");
+    c.beginPath(); c.moveTo(0, ch);
+    const yOf = m => ch - Math.min(1, nat[m] / maxPerMin) * (ch - 2 * dpr);
+    for (let m = 0; m < M; m++) c.lineTo(m / (M - 1) * cw, yOf(m));
+    c.lineTo(cw, ch); c.closePath();
+    c.fillStyle = "rgba(255,180,60,0.22)"; c.fill();
+    c.beginPath();
+    for (let m = 0; m < M; m++) c[m ? "lineTo" : "moveTo"](m / (M - 1) * cw, yOf(m));
+    c.strokeStyle = "rgba(255,180,60,0.9)"; c.lineWidth = 1.2 * dpr; c.stroke();
+    for (const h of [8, 10, 12, 14, 16, 18]) {
+      const x = (h * 60 - START) / (M - 1) * cw;
+      c.fillStyle = "rgba(255,255,255,0.18)"; c.fillRect(x, ch - 4 * dpr, dpr, 4 * dpr);
+    }
+  }
+  function drawCurve(t) {
+    const cw = curve.width, ch = curve.height;
+    cctx.clearRect(0, 0, cw, ch); cctx.drawImage(curveBase, 0, 0);
+    const x = (t - START) / (M - 1) * cw;
+    cctx.fillStyle = "rgba(236,232,220,0.9)"; cctx.fillRect(x - dpr / 2, 0, dpr, ch);
+  }
+
+  // Tap or hover a town: its numbers up to this minute.
+  let picked = -1;
+  function townAt(cx, cy) {
+    // screen (CSS px) -> base px
+    const bx = (cx * dpr - ax) / cam.z + X(cam.lon), by = (cy * dpr - ay) / cam.z + Y(cam.lat);
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < N; i++) {
+      const d = Math.hypot(px[i] - bx, py[i] - by), lim = pr[i] / Math.sqrt(cam.z) + 9 * dpr / cam.z;
+      if (d < lim && d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  function tipText(i, t) {
+    const upTo = Math.max(0, Math.min(M - 1, Math.floor(t) - START));
+    let sofar = 0; for (let m = 0; m <= upTo; m++) sofar += raw[m * N + i] / 255 * towns.pico[i];
+    sofar = Math.min(towns.votos[i], sofar);
+    return `<b>${towns.nome[i]}, ${towns.uf[i]}</b>` +
+      `<span>${fmt(towns.aptos[i])} eleitores · ${fmt(towns.secoes[i])} seções</span><br>` +
+      `<i>${fmt(sofar)}</i> <span>votos até ${hhmm(Math.floor(t))} de ${fmt(towns.votos[i])}</span><br>` +
+      `<span>ritmo máximo às</span> <i>${hhmm(towns.pico_min[i])}</i>`;
+  }
+  function placeTip() {
+    const tip = $("tip");
+    const x = (ax + (px[picked] - X(cam.lon)) * cam.z) / dpr, y = (ay + (py[picked] - Y(cam.lat)) * cam.z) / dpr;
+    tip.style.left = `${Math.max(120, Math.min(canvas.clientWidth - 120, x))}px`;
+    tip.style.top = `${Math.max(90, y - pr[picked] / dpr)}px`;
+    tip.innerHTML = tipText(picked, t);
+  }
+  function pick(i) { picked = i; $("tip").classList.toggle("on", i >= 0); if (i >= 0) placeTip(); }
+  canvas.addEventListener("pointerdown", e => { const i = townAt(e.clientX, e.clientY); pick(i === picked ? -1 : i); });
+  canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); } });
+
+  // Playback: the chapter in view sets the window [from, to] and the camera; the window loops.
+  let from = START, to = END, t = START, playing = true, last = performance.now();
+  function setWindow(a, b) { if (a === from && b === to) return; from = a; to = b; t = a; flash = 0.9; }
   function tick(now) {
-    const dt = (now - last) / 1000; last = now;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    const k = 1 - Math.pow(0.02, dt);          // camera eases in about a second
+    cam.lon += (camTo.lon - cam.lon) * k; cam.lat += (camTo.lat - cam.lat) * k; cam.z += (camTo.z - cam.z) * k;
+    flash = Math.max(0, flash - dt * 2.5);
     if (playing) {
       const span = to - from, speed = span > 300 ? SPEED : Math.max(2.5, span / 14);
       t += dt * speed;
       if (t > to) t = from;
-      draw(t);
     }
+    draw(t);
     requestAnimationFrame(tick);
   }
   const ICON_PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>', ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
-  $("play").addEventListener("click", () => {
-    playing = !playing;
-    $("ico").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
-    $("play").setAttribute("aria-label", playing ? "Pausar" : "Tocar");
+  function setPlaying(p) { playing = p; $("ico").innerHTML = p ? ICON_PAUSE : ICON_PLAY; $("play").setAttribute("aria-label", p ? "Pausar" : "Tocar"); }
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("copy").addEventListener("click", async () => {
+    const url = `${location.origin}${location.pathname}?t=${hhmm(Math.floor(t))}`;
+    try { await navigator.clipboard.writeText(url); $("copy").textContent = "link copiado"; }
+    catch { $("copy").textContent = url; }
+    setTimeout(() => { $("copy").textContent = "copiar o link deste minuto"; }, 2500);
   });
-  // The chapter whose card sits in the middle of the screen owns the window.
+
+  // The chapter whose card sits in the middle of the screen owns the window and the camera.
   const steps = [...document.querySelectorAll(".step")];
+  const dots = steps.map((s, k) => {
+    const b = document.createElement("button"); b.setAttribute("aria-label", `Capítulo ${k + 1}`);
+    b.addEventListener("click", () => s.scrollIntoView({ block: "start" }));
+    $("dots").appendChild(b); return b;
+  });
+  let active = -1;
   function sync() {
     const mid = scrollY + innerHeight / 2;
-    for (const s of steps) {
-      if (mid >= s.offsetTop && mid < s.offsetTop + s.offsetHeight) { setWindow(+s.dataset.from, +s.dataset.to); break; }
-    }
+    steps.forEach((s, k) => {
+      if (mid >= s.offsetTop && mid < s.offsetTop + s.offsetHeight && k !== active) {
+        active = k; setWindow(+s.dataset.from, +s.dataset.to); setView(s.dataset.view);
+        dots.forEach((d, j) => d.classList.toggle("on", j === k));
+      }
+    });
   }
   addEventListener("scroll", sync, { passive: true });
 
-  // ?t=13:30 opens paused at that time.
-  const q = new URLSearchParams(location.search).get("t");
-  if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); playing = false; $("ico").innerHTML = ICON_PLAY; }
-
   // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
   window.replay = {
-    seek(min) { playing = false; $("ico").innerHTML = ICON_PLAY; t = min; draw(t); },
-    sync, get t() { return t; }, get playing() { return playing; }, get window() { return [from, to]; },
+    seek(min) { setPlaying(false); t = min; Object.assign(cam, camTo); flash = 0; draw(t); },
+    sync, pick, get t() { return t; }, get playing() { return playing; }, get window() { return [from, to]; }, get cam() { return { ...cam }; },
   };
 
-  layout(); draw(t); $("loading").remove();
-  new ResizeObserver(() => { layout(); draw(t); }).observe(canvas);
+  // ?t=13:30 opens paused at that time.
+  const q = new URLSearchParams(location.search).get("t");
+  if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); setPlaying(false); }
+
+  layout(); buildCurve(); sync(); draw(t); $("loading").remove();
+  new ResizeObserver(() => { layout(); buildCurve(); draw(t); }).observe(canvas);
   requestAnimationFrame(tick);
 })();
 </script>
