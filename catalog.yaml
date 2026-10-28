@@ -1,0 +1,89 @@
+# Every table in the lake: source, grain, keys and columns.
+# Names follow Base dos Dados (dataset br_<org>_<theme>, snake_case Portuguese columns,
+# ano/turno/sigla_uf/id_municipio/id_municipio_tse) so our tables join with theirs.
+# Codes: id_municipio_tse is 5 digits zero-padded, zona 4, secao 4 (as on the results site).
+# sigla_uf is upper case in tables ("RR"); lower case only in URLs.
+# Layout: {lake}/{dataset}/{table}/ano=<a>/turno=<t>/sigla_uf=<UF>/part-<n>.parquet
+
+br_tse_urna_logs:
+  eventos:
+    source: urna log (logd.dat inside <name>-log.jez) per section, results site
+    grain: one row per log line
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, linha]
+    columns:
+      ano: INTEGER
+      turno: INTEGER
+      sigla_uf: VARCHAR
+      id_municipio_tse: VARCHAR
+      zona: VARCHAR
+      secao: VARCHAR          # section that owns the files (principal of an aggregation)
+      arquivo_hash: VARCHAR   # hash folder from aux.json; a replaced urna gives a second hash
+      linha: INTEGER          # 1-based line number in logd.dat
+      data_hora: TIMESTAMP    # urna local clock, no time zone
+      nivel: VARCHAR          # INFO, ALERTA, ERRO ...
+      id_urna: VARCHAR        # 3rd field, e.g. "02299969"
+      componente: VARCHAR     # LOGD, SCUE, VOTA, GAP ...
+      mensagem: VARCHAR       # 5th field, verbatim (latin-1 decoded)
+      autenticador: VARCHAR   # 6th field, 16 hex chars
+      tipo_evento: VARCHAR    # see brasildb/tse/logparse.py EVENT_TYPES; NULL if none matches
+      valor: VARCHAR          # bracket content for typed events, e.g. "biométrica", "Presidente"
+
+  secoes_coleta:
+    source: collector state, one row per section listed in cs.json
+    grain: one row per section per round
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao]
+    columns:
+      ano: INTEGER
+      turno: INTEGER
+      sigla_uf: VARCHAR
+      id_municipio_tse: VARCHAR
+      zona: VARCHAR
+      secao: VARCHAR
+      secao_principal: VARCHAR  # set when this section was aggregated into another (cs.json "nsp")
+      status: VARCHAR           # ok | agregada | sem_log | erro
+      n_hashes: INTEGER
+      erro: VARCHAR
+      coletado_em: TIMESTAMP
+
+br_tse_eleicoes:
+  detalhes_votacao_secao:
+    source: CKAN resultados-<ano>, detalhe_votacao_secao_<ano>_<UF|BR>.csv (latin-1, ";")
+    grain: section x cargo x turno
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, cargo]
+    columns:
+      ano: INTEGER                 # ANO_ELEICAO
+      turno: INTEGER               # NR_TURNO
+      id_eleicao: VARCHAR          # CD_ELEICAO
+      tipo_eleicao: VARCHAR        # NM_TIPO_ELEICAO
+      data_eleicao: DATE           # DT_ELEICAO dd/mm/yyyy
+      sigla_uf: VARCHAR            # SG_UF
+      id_municipio_tse: VARCHAR    # CD_MUNICIPIO, zero-pad to 5
+      zona: VARCHAR                # NR_ZONA, zero-pad to 4
+      secao: VARCHAR               # NR_SECAO, zero-pad to 4
+      cargo: VARCHAR               # DS_CARGO
+      aptos: BIGINT
+      comparecimento: BIGINT
+      abstencoes: BIGINT
+      votos_nominais: BIGINT
+      votos_brancos: BIGINT
+      votos_nulos: BIGINT
+      votos_legenda: BIGINT
+      votos_nulos_apu_sep: BIGINT  # QT_VOTOS_ANULADOS_APU_SEP
+      id_local_votacao: VARCHAR    # NR_LOCAL_VOTACAO
+      secao_instalada: BOOLEAN     # ST_SECAO_INSTALADA Sim/Não
+      modelo_urna: VARCHAR         # DS_MODELO_URNA
+
+br_bd_diretorios_brasil:
+  municipio:
+    source: CKAN codigos-oficiais-de-uf-e-municipios-segundo-o-tse-e-o-ibge, municipio_tse_ibge.csv
+    grain: one row per municipality
+    partition: []
+    keys: [id_municipio]
+    columns:
+      id_municipio: VARCHAR       # CD_MUNICIPIO_IBGE, 7 digits
+      id_municipio_tse: VARCHAR   # CD_MUNICIPIO_TSE, 5 digits
+      sigla_uf: VARCHAR
+      nome: VARCHAR               # NM_MUNICIPIO_IBGE
