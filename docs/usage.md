@@ -102,3 +102,18 @@ a reparse `arquivo_hash` is the 12-hex prefix kept in the raw file name.
 docker build -t brasildb:dev .
 docker run --rm -v $PWD/data:/data -e BRASILDB_RPS=40 brasildb:dev collect-logs --turno 2 --ufs rr
 ```
+
+## Replay map (docs/site)
+
+`docs/site/` is the static page "O Brasil votando", published to GitHub Pages by
+`.github/workflows/pages.yml`. Rebuild its data from the lake:
+
+```sh
+brasildb sql "copy (select * from main.votos_minuto where turno = 2) to 'vm.parquet'"
+uv run python scripts/site_data.py --votos vm.parquet --towns towns.csv \
+  --borders br_uf.geojson --out docs/site/data
+```
+
+`towns.csv` joins `br_bd_diretorios_brasil.municipio` with IBGE centroids and the electorate
+from `detalhes_votacao_secao`; `br_uf.geojson` is the IBGE malhas API (`paises/BR`,
+`intrarregiao=UF`, `qualidade=minima`). The page reads `?t=13:30` to open paused at a time.
