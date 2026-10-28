@@ -99,17 +99,40 @@ class BatchWriter:
         self.n_batch += 1
 
 
+def _municipio_ufs(settings, codes: list[str]) -> dict[str, str]:
+    """TSE municipality code -> lower-case state, from the loaded municipio table."""
+    codes = [c.zfill(5) for c in codes]
+    con = lake.connect(settings.lake)
+    try:
+        rows = con.execute(
+            "SELECT id_municipio_tse, lower(sigla_uf) FROM br_bd_diretorios_brasil.municipio "
+            "WHERE id_municipio_tse IN (SELECT unnest(?))", [codes]).fetchall()
+    except Exception as exc:  # noqa: BLE001  no table yet
+        raise SystemExit("municipio table missing: run `brasildb load-municipios` first") from exc
+    found = dict(rows)
+    if missing := sorted(set(codes) - set(found)):
+        raise SystemExit(f"unknown TSE municipality codes: {', '.join(missing)}")
+    return found
+
+
 def cmd_collect_logs(a) -> None:
     s = config.load()
     e = config.ELECTIONS[(a.ano, a.turno)]
     full = {u.lower() for u in a.ufs}
-    scope = sorted(set(config.UFS)) if a.sample_fraction else sorted(full)
+    municipios = _municipio_ufs(s, a.municipios) if a.municipios else {}
+    if a.sample_fraction:
+        scope = sorted(set(config.UFS))
+    else:
+        scope = sorted(full | set(municipios.values()))
     t0 = time.time()
     by_uf = asyncio.run(_section_lists(s, e, scope))
     if a.sample_fraction:
         entries = sections.sample_sections(by_uf, a.sample_fraction, a.seed, full)
     else:
-        entries = sorted((x for uf in full for x in by_uf[uf]), key=lambda x: x.key)
+        entries = [x for uf in full for x in by_uf[uf]]
+    entries += [x for uf in set(municipios.values()) - full for x in by_uf[uf]
+                if x.key.id_municipio_tse in municipios]
+    entries = sorted(set(entries), key=lambda x: x.key)
     done = _collected_in_lake(s, e)
     todo = [x for x in entries if x.key not in done]
     print(f"{len(entries)} sections in scope, {len(todo)} to collect")
@@ -169,6 +192,8 @@ def main(argv=None) -> None:
     c.add_argument("--ano", type=int, default=2026)
     c.add_argument("--turno", type=int, required=True)
     c.add_argument("--ufs", nargs="*", default=[], help="states collected in full, e.g. rr")
+    c.add_argument("--municipios", nargs="*", default=[],
+                   help="TSE municipality codes collected in full, e.g. 85367 (needs load-municipios)")
     c.add_argument("--sample-fraction", type=float, default=0.0,
                    help="also take this fraction of sections from every other state")
     c.add_argument("--seed", type=int, default=1)
