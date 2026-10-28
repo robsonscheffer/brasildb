@@ -65,6 +65,12 @@ def _eventos() -> list[tuple]:
     l.votos("RR", "00108", "0001", "0001", ["08:00", "08:01"])
     # AC 01304: one section, state default -2.
     l.votos("AC", "01304", "0001", "0001", ["09:00"])
+    # AM 02135 (Benjamin Constant, Acre time): one section at 06:00, derived -2 is kept.
+    l.votos("AM", "02135", "0020", "0026", ["06:01"])
+    # PE 26000 (Noronha-like): one section at 09:00, derived +1 is kept.
+    l.votos("PE", "26000", "0001", "0001", ["09:00"])
+    # SP 71072: one section that opened late at 09:00; +1 is not an SP offset, so default 0.
+    l.votos("SP", "71072", "0001", "0001", ["09:00"])
     # SP 50308: three sections at 07:00 local, derived -1 (state default would be 0).
     l.votos("SP", "50308", "0001", "0001", ["07:00", "07:01"])
     l.votos("SP", "50308", "0001", "0002", ["07:10", "07:11"])
@@ -89,6 +95,9 @@ def _detalhe() -> list[tuple]:
         _detalhe_row("RR", "03085", "0008", "0005", "Presidente", 5),  # no log at all
         _detalhe_row("RR", "00108", "0001", "0001", "Presidente", 2),
         _detalhe_row("AC", "01304", "0001", "0001", "Presidente", 1),
+        _detalhe_row("AM", "02135", "0020", "0026", "Presidente", 1),
+        _detalhe_row("PE", "26000", "0001", "0001", "Presidente", 1),
+        _detalhe_row("SP", "71072", "0001", "0001", "Presidente", 1),
     ]
     for secao in ("0001", "0002", "0003"):
         rows.append(_detalhe_row("SP", "50308", "0001", secao, "Presidente", 2))
@@ -133,6 +142,9 @@ def test_fuso_derived_and_fallback(con):
         ("RR", "00108"): -1,  # 1 section: state default (derived would be 0)
         ("AC", "01304"): -2,  # 1 section: state default
         ("SP", "50308"): -1,  # 3 sections, derived; state default would be 0
+        ("AM", "02135"): -2,  # 1 section, derived -2 is AM's other offset
+        ("PE", "26000"): 1,   # 1 section, derived +1 is PE's other offset (Noronha)
+        ("SP", "71072"): 0,   # 1 late section, derived +1 is not an SP offset
     }
 
 
@@ -159,9 +171,12 @@ def test_votos_hora_uf_rollup(con):
     rows = _q(con, "SELECT sigla_uf, hora_brasilia, votos FROM main.votos_hora_uf ORDER BY sigla_uf, hora_brasilia")
     assert rows == [
         ("AC", 11, 1),
+        ("AM", 8, 1),   # 06:01 local at -2
+        ("PE", 8, 1),   # 09:00 local at +1
         ("RR", 8, 17),  # 5 + 4 + 6 + 2
         ("RR", 9, 2),
         ("SP", 8, 6),
+        ("SP", 9, 1),   # the late section stays at 09:00
     ]
 
 
@@ -173,6 +188,8 @@ def test_check_comparecimento_statuses(con):
     )
     assert rows == [
         ("AC", "01304", "0001", "0001", 1, 1, "ok"),
+        ("AM", "02135", "0020", "0026", 1, 1, "ok"),
+        ("PE", "26000", "0001", "0001", 1, 1, "ok"),
         ("RR", "00108", "0001", "0001", 2, 2, "ok"),
         ("RR", "03085", "0008", "0001", 5, 5, "ok"),  # max over cargos; setup-day vote not counted
         ("RR", "03085", "0008", "0002", 4, 3, "diferente"),
@@ -182,6 +199,7 @@ def test_check_comparecimento_statuses(con):
         ("SP", "50308", "0001", "0001", 2, 2, "ok"),
         ("SP", "50308", "0001", "0002", 2, 2, "ok"),
         ("SP", "50308", "0001", "0003", 2, 2, "ok"),
+        ("SP", "71072", "0001", "0001", 1, 1, "ok"),
     ]
 
 
