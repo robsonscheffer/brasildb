@@ -73,10 +73,13 @@ def main() -> None:
         by_uf.setdefault(uf, [0] * minutes)[m] += votos
 
     pixels = bytearray(n * minutes)
-    peaks = []
+    peaks, peak_min, total = [], [], []
     for i, c in enumerate(counts):
-        peak = max((c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)) or 1
+        mean3 = [(c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)]
+        peak = max(mean3) or 1
         peaks.append(round(peak, 1))
+        peak_min.append(mean3.index(peak) + START)
+        total.append(sum(c))
         for m in range(minutes):
             pixels[m * n + i] = min(255, round(255 * c[m] / peak))
 
@@ -90,6 +93,8 @@ def main() -> None:
         "aptos": [t[5] for t in towns],
         "secoes": [t[6] for t in towns],
         "pico": peaks,
+        "pico_min": peak_min,
+        "votos": total,
     }, ensure_ascii=False, separators=(",", ":")))
     (out / "totals.json").write_text(json.dumps({
         "start": START, "minutes": minutes,
