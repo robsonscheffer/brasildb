@@ -4,124 +4,177 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>O Brasil votando</title>
-<meta name="description" content="O segundo turno de 2026 em 60 segundos: cada cidade acende a cada minuto conforme suas urnas registram votos. Dados: TSE, logs das urnas.">
+<meta name="description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas. Dados: TSE, logs das urnas.">
 <meta property="og:title" content="O Brasil votando">
-<meta property="og:description" content="O dia da eleição em 60 segundos, cidade por cidade, minuto a minuto. Dados: logs das urnas, TSE.">
+<meta property="og:description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
 <style>
   :root {
-    --bg: #0a0d16;
-    --fg: #e9e6dd;
-    --muted: #8d8f9a;
-    --line: #232736;
+    --bg: #070a12;
+    --fg: #ece8dc;
+    --muted: #9a9ca6;
+    --line: #262a38;
     --accent: #ffb43c;
+    --card: rgba(7,10,18,.82);
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   html, body { margin: 0; background: var(--bg); color: var(--fg); }
-  body {
-    font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 16px; line-height: 1.45;
-    padding-block: 16px 48px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-  }
-  main { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
-  h1 { font-size: clamp(28px, 6vw, 44px); font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.05; text-wrap: balance; }
-  .sub { color: var(--muted); margin: 0; max-width: 60ch; }
-  .map { position: relative; width: 100%; aspect-ratio: 1 / 1.02; max-width: 100%; }
-  canvas { display: block; width: 100%; height: 100%; border-radius: 12px; background: var(--bg); }
-  .hud { position: absolute; left: 12px; top: 10px; display: grid; gap: 2px; pointer-events: none; }
-  .clock { font-size: clamp(34px, 9vw, 56px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
-  .total { font-size: clamp(14px, 3.4vw, 18px); color: var(--fg); font-variant-numeric: tabular-nums; }
-  .total b { color: var(--accent); font-weight: 600; }
-  .callout {
-    position: absolute; right: 12px; bottom: 12px; max-width: min(60%, 300px);
-    background: rgba(10,13,22,.78); border: 1px solid var(--line); border-radius: 10px;
-    padding: 8px 12px; font-size: 14px; line-height: 1.3; opacity: 0; transition: opacity .4s;
-    pointer-events: none;
-  }
-  .callout.on { opacity: 1; }
-  .callout b { color: var(--accent); font-weight: 600; }
-  .controls { display: flex; gap: 12px; align-items: center; }
-  button {
-    font: inherit; font-weight: 600; color: var(--bg); background: var(--accent); border: 0;
-    border-radius: 999px; min-width: 88px; padding: 8px 16px; cursor: pointer;
-  }
-  button:hover { filter: brightness(1.08); }
-  input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 14px; }
-  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
-  .legend .dim::before { background: rgba(255,180,60,.18); }
-  .legend .lit::before { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-  .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
-  section.text { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; max-width: 65ch; }
-  section.text h2 { font-size: 18px; margin: 4px 0 0; }
-  section.text p { margin: 0; }
+  body { font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.45; }
   a { color: var(--accent); }
-  footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* The map stays on screen while the chapters scroll over it. */
+  .stage { position: relative; }
+  .sticky { position: sticky; top: 0; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; pointer-events: none; }
+  .clock { font-size: clamp(44px, 10vw, 84px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .total { font-size: clamp(14px, 3.2vw, 18px); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .total b { color: var(--fg); font-weight: 600; }
+  .play {
+    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
+    color: var(--fg); cursor: pointer; display: grid; place-items: center; padding: 0;
+  }
+  .play svg { width: 22px; height: 22px; fill: currentColor; }
+  .play:hover { border-color: var(--accent); }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+
+  .steps { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100dvh; }
+  .step { min-height: 100vh; min-height: 100dvh; display: flex; align-items: flex-start; padding-block: 12vh 20vh; }
+  .step:first-child { padding-top: max(20px, env(safe-area-inset-top, 0px)); }
+  .card {
+    max-width: 380px; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .card .k { color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 6px; }
+  .card p { margin: 0; }
+  .card p + p { margin-top: 10px; }
+  h1 { font-size: clamp(36px, 8vw, 64px); font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px; line-height: 1; text-wrap: balance; }
+  .lede { font-size: clamp(17px, 2.4vw, 21px); margin: 0; max-width: 34ch; }
+  .lede + p { color: var(--muted); font-size: 15px; margin-top: 12px; }
+
+  .after { position: relative; z-index: 2; background: var(--bg); border-top: 1px solid var(--line); padding-block: 40px 60px; }
+  .after .in { max-width: 62ch; margin: 0 auto; display: grid; gap: 12px; }
+  .after h2 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .after p { margin: 0; }
+  .after .legend { display: grid; gap: 6px; color: var(--muted); font-size: 15px; margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+  .legend .dim::before { background: rgba(255,180,60,.16); }
+  .legend .lit::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
+  footer { color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 12px; }
+  /* Phone: the map takes the top half, the clock sits under it, the cards come up from the bottom. */
+  @media (max-width: 600px) {
+    .card { max-width: 100%; padding: 14px 16px; }
+    .step { align-items: flex-end; padding-block: 62vh 4vh; }
+    .step:first-child { padding-top: 62vh; }
+    .hud { bottom: auto; top: 54vh; top: 54dvh; }
+    .play { bottom: auto; top: 54vh; top: 54dvh; width: 44px; height: 44px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>O Brasil votando</h1>
-  <p class="sub">Segundo turno, 25 de outubro de 2026, das 8h às 18h30 no horário de Brasília, em 60 segundos.
-    Cada ponto é uma cidade. Ele acende quando as urnas dela registram votos naquele minuto.</p>
-
-  <div class="map">
+<div class="stage">
+  <div class="sticky">
     <canvas id="c"></canvas>
-    <div class="hud">
-      <div class="clock" id="clock">08:00</div>
-      <div class="total"><b id="total">0</b> votos registrados</div>
-    </div>
-    <div class="callout" id="callout"></div>
     <div class="loading" id="loading">carregando o dia…</div>
+    <div class="hud">
+      <div class="clock" id="clock">07:50</div>
+      <div class="total"><b id="total">0</b> votos até agora</div>
+    </div>
+    <button class="play" id="play" aria-label="Pausar">
+      <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+    </button>
   </div>
 
-  <div class="controls">
-    <button id="play" aria-label="Tocar ou pausar">Pausar</button>
-    <input type="range" id="scrub" min="0" max="630" value="0" step="0.1" aria-label="Minuto do dia">
-  </div>
-  <div class="legend">
-    <span class="size">tamanho: eleitores aptos</span>
-    <span class="dim">apagado: nenhum voto no minuto</span>
-    <span class="lit">aceso: urnas da cidade a pleno ritmo</span>
-  </div>
+  <div class="steps gutter">
+    <section class="step" data-from="470" data-to="1150">
+      <div class="card">
+        <h1>O Brasil votando</h1>
+        <p class="lede">127 milhões de votos, minuto a minuto. O segundo turno de 25 de outubro de 2026,
+          visto pelo relógio das urnas.</p>
+        <p>Cada ponto é uma cidade. Ele acende quando as urnas dela registram votos naquele minuto.
+          Quanto mais perto do ritmo máximo daquela cidade, mais forte a luz. O tamanho é o eleitorado.
+          Role a página.</p>
+      </div>
+    </section>
 
-  <section class="text">
-    <h2>O que você está vendo</h2>
-    <p>Cada urna grava um log com a hora de cada voto. O TSE publica esses logs. Juntamos os
-      de 497.896 seções do segundo turno, convertemos a hora de cada cidade para Brasília e
-      contamos os votos por minuto.</p>
-    <p>O brilho de uma cidade é quantos votos por minuto suas urnas registraram, comparado com
-      o ritmo máximo de uma urna (cerca de um voto e meio por minuto). O tamanho é o número de
-      eleitores aptos.</p>
-    <p>O log não tem o voto de ninguém. Ele diz quando a urna registrou um voto, não em quem.</p>
-    <p>Depois das 17h a fila ainda vota: quem chegou antes do fechamento tem direito. O mapa
-      mostra isso sem opinar sobre nada.</p>
-  </section>
+    <section class="step" data-from="470" data-to="500">
+      <div class="card">
+        <p class="k">8h</p>
+        <p>Tudo abre ao mesmo tempo. Desde 2022 o horário de votação é o de Brasília no país inteiro.
+          No Acre, as urnas abrem às 6h da manhã local.</p>
+      </div>
+    </section>
 
-  <footer>Dados: TSE, logs das urnas (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>).
-    Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.
-    Feito por <a href="https://github.com/robsonscheffer">Robson Scheffer</a>.</footer>
-</main>
+    <section class="step" data-from="495" data-to="560">
+      <div class="card">
+        <p class="k">8h30</p>
+        <p>O pico do dia. Mais de 350 mil votos por minuto. Quem acorda cedo vota cedo.</p>
+      </div>
+    </section>
+
+    <section class="step" data-from="710" data-to="790">
+      <div class="card">
+        <p class="k">Meio-dia</p>
+        <p>O ritmo cai para 240 mil votos por minuto. Hora do almoço. O Sul e o Sudeste apagam
+          mais que o Nordeste.</p>
+      </div>
+    </section>
+
+    <section class="step" data-from="745" data-to="840">
+      <div class="card">
+        <p class="k">Início da tarde</p>
+        <p>Temporal em Minas. A energia cai em Belo Horizonte e em cidades vizinhas. Mais de 3 mil seções
+          seguem votando na bateria da urna. A luz da cidade não apaga.</p>
+      </div>
+    </section>
+
+    <section class="step" data-from="985" data-to="1035">
+      <div class="card">
+        <p class="k">17h</p>
+        <p>Os portões fecham. Em dez minutos, 473 mil seções encerram. O país apaga quase de uma vez.</p>
+      </div>
+    </section>
+
+    <section class="step" data-from="1015" data-to="1150">
+      <div class="card">
+        <p class="k">Depois das 17h</p>
+        <p>O STF estende a votação até as 19h. Vale só para as 24 mil seções que ainda estavam abertas.
+          Elas registram cerca de 34 mil votos, 0,03% do total. O último, às 19h06.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="after gutter">
+  <div class="in">
+    <h2>Como foi feito</h2>
+    <p>Cada urna grava um log com a hora de cada voto. O TSE publica esses arquivos. Lemos os logs de
+      497.896 seções do segundo turno, convertemos cada relógio para o horário de Brasília e contamos
+      os votos por minuto, cidade por cidade.</p>
+    <p>O log diz quando a urna registrou um voto. Não diz em quem. Nada aqui identifica eleitor ou
+      candidato.</p>
+    <div class="legend">
+      <span class="size">tamanho: eleitores aptos na cidade</span>
+      <span class="dim">apagado: nenhum voto naquele minuto</span>
+      <span class="lit">aceso: a cidade no seu ritmo máximo do dia</span>
+    </div>
+    <footer>Dados: TSE, logs das urnas (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>).
+      Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.
+      Feito por <a href="https://github.com/robsonscheffer">Robson Scheffer</a>.</footer>
+  </div>
+</section>
 
 <script>
 (async function () {
-  const DUR = 60;            // seconds per loop
   const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0;
   const KX = Math.cos(15 * Math.PI / 180);
-  const CALLOUTS = [
-    [480, 505, "<b>8h</b> As seções abrem. O Acre e o Amazonas começam uma e duas horas depois, no relógio de Brasília."],
-    [600, 625, "<b>10h</b> O pico da manhã: o país inteiro aceso."],
-    [735, 775, "<b>12h</b> Hora do almoço: o ritmo cai, mais no Sul e no Sudeste."],
-    [810, 845, "<b>13h30</b> Temporal em Minas: milhares de seções em Belo Horizonte seguem votando na bateria da urna."],
-    [1020, 1050, "<b>17h</b> Os portões fecham. Quem já está na fila ainda vota."],
-    [1080, 1110, "<b>18h</b> As últimas filas do Norte e do Nordeste, onde cada voto leva mais tempo."],
-  ];
-
+  const SPEED = 10;                 // replay minutes per real second in the full loop
   const $ = id => document.getElementById(id);
   const canvas = $("c"), ctx = canvas.getContext("2d");
   const [towns, totals, borders, img] = await Promise.all([
@@ -132,52 +185,44 @@
   ]);
   const N = towns.id.length, M = totals.minutes, START = totals.start;
 
-  // Decode the PNG into one byte per town and minute, then smooth over three minutes.
   const off = document.createElement("canvas");
   off.width = N; off.height = M;
-  off.getContext("2d").drawImage(img, 0, 0);
-  const rgba = off.getContext("2d").getImageData(0, 0, N, M).data;
-  const raw = new Uint8Array(N * M);
-  for (let k = 0; k < N * M; k++) raw[k] = rgba[k * 4];
-  const lit = new Uint8Array(N * M);
-  for (let m = 0; m < M; m++) {
-    const a = Math.max(0, m - 1), b = Math.min(M - 1, m + 1);
-    for (let i = 0; i < N; i++) {
-      let s = 0; for (let j = a; j <= b; j++) s += raw[j * N + i];
-      lit[m * N + i] = s / (b - a + 1);
-    }
-  }
+  const octx = off.getContext("2d"); octx.drawImage(img, 0, 0);
+  const rgba = octx.getImageData(0, 0, N, M).data;
+  const lit = new Float32Array(N * M);
+  for (let k = 0; k < N * M; k++) lit[k] = Math.pow(rgba[k * 4] / 255, 1.4);
   const cumul = []; let acc = 0;
   for (const v of totals.national) { acc += v; cumul.push(acc); }
 
-  // Projection: equirectangular, longitude scaled for 15 degrees south.
+  // Equirectangular, longitude scaled for 15 degrees south. The map fills the viewport.
   let W = 0, H = 0, sx = 1, sy = 1, ox = 0, oy = 0, dpr = 1;
   const px = new Float32Array(N), py = new Float32Array(N), pr = new Float32Array(N);
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
-    const rect = canvas.getBoundingClientRect();
-    W = Math.round(rect.width * dpr); H = Math.round(rect.height * dpr);
+    W = Math.round(canvas.clientWidth * dpr); H = Math.round(canvas.clientHeight * dpr);
     canvas.width = W; canvas.height = H;
-    const pad = 0.04 * W;
     const mw = (LON1 - LON0) * KX, mh = LAT0 - LAT1;
-    const s = Math.min((W - 2 * pad) / mw, (H - 2 * pad) / mh);
+    const wide = W > H;
+    const s = Math.min((W * (wide ? 0.62 : 0.94)) / mw, (H * (wide ? 0.92 : 0.50)) / mh);
     sx = s * KX; sy = s;
-    ox = (W - mw * s) / 2; oy = (H - mh * s) / 2;
-    const rmax = 0.028 * W, amax = Math.sqrt(towns.aptos[0]);
+    ox = wide ? W - mw * s - 0.03 * W : (W - mw * s) / 2;
+    oy = wide ? (H - mh * s) / 2 : H * 0.03;
+    const rmax = 0.022 * Math.min(W, H * 1.2), amax = Math.sqrt(towns.aptos[0]);
     for (let i = 0; i < N; i++) {
       px[i] = ox + (towns.lon[i] - LON0) * sx;
       py[i] = oy + (LAT0 - towns.lat[i]) * sy;
-      pr[i] = Math.max(1.1 * dpr, rmax * Math.sqrt(towns.aptos[i]) / amax);
+      pr[i] = Math.max(1.0 * dpr, rmax * Math.sqrt(towns.aptos[i]) / amax);
     }
   }
   const X = lon => ox + (lon - LON0) * sx, Y = lat => oy + (LAT0 - lat) * sy;
 
-  const LEVELS = 14;
+  const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS + 1 }, () => []);
-  function draw(t) {               // t: minute of the replay, fractional
-    const m0 = Math.min(M - 1, Math.floor(t)), m1 = Math.min(M - 1, m0 + 1), f = t - m0;
+  let lastMinute = -1;
+  function draw(t) {                // t: minute of the day, fractional
+    const m0 = Math.max(0, Math.min(M - 1, Math.floor(t - START))), m1 = Math.min(M - 1, m0 + 1), f = Math.min(1, Math.max(0, t - START - m0));
     ctx.clearRect(0, 0, W, H);
-    ctx.lineWidth = 1 * dpr; ctx.strokeStyle = "rgba(255,255,255,0.13)";
+    ctx.lineWidth = 1 * dpr; ctx.strokeStyle = "rgba(255,255,255,0.10)";
     ctx.beginPath();
     for (const ring of borders) {
       ring.forEach(([lon, lat], k) => k ? ctx.lineTo(X(lon), Y(lat)) : ctx.moveTo(X(lon), Y(lat)));
@@ -187,52 +232,77 @@
 
     for (const b of buckets) b.length = 0;
     for (let i = 0; i < N; i++) {
-      const v = (lit[m0 * N + i] * (1 - f) + lit[m1 * N + i] * f) / 255;
+      const v = lit[m0 * N + i] * (1 - f) + lit[m1 * N + i] * f;
       buckets[Math.min(LEVELS, Math.round(v * LEVELS))].push(i);
     }
-    // Big towns first so the small ones stay visible on top.
+    // Halo pass for the lit towns, then the dots; big towns come first in towns.json.
+    for (let L = Math.ceil(LEVELS * 0.3); L <= LEVELS; L++) {
+      const ids = buckets[L]; if (!ids.length) continue;
+      const v = L / LEVELS;
+      ctx.fillStyle = `rgba(255,170,50,${0.10 * v})`;
+      ctx.beginPath();
+      for (const i of ids) { const r = pr[i] * (1.8 + 1.6 * v) + 2 * dpr; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      ctx.fill();
+    }
     for (let L = 0; L <= LEVELS; L++) {
       const ids = buckets[L]; if (!ids.length) continue;
       const v = L / LEVELS;
-      if (v > 0.35) { ctx.shadowBlur = 6 * dpr * v; ctx.shadowColor = `rgba(255,180,60,${0.6 * v})`; } else ctx.shadowBlur = 0;
-      ctx.fillStyle = v === 0 ? "rgba(255,180,60,0.14)"
-        : `rgba(${255},${Math.round(180 + 60 * v)},${Math.round(60 + 160 * v)},${0.25 + 0.75 * v})`;
+      ctx.fillStyle = v === 0 ? "rgba(255,180,60,0.13)"
+        : `rgba(255,${Math.round(165 + 70 * v)},${Math.round(45 + 170 * v)},${0.22 + 0.78 * v})`;
       ctx.beginPath();
-      for (const i of ids) { const r = pr[i] * (1 + 0.35 * v); ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      for (const i of ids) { const r = pr[i] * (0.85 + 0.45 * v); ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
 
-    const minute = START + Math.round(t);
-    $("clock").textContent = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-    $("total").textContent = cumul[m0].toLocaleString("pt-BR");
-    const c = CALLOUTS.find(([a, b]) => minute >= a && minute < b);
-    const el = $("callout");
-    if (c) { if (el.dataset.k !== c[2]) { el.innerHTML = c[2]; el.dataset.k = c[2]; } el.classList.add("on"); }
-    else el.classList.remove("on");
+    const minute = Math.floor(t);
+    if (minute !== lastMinute) {
+      lastMinute = minute;
+      $("clock").textContent = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+      $("total").textContent = cumul[Math.max(0, Math.min(M - 1, minute - START))].toLocaleString("pt-BR");
+    }
   }
 
-  let playing = true, t0 = performance.now(), base = 0;
-  const scrub = $("scrub"); scrub.max = M - 1;
+  // Playback: the chapter in view sets the window [from, to]; the window loops.
+  let from = START, to = START + M - 1, t = START, playing = true, last = performance.now();
+  function setWindow(a, b) { if (a === from && b === to) return; from = a; to = b; t = a; }
   function tick(now) {
+    const dt = (now - last) / 1000; last = now;
     if (playing) {
-      let t = base + (now - t0) / 1000 * (M - 1) / DUR;
-      if (t >= M - 1) { base = 0; t0 = now; t = 0; }
-      scrub.value = t; draw(t);
+      const span = to - from, speed = span > 300 ? SPEED : Math.max(2.5, span / 14);
+      t += dt * speed;
+      if (t > to) t = from;
+      draw(t);
     }
     requestAnimationFrame(tick);
   }
-  $("play").onclick = () => {
-    playing = !playing; $("play").textContent = playing ? "Pausar" : "Tocar";
-    if (playing) { base = +scrub.value; t0 = performance.now(); }
-  };
-  scrub.oninput = () => { playing = false; $("play").textContent = "Tocar"; draw(+scrub.value); };
+  const ICON_PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>', ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
+  $("play").addEventListener("click", () => {
+    playing = !playing;
+    $("ico").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    $("play").setAttribute("aria-label", playing ? "Pausar" : "Tocar");
+  });
+  // The chapter whose card sits in the middle of the screen owns the window.
+  const steps = [...document.querySelectorAll(".step")];
+  function sync() {
+    const mid = scrollY + innerHeight / 2;
+    for (const s of steps) {
+      if (mid >= s.offsetTop && mid < s.offsetTop + s.offsetHeight) { setWindow(+s.dataset.from, +s.dataset.to); break; }
+    }
+  }
+  addEventListener("scroll", sync, { passive: true });
+
   // ?t=13:30 opens paused at that time.
   const q = new URLSearchParams(location.search).get("t");
-  if (q) { const [h, m] = q.split(":").map(Number); scrub.value = h * 60 + (m || 0) - START; playing = false; $("play").textContent = "Tocar"; }
+  if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); playing = false; $("ico").innerHTML = ICON_PLAY; }
 
-  layout(); draw(+scrub.value); $("loading").remove();
-  new ResizeObserver(() => { layout(); draw(+scrub.value); }).observe(canvas);
+  // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
+  window.replay = {
+    seek(min) { playing = false; $("ico").innerHTML = ICON_PLAY; t = min; draw(t); },
+    sync, get t() { return t; }, get playing() { return playing; }, get window() { return [from, to]; },
+  };
+
+  layout(); draw(t); $("loading").remove();
+  new ResizeObserver(() => { layout(); draw(t); }).observe(canvas);
   requestAnimationFrame(tick);
 })();
 </script>

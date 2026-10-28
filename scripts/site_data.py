@@ -8,8 +8,9 @@ Inputs:
   --out      directory, gets towns.json, frames.png, totals.json, borders.json
 
 frames.png is a grayscale image: one column per town (towns.json order), one row per minute
-from 08:00 Brasilia. A pixel is how busy the town's urnas were that minute: 255 = 1.5 votes per
-section per minute or more. A PNG costs a quarter of the raw bytes and the browser decodes it.
+from 07:50 Brasilia. A pixel is the town's votes that minute against its own busiest minute
+(the peak of a 3-minute mean, so one spike does not set it): 255 = the peak. A PNG costs a
+quarter of the raw bytes and the browser decodes it.
 """
 from __future__ import annotations
 
@@ -21,9 +22,8 @@ from pathlib import Path
 
 import duckdb
 
-START = 8 * 60  # 08:00 Brasilia
-END = 18 * 60 + 30  # 18:30, inclusive
-FULL = 1.5  # votes per section per minute that count as fully lit
+START = 7 * 60 + 50  # 07:50 Brasilia, ten dark minutes before the polls open
+END = 19 * 60 + 10  # 19:10, after the last vote (19:06)
 
 
 def png_gray(width: int, height: int, pixels: bytes) -> bytes:
@@ -57,7 +57,7 @@ def main() -> None:
     n = len(towns)
     minutes = END - START + 1
 
-    pixels = bytearray(n * minutes)
+    counts = [[0] * minutes for _ in range(n)]
     national = [0] * minutes
     by_uf: dict[str, list[int]] = {}
     for uf, mun, minuto, votos in con.execute(f"""
@@ -68,11 +68,17 @@ def main() -> None:
         m = int(minuto) - START
         if not 0 <= m < minutes or (uf, mun) not in index:
             continue
-        i = index[(uf, mun)]
-        secoes = towns[i][6] or 1
-        pixels[m * n + i] = min(255, round(255 * votos / (secoes * FULL)))
+        counts[index[(uf, mun)]][m] = votos
         national[m] += votos
         by_uf.setdefault(uf, [0] * minutes)[m] += votos
+
+    pixels = bytearray(n * minutes)
+    peaks = []
+    for i, c in enumerate(counts):
+        peak = max((c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)) or 1
+        peaks.append(round(peak, 1))
+        for m in range(minutes):
+            pixels[m * n + i] = min(255, round(255 * c[m] / peak))
 
     (out / "frames.png").write_bytes(png_gray(n, minutes, bytes(pixels)))
     (out / "towns.json").write_text(json.dumps({
@@ -83,9 +89,10 @@ def main() -> None:
         "lon": [t[4] for t in towns],
         "aptos": [t[5] for t in towns],
         "secoes": [t[6] for t in towns],
+        "pico": peaks,
     }, ensure_ascii=False, separators=(",", ":")))
     (out / "totals.json").write_text(json.dumps({
-        "start": START, "minutes": minutes, "full": FULL,
+        "start": START, "minutes": minutes,
         "aptos": sum(t[5] for t in towns),
         "national": national,
         "uf": dict(sorted(by_uf.items())),
