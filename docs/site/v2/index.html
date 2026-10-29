@@ -62,7 +62,7 @@
 
   /* A scene is a tall section whose stage sticks while the reader scrolls through it. */
   .cena { position: relative; height: var(--len, 300vh); }
-  .palco { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; }
+  .palco { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; background: var(--bg); }
   .palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .flow { padding-top: 18vh; padding-bottom: 18vh; max-width: 760px; margin: 0 auto; }
   .flow > .k { display: block; margin-bottom: 16px; }
@@ -207,7 +207,7 @@
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
 
 <!-- 1. The hook: the number, the first vote, the first minute -->
-<section class="cena" id="um-voto" style="--len:560vh">
+<section class="cena" id="primeiro" style="--len:560vh">
   <div class="palco">
     <div class="fase dobra on" id="dobra">
       <h1 class="big num">127.854.844 votos.</h1>
@@ -229,7 +229,7 @@
 </section>
 
 <!-- 2. 08:00 all at once -->
-<section class="cena" id="oito" style="--len:320vh" data-grande>
+<section class="cena" id="abertura" style="--len:320vh" data-grande>
   <div class="palco">
     <canvas id="c3"></canvas>
     <div class="notas gx" id="c3notas">
@@ -242,7 +242,7 @@
 </section>
 
 <!-- 4. The turn -->
-<section class="pergunta gx" id="onde">
+<section class="pergunta gx" id="onde-votou">
   <span class="k">E você?</span>
   <h2 class="big">Onde você votou?</h2>
   <div class="campo">
@@ -259,13 +259,13 @@
   </details>
   <div class="acoes">
     <button class="btn" id="ir" disabled>Ver no mapa</button>
-    <a class="pular" href="#mapa" id="pular">Pular</a>
+    <a class="pular" href="#dia-no-mapa" id="pular">Pular</a>
   </div>
   <div class="eco" id="eco"></div>
 </section>
 
 <!-- 5. The map -->
-<section class="cena mapa" id="mapa" style="--len:1300vh" data-grande>
+<section class="cena mapa" id="dia-no-mapa" style="--len:1300vh" data-grande>
   <div class="palco">
     <canvas id="c7"></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
@@ -280,7 +280,7 @@
   </div>
 </section>
 
-<section class="flow gx" id="hora" style="min-height:100svh">
+<section class="flow gx" id="quando-votou" style="min-height:100svh">
   <span class="k">Mais ou menos que horas?</span>
   <p class="lead" id="horalead">Não sabemos quando você votou. Toque na hora mais próxima.</p>
   <div class="horas" id="horas"></div>
@@ -288,7 +288,7 @@
 </section>
 
 <!-- 6. The close, with your urna pinned -->
-<section class="cena" id="fim" style="--len:320vh" data-grande>
+<section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco">
     <canvas id="c8"></canvas>
     <div class="notas gx" id="c8notas"></div>
@@ -296,7 +296,7 @@
 </section>
 
 <!-- 7. Your urna's trip to Brasília (only after a town answer) -->
-<section class="cena viagem" id="viagem" style="--len:320vh" data-grande hidden>
+<section class="cena viagem" id="encerramento" style="--len:320vh" data-grande hidden>
   <div class="palco">
     <div class="cena3">
       <div>
@@ -326,7 +326,7 @@
 </section>
 
 <!-- 8. The night -->
-<section class="cena" id="noite" style="--len:320vh" data-grande>
+<section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco">
     <canvas id="c9"></canvas>
     <div class="notas gx" id="c9notas"></div>
@@ -334,7 +334,7 @@
 </section>
 
 <!-- 9. The card -->
-<section class="cartao gx" id="cartao">
+<section class="cartao gx" id="compartilhamento">
   <span class="k">Para guardar</span>
   <p class="mid" style="margin:14px 0 26px">Você estava lá.</p>
   <canvas id="card" width="1080" height="1350" aria-label="Seu cartão"></canvas>
@@ -401,7 +401,11 @@ function tick() {
     if (s.el.hidden) continue;
     const r = s.el.getBoundingClientRect();
     if (r.bottom < -vh || r.top > 2 * vh) continue;
-    const out = s.render(clamp(-r.top / Math.max(1, r.height - vh)));
+    const p = clamp(-r.top / Math.max(1, r.height - vh)), out = s.render(p);
+    // The stage fades in over the first 5% and out over the last 8% of its scene, so its last
+    // frame never rides into the next fold (U4).
+    s.palco ||= s.el.querySelector(".palco");
+    if (s.palco) s.palco.style.opacity = Math.min(clamp(p / 0.05), clamp((1 - p) / 0.08));
     if (r.top <= 1 && r.bottom >= vh - 1) { clock = out; grande = s.el.hasAttribute("data-grande"); }
   }
   const rel = $("relogio");
@@ -474,7 +478,7 @@ function minha() {
 
 /* ---------- 1. The hook ---------- */
 {
-  const el = $("um-voto"), s = urna.secao, pm = urna.primeiro_minuto;
+  const el = $("primeiro"), s = urna.secao, pm = urna.primeiro_minuto;
   const first = urna.linhas.find(l => l.texto === "O voto foi computado");
   $("pph").textContent = first.hora;
   $("ppl").innerHTML = `${s.municipio}, ${s.uf} · <a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
@@ -529,7 +533,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
 
 /* ---------- 2. 08:00 all at once ---------- */
 {
-  const el = $("oito"), c = $("c3"), notas = [...$("c3notas").children];
+  const el = $("abertura"), c = $("c3"), notas = [...$("c3notas").children];
   const nat = TOT.national, S = TOT.start;
   scene(el, p => {
     const t = lerp(478.5, 540, clamp(p / 0.92));
@@ -560,7 +564,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
 /* ---------- 4. The question ---------- */
 let towns = null, names = null, byId = null;
 const ready = (async () => {
-  await new Promise(r => near($("oito"), r, "50% 0px"));
+  await new Promise(r => near($("abertura"), r, "50% 0px"));
   towns = await loadTowns();
   names = towns.nome.map(norm);
   byId = new Map(towns.id.map((id, i) => [String(id), i]));
@@ -595,7 +599,7 @@ const ready = (async () => {
     state.secao = $("secao").value.replace(/\D/g, "").padStart(4, "0").slice(-4);
     if (!$("zona").value.trim() || !$("secao").value.trim()) state.zona = state.secao = "";
     await afterAnswer();
-    $("mapa").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    $("dia-no-mapa").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   });
   $("pular").addEventListener("click", () => { state.town = null; afterAnswer(); });
 }
@@ -608,7 +612,7 @@ async function afterAnswer() {
   }
   $("eco").textContent = !t ? "" : state.sec ? `${t.nome}, zona ${state.zona}, seção ${state.secao}.`
     : state.zona ? `${t.nome}. Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : `${t.nome}.`;
-  $("viagem").hidden = !minha();
+  $("encerramento").hidden = !minha();
   if (minha()) loadChegada();
   saveURL(); renderHoras(); drawCard(); tick();
 }
@@ -627,7 +631,7 @@ async function afterAnswer() {
 
 /* ---------- 5. The map ---------- */
 {
-  const el = $("mapa"), c = $("c7"), box = $("mcap");
+  const el = $("dia-no-mapa"), c = $("c7"), box = $("mcap");
   let M = null; // decoded map data, built once
   async function build() {
     const [t, img, borders] = await Promise.all([loadTowns(), loadFrames(), loadBorders()]);
@@ -745,7 +749,7 @@ renderHoras();
 
 /* ---------- 6. The close ---------- */
 {
-  const el = $("fim"), c = $("c8"), host = $("c8notas");
+  const el = $("fechamento"), c = $("c8"), host = $("c8notas");
   host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
@@ -798,7 +802,7 @@ renderHoras();
 
 /* ---------- 7. Your urna's trip: closes, prints, transmits ---------- */
 {
-  const el = $("viagem"), tela = $("utela"), papel = $("papel"), sinal = [...$("sinal").children], tse = $("tse"), vn = $("vnota");
+  const el = $("encerramento"), tela = $("utela"), papel = $("papel"), sinal = [...$("sinal").children], tse = $("tse"), vn = $("vnota");
   const seg = s => { const [h, m, x] = s.split(":").map(Number); return h * 3600 + m * 60 + (x || 0); };
   const hms = x => [x / 3600, (x % 3600) / 60, x % 60].map(v => String(Math.floor(v)).padStart(2, "0")).join(":");
   // A town-only answer gets a typical urna: the same steps from the town's typical close.
@@ -839,7 +843,7 @@ renderHoras();
 
 /* ---------- 8. The night: every state's bulletins arriving ---------- */
 {
-  const el = $("noite"), c = $("c9"), host = $("c9notas");
+  const el = $("transmissao"), c = $("c9"), host = $("c9notas");
   host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
   near(el, loadChegada);
   let R = null; // per-state cumulative curves and the notes, built once the file is in
