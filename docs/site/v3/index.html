@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171916">
+  <title>O dia de uma urna · O Brasil votando</title>
+  <meta name="description" content="274 votos, uma seção de Belo Horizonte e o registro de um domingo inteiro. Percorra o diário de uma urna no segundo turno de 2026.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23171916'/%3E%3Cpath d='M8 8h16v16H8z' fill='%23e9e5d5'/%3E%3Cpath d='M12 13h8M12 17h8M12 21h4' stroke='%23171916' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=IBM+Plex+Mono:wght@400;450;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./diary.js" defer></script>
+</head>
+<body>
+  <!-- V3 prototype: one real section, one continuous tape. Not an official TSE document. -->
+  <a class="skip-link" href="#diario">Pular a abertura e ler o diário</a>
+  <div class="page-progress" aria-hidden="true"><span id="page-progress"></span></div>
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="O Brasil votando, início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h8v8H2zm12 0h8v8h-8zM2 15h8v6H2zm12 0h8v6h-8z"/></svg>
+      <span>O Brasil votando<span class="brand-divider">/</span><span class="brand-sub">O diário de uma urna</span></span>
+    </a>
+    <div class="header-right"><span class="edition">EXPERIMENTO 03</span><a href="#fontes">Sobre os dados <span aria-hidden="true">↗</span></a></div>
+  </header>
+
+  <main>
+    <section class="hero shell" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="small-cross" aria-hidden="true">+</span> BELO HORIZONTE, MG <span class="eyebrow-separator">/</span> 25.10.2026</p>
+        <h1 id="hero-title">Antes de ser<br>um resultado,<br>foi <em>um dia.</em></h1>
+        <p class="hero-intro">Eu abri às oito. Passei para a bateria.<br>Registrei <strong data-total>274</strong> votos.<br>Este é o meu domingo, contado pelo meu log.</p>
+        <a class="start-link" href="#diario"><span class="arrow-circle" aria-hidden="true">↓</span><span>Percorrer o dia<small>No seu ritmo. Role para avançar.</small></span></a>
+      </div>
+
+      <div class="hero-art" aria-label="Uma prévia da fita da seção 0060">
+        <div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
+        <span class="art-coordinate art-coordinate-top" aria-hidden="true">ARQUIVO 001 / MG</span>
+        <div class="preview-shadow" aria-hidden="true"></div>
+        <article class="preview-paper paper" id="preview-paper">
+          <div class="receipt-top"><span>ELEIÇÕES 2026</span><span>2º TURNO</span></div>
+          <div class="receipt-brand"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M2 4h24v18H2zM8 25h12M5 8h11v9H5zm15 0h3m-3 4h3m-3 4h3"/></svg><span>DIÁRIO<br>DE URNA</span></div>
+          <div class="receipt-identity"><span>SEÇÃO ELEITORAL</span><strong>0060</strong><span>ZONA 0331 <span aria-hidden="true">·</span> BELO HORIZONTE / MG</span></div>
+          <dl class="receipt-meta"><div><dt>DATA</dt><dd>25/10/2026</dd></div><div><dt>URNA</dt><dd>02322500</dd></div><div><dt>MODELO</dt><dd>UE2022</dd></div></dl>
+          <div class="preview-log">
+            <p><time>07:16:14</time><span>ZERÉSIMA IMPRESSA</span></p>
+            <p><time>08:00:01</time><span>URNA PRONTA</span></p>
+            <p><time>08:01:53</time><span>VOTO COMPUTADO <b>001</b></span></p>
+            <p class="log-ellipsis" aria-label="Outros registros entre estes momentos">···</p>
+            <p class="preview-battery"><time>08:38:26</time><span>OPERANDO NA BATERIA</span></p>
+            <p><time>08:39:43</time><span>VOTO COMPUTADO <b id="preview-vote">034</b></span></p>
+          </div>
+          <div class="receipt-bottom"><span>CADA LINHA, UM INSTANTE.</span><div class="barcode" aria-hidden="true"></div><span class="not-official">RECONSTRUÇÃO DO LOG · NÃO É UM BU</span></div>
+        </article>
+        <div class="paper-annotation"><span class="annotation-line" aria-hidden="true"></span><span>O voto é secreto.<br>O tempo deixa um registro.</span></div>
+        <span class="art-coordinate art-coordinate-bottom" aria-hidden="true">0331.0060 / 2T</span>
+      </div>
+
+      <div class="hero-footer"><span>UM DOMINGO EM <strong>274 REGISTROS DE VOTO</strong></span><span>DOCUMENTO INTERATIVO <span class="footer-plus" aria-hidden="true">+</span></span></div>
+    </section>
+
+    <section class="diary-section" id="diario" tabindex="-1" aria-label="O diário da seção 0060">
+      <div class="reading-bar">
+        <div class="reading-bar-inner shell">
+          <span class="reading-location">SEÇÃO <strong>0060</strong><span class="reading-city"> / BELO HORIZONTE</span></span>
+          <select class="mobile-chapters" id="mobile-chapters" aria-label="Saltar para um momento do diário" disabled><option>Capítulos</option></select>
+          <div class="mobile-clock"><span id="mobile-clock">07:04:30</span><small>BRASÍLIA</small></div>
+          <span class="reading-instruction"><span class="reading-dot" aria-hidden="true"></span> O RELÓGIO SEGUE A LINHA EM DESTAQUE</span>
+          <span class="reading-count"><b id="bar-count">000</b> / <span data-total>274</span><span class="count-unit"> VOTOS</span></span>
+        </div>
+      </div>
+
+      <div class="diary-layout shell">
+        <aside class="reading-aside" aria-label="Posição no diário">
+          <div class="aside-sticky">
+            <p class="eyebrow clock-label">HORÁRIO DE BRASÍLIA</p>
+            <div class="reading-clock" aria-hidden="true"><span id="clock-main">07:04</span><span id="clock-seconds">30</span></div>
+            <div class="chapter-context" id="chapter-context" aria-hidden="true">
+              <span class="chapter-kicker" id="chapter-kicker">01 / ANTES DOS VOTOS</span>
+              <p class="context-title" id="context-title">O dia começa<br>no zero.</p>
+              <p class="context-copy" id="context-copy">Antes de receber o primeiro voto, eu imprimi a zerésima.</p>
+            </div>
+            <nav class="chapter-nav" aria-label="Saltar para um momento do dia" id="chapter-nav"></nav>
+            <div class="vote-index" aria-hidden="true">
+              <div class="vote-marks" id="vote-marks"></div>
+              <div class="vote-index-caption"><span>CADA MARCA, UM VOTO</span><span><b id="index-count">000</b> / <span data-total>274</span></span></div>
+            </div>
+            <a class="aside-source" href="#fontes">Uma leitura dos registros públicos <span aria-hidden="true">↗</span></a>
+          </div>
+        </aside>
+
+        <div class="tape-column">
+          <div class="tape-lead"><span>INÍCIO DO REGISTRO</span><span aria-hidden="true">↓</span></div>
+          <article class="diary-paper paper" aria-label="Registros em ordem cronológica">
+            <header class="tape-heading"><p>DIÁRIO DA SEÇÃO 0060</p><span>25.10.2026 · ZONA 0331 · MG</span><p class="tape-disclaimer">Uma reconstrução do log, não um documento oficial.</p></header>
+            <div id="tape">
+              <p class="loading" id="loading" role="status" hidden>Preparando os registros…</p>
+              <noscript><p class="load-error">Ative o JavaScript para percorrer os registros. Você também pode <a href="./data/secao.json">ler os dados da seção em JSON</a>.</p></noscript>
+            </div>
+            <footer class="tape-end" id="tape-end" hidden><span class="end-symbol" aria-hidden="true">✳</span><strong>FIM DO REGISTRO</strong><span>0060 / 0331 / MG</span><span class="not-official">AS ESCOLHAS INDIVIDUAIS NÃO ESTÃO NESTA FITA.</span></footer>
+          </article>
+          <p class="tape-footnote">O espaço entre as linhas não representa o tempo decorrido.<br>Os horários vêm dos registros. A narrativa é nossa.</p>
+        </div>
+        <div class="margin-note" aria-hidden="true"><span>25 DE OUTUBRO DE 2026</span><span>UM DIA, LINHA POR LINHA</span></div>
+      </div>
+    </section>
+
+    <section class="ending shell" id="fim" aria-labelledby="ending-title">
+      <p class="eyebrow">DEPOIS DO ÚLTIMO VOTO</p>
+      <h2 id="ending-title">O meu dia terminou.<br><em>O registro ficou.</em></h2>
+      <p>Foram <span data-total>274</span> votos nesta urna.<br>Uma pequena parte de um país inteiro.</p>
+      <div class="ending-actions"><a class="text-link" href="#inicio">Voltar ao começo <span aria-hidden="true">↑</span></a><a class="text-link" href="../">Ver o Brasil no mapa <span aria-hidden="true">↗</span></a></div>
+    </section>
+
+    <section class="sources shell" id="fontes" tabindex="-1" aria-labelledby="sources-title">
+      <div class="source-intro"><p class="eyebrow">COMO LER ESTA FITA</p><h2 id="sources-title">Dados reais.<br>Uma voz inventada.</h2><p>Quem fala é uma urna. A voz é um recurso narrativo. As horas e os eventos vêm dos arquivos públicos do TSE.</p><a class="text-link" href="./data/secao.json" download>Baixar os registros desta seção <span aria-hidden="true">↓</span></a></div>
+      <div class="source-details">
+        <details open><summary>O que está no diário</summary><p>Seção 0060, zona 0331, Belo Horizonte. Segundo turno, 25 de outubro de 2026. Cada “voto computado” é uma linha do log. Não publicamos identificadores de eleitores, de mesários ou escolhas individuais.</p><p>A zerésima é o relatório anterior à votação. O BU é o boletim com os totais da seção. Esta fita não reproduz esses documentos.</p></details>
+        <details><summary>O que a bateria permite afirmar</summary><p>O log registra duas entradas em bateria durante a votação. A primeira dura 4 min e 37 s até o evento de retorno à rede. A segunda não tem um retorno explícito nesse tipo de evento, mas há registros posteriores de conexão à rede.</p><p>Por isso, não afirmamos oito horas sem energia, nem atribuímos uma causa à troca para bateria.</p></details>
+        <details><summary>Três fontes, três medidas de tempo</summary><p><strong>Urna:</strong> horário local do log, que em Belo Horizonte coincide com Brasília. Não é um relógio auditado.</p><p><strong>País:</strong> marcos calculados a partir de <a href="../data/totals.json">votos por minuto</a> nos logs coletados. São votos registrados, não resultados da apuração. O minuto inclui todos os seus segundos.</p><p><strong>TSE:</strong> 19:09:38 é o campo <code>ha</code> da seção no <a href="https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3221/config/mg/mg-p003221-cs.json">arquivo de seções</a>. Não comprova a primeira transmissão. O arquivo nacional final foi gerado às 23:27:02 e já mostra 100% das 499.248 seções totalizadas, com horário de totalização 23:26:38. Não determina o instante em que a eleição foi decidida.</p></details>
+        <details><summary>Como reproduzir</summary><p>O exportador <code>scripts/site_diary_data.py</code> seleciona os registros desta seção, retira os campos pessoais e intercala os marcos nacionais. Os hashes das fontes estão no JSON.</p><p><a href="https://github.com/robsonscheffer/brasildb">Código e coleta: brasildb ↗</a> · Dados: Tribunal Superior Eleitoral. Protótipo independente, sem vínculo com o TSE.</p></details>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer shell"><a href="#inicio">O Brasil votando</a><span>UM EXPERIMENTO COM DADOS PÚBLICOS</span><span>V3 · PROTÓTIPO</span></footer>
+</body>
+</html>

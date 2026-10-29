@@ -1,0 +1,2635 @@
+{
+  "schema": 1,
+  "section": {
+    "ano": 2026,
+    "turno": 2,
+    "sigla_uf": "MG",
+    "id_municipio_tse": "41238",
+    "zona": "0331",
+    "secao": "0060",
+    "municipio": "Belo Horizonte",
+    "date": "2026-10-25",
+    "urna": "02322500",
+    "model": "UE2022",
+    "timezone": "America/Sao_Paulo"
+  },
+  "summary": {
+    "votes": 274,
+    "first_vote": "08:01:53",
+    "last_vote": "16:50:16",
+    "battery_switches": 2,
+    "battery_episodes": [
+      {
+        "start": "08:38:26",
+        "end": "08:43:03",
+        "seconds": 277
+      },
+      {
+        "start": "08:43:04",
+        "end": null,
+        "seconds": null
+      }
+    ],
+    "arrival": "19:09:38",
+    "national_total": 127854844,
+    "totalized_sections": 499248,
+    "final_totalization": "23:26:38",
+    "final_file_generated": "23:27:02"
+  },
+  "events": [
+    {
+      "time": "07:04:30",
+      "type": "boot",
+      "label": "URNA LIGADA",
+      "votes": 0,
+      "line": 6672,
+      "source": "log"
+    },
+    {
+      "time": "07:05:12",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6688,
+      "source": "log"
+    },
+    {
+      "time": "07:06:59",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6752,
+      "source": "log"
+    },
+    {
+      "time": "07:07:04",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6761,
+      "source": "log"
+    },
+    {
+      "time": "07:07:09",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6763,
+      "source": "log"
+    },
+    {
+      "time": "07:07:14",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6764,
+      "source": "log"
+    },
+    {
+      "time": "07:07:41",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6766,
+      "source": "log"
+    },
+    {
+      "time": "07:08:12",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6767,
+      "source": "log"
+    },
+    {
+      "time": "07:08:15",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6769,
+      "source": "log"
+    },
+    {
+      "time": "07:10:32",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6770,
+      "source": "log"
+    },
+    {
+      "time": "07:10:33",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6772,
+      "source": "log"
+    },
+    {
+      "time": "07:10:37",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6773,
+      "source": "log"
+    },
+    {
+      "time": "07:10:37",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6775,
+      "source": "log"
+    },
+    {
+      "time": "07:10:47",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6776,
+      "source": "log"
+    },
+    {
+      "time": "07:10:47",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6778,
+      "source": "log"
+    },
+    {
+      "time": "07:10:54",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6779,
+      "source": "log"
+    },
+    {
+      "time": "07:10:55",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6781,
+      "source": "log"
+    },
+    {
+      "time": "07:11:52",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 0,
+      "line": 6782,
+      "source": "log"
+    },
+    {
+      "time": "07:11:53",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 0,
+      "line": 6784,
+      "source": "log"
+    },
+    {
+      "time": "07:16:14",
+      "type": "zero",
+      "label": "ZERÉSIMA IMPRESSA",
+      "votes": 0,
+      "line": 6792,
+      "source": "log"
+    },
+    {
+      "time": "08:00:01",
+      "type": "open",
+      "label": "PRONTA PARA RECEBER VOTOS",
+      "votes": 0,
+      "line": 6816,
+      "source": "log"
+    },
+    {
+      "time": "08:01:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 1,
+      "line": 6824,
+      "source": "log"
+    },
+    {
+      "time": "08:02:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 2,
+      "line": 6831,
+      "source": "log"
+    },
+    {
+      "time": "08:03:00",
+      "type": "national",
+      "label": "1 milhão",
+      "detail": "de votos registrados no país",
+      "key": "million",
+      "precision": "minute",
+      "source": "totals",
+      "votes": 2
+    },
+    {
+      "time": "08:03:41",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 3,
+      "line": 6845,
+      "source": "log"
+    },
+    {
+      "time": "08:04:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 4,
+      "line": 6856,
+      "source": "log"
+    },
+    {
+      "time": "08:05:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 5,
+      "line": 6866,
+      "source": "log"
+    },
+    {
+      "time": "08:07:00",
+      "type": "national",
+      "label": "420.851",
+      "detail": "votos no minuto mais movimentado",
+      "key": "peak",
+      "precision": "minute",
+      "source": "totals",
+      "votes": 5
+    },
+    {
+      "time": "08:07:18",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 6,
+      "line": 6903,
+      "source": "log"
+    },
+    {
+      "time": "08:08:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 7,
+      "line": 6913,
+      "source": "log"
+    },
+    {
+      "time": "08:08:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 8,
+      "line": 6920,
+      "source": "log"
+    },
+    {
+      "time": "08:10:04",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 9,
+      "line": 6936,
+      "source": "log"
+    },
+    {
+      "time": "08:10:59",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 10,
+      "line": 6946,
+      "source": "log"
+    },
+    {
+      "time": "08:11:52",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 11,
+      "line": 6954,
+      "source": "log"
+    },
+    {
+      "time": "08:12:38",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 12,
+      "line": 6961,
+      "source": "log"
+    },
+    {
+      "time": "08:13:35",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 13,
+      "line": 6972,
+      "source": "log"
+    },
+    {
+      "time": "08:16:33",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 14,
+      "line": 6996,
+      "source": "log"
+    },
+    {
+      "time": "08:17:34",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 15,
+      "line": 7010,
+      "source": "log"
+    },
+    {
+      "time": "08:18:39",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 16,
+      "line": 7026,
+      "source": "log"
+    },
+    {
+      "time": "08:19:39",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 17,
+      "line": 7037,
+      "source": "log"
+    },
+    {
+      "time": "08:20:33",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 18,
+      "line": 7047,
+      "source": "log"
+    },
+    {
+      "time": "08:23:21",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 19,
+      "line": 7082,
+      "source": "log"
+    },
+    {
+      "time": "08:24:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 20,
+      "line": 7106,
+      "source": "log"
+    },
+    {
+      "time": "08:25:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 21,
+      "line": 7116,
+      "source": "log"
+    },
+    {
+      "time": "08:26:12",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 22,
+      "line": 7129,
+      "source": "log"
+    },
+    {
+      "time": "08:27:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 23,
+      "line": 7139,
+      "source": "log"
+    },
+    {
+      "time": "08:28:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 24,
+      "line": 7149,
+      "source": "log"
+    },
+    {
+      "time": "08:29:02",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 25,
+      "line": 7165,
+      "source": "log"
+    },
+    {
+      "time": "08:29:59",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 26,
+      "line": 7182,
+      "source": "log"
+    },
+    {
+      "time": "08:30:30",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 27,
+      "line": 7193,
+      "source": "log"
+    },
+    {
+      "time": "08:31:14",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 28,
+      "line": 7203,
+      "source": "log"
+    },
+    {
+      "time": "08:34:27",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 29,
+      "line": 7213,
+      "source": "log"
+    },
+    {
+      "time": "08:35:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 30,
+      "line": 7223,
+      "source": "log"
+    },
+    {
+      "time": "08:36:24",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 31,
+      "line": 7233,
+      "source": "log"
+    },
+    {
+      "time": "08:37:08",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 32,
+      "line": 7250,
+      "source": "log"
+    },
+    {
+      "time": "08:38:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 33,
+      "line": 7260,
+      "source": "log"
+    },
+    {
+      "time": "08:38:26",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 33,
+      "line": 7262,
+      "source": "log"
+    },
+    {
+      "time": "08:39:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 34,
+      "line": 7281,
+      "source": "log"
+    },
+    {
+      "time": "08:40:59",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 35,
+      "line": 7293,
+      "source": "log"
+    },
+    {
+      "time": "08:41:47",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 36,
+      "line": 7304,
+      "source": "log"
+    },
+    {
+      "time": "08:43:03",
+      "type": "mains",
+      "label": "OPERANDO NA REDE",
+      "votes": 36,
+      "line": 7306,
+      "source": "log"
+    },
+    {
+      "time": "08:43:04",
+      "type": "battery",
+      "label": "OPERANDO NA BATERIA",
+      "votes": 36,
+      "line": 7307,
+      "source": "log"
+    },
+    {
+      "time": "08:44:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 37,
+      "line": 7318,
+      "source": "log"
+    },
+    {
+      "time": "08:46:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 38,
+      "line": 7328,
+      "source": "log"
+    },
+    {
+      "time": "08:48:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 39,
+      "line": 7338,
+      "source": "log"
+    },
+    {
+      "time": "08:49:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 40,
+      "line": 7350,
+      "source": "log"
+    },
+    {
+      "time": "08:50:21",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 41,
+      "line": 7360,
+      "source": "log"
+    },
+    {
+      "time": "08:51:42",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 42,
+      "line": 7376,
+      "source": "log"
+    },
+    {
+      "time": "08:52:30",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 43,
+      "line": 7383,
+      "source": "log"
+    },
+    {
+      "time": "08:53:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 44,
+      "line": 7402,
+      "source": "log"
+    },
+    {
+      "time": "08:54:11",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 45,
+      "line": 7415,
+      "source": "log"
+    },
+    {
+      "time": "08:54:47",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 46,
+      "line": 7425,
+      "source": "log"
+    },
+    {
+      "time": "08:55:28",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 47,
+      "line": 7436,
+      "source": "log"
+    },
+    {
+      "time": "08:56:03",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 48,
+      "line": 7447,
+      "source": "log"
+    },
+    {
+      "time": "08:57:52",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 49,
+      "line": 7460,
+      "source": "log"
+    },
+    {
+      "time": "09:00:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 50,
+      "line": 7476,
+      "source": "log"
+    },
+    {
+      "time": "09:01:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 51,
+      "line": 7492,
+      "source": "log"
+    },
+    {
+      "time": "09:03:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 52,
+      "line": 7503,
+      "source": "log"
+    },
+    {
+      "time": "09:05:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 53,
+      "line": 7513,
+      "source": "log"
+    },
+    {
+      "time": "09:06:45",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 54,
+      "line": 7531,
+      "source": "log"
+    },
+    {
+      "time": "09:09:27",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 55,
+      "line": 7547,
+      "source": "log"
+    },
+    {
+      "time": "09:10:33",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 56,
+      "line": 7557,
+      "source": "log"
+    },
+    {
+      "time": "09:11:06",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 57,
+      "line": 7567,
+      "source": "log"
+    },
+    {
+      "time": "09:14:02",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 58,
+      "line": 7578,
+      "source": "log"
+    },
+    {
+      "time": "09:15:16",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 59,
+      "line": 7585,
+      "source": "log"
+    },
+    {
+      "time": "09:18:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 60,
+      "line": 7595,
+      "source": "log"
+    },
+    {
+      "time": "09:20:14",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 61,
+      "line": 7615,
+      "source": "log"
+    },
+    {
+      "time": "09:22:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 62,
+      "line": 7642,
+      "source": "log"
+    },
+    {
+      "time": "09:22:47",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 63,
+      "line": 7652,
+      "source": "log"
+    },
+    {
+      "time": "09:23:46",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 64,
+      "line": 7661,
+      "source": "log"
+    },
+    {
+      "time": "09:25:03",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 65,
+      "line": 7671,
+      "source": "log"
+    },
+    {
+      "time": "09:26:11",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 66,
+      "line": 7681,
+      "source": "log"
+    },
+    {
+      "time": "09:27:31",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 67,
+      "line": 7688,
+      "source": "log"
+    },
+    {
+      "time": "09:28:35",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 68,
+      "line": 7697,
+      "source": "log"
+    },
+    {
+      "time": "09:29:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 69,
+      "line": 7709,
+      "source": "log"
+    },
+    {
+      "time": "09:31:04",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 70,
+      "line": 7725,
+      "source": "log"
+    },
+    {
+      "time": "09:31:49",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 71,
+      "line": 7732,
+      "source": "log"
+    },
+    {
+      "time": "09:36:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 72,
+      "line": 7745,
+      "source": "log"
+    },
+    {
+      "time": "09:38:51",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 73,
+      "line": 7768,
+      "source": "log"
+    },
+    {
+      "time": "09:39:44",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 74,
+      "line": 7777,
+      "source": "log"
+    },
+    {
+      "time": "09:42:03",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 75,
+      "line": 7787,
+      "source": "log"
+    },
+    {
+      "time": "09:42:57",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 76,
+      "line": 7798,
+      "source": "log"
+    },
+    {
+      "time": "09:43:52",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 77,
+      "line": 7808,
+      "source": "log"
+    },
+    {
+      "time": "09:44:49",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 78,
+      "line": 7824,
+      "source": "log"
+    },
+    {
+      "time": "09:47:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 79,
+      "line": 7831,
+      "source": "log"
+    },
+    {
+      "time": "09:48:02",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 80,
+      "line": 7844,
+      "source": "log"
+    },
+    {
+      "time": "09:49:03",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 81,
+      "line": 7854,
+      "source": "log"
+    },
+    {
+      "time": "09:49:49",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 82,
+      "line": 7868,
+      "source": "log"
+    },
+    {
+      "time": "09:51:59",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 83,
+      "line": 7884,
+      "source": "log"
+    },
+    {
+      "time": "09:53:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 84,
+      "line": 7895,
+      "source": "log"
+    },
+    {
+      "time": "09:54:11",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 85,
+      "line": 7905,
+      "source": "log"
+    },
+    {
+      "time": "09:55:42",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 86,
+      "line": 7915,
+      "source": "log"
+    },
+    {
+      "time": "09:56:52",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 87,
+      "line": 7928,
+      "source": "log"
+    },
+    {
+      "time": "09:58:25",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 88,
+      "line": 7944,
+      "source": "log"
+    },
+    {
+      "time": "09:59:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 89,
+      "line": 7969,
+      "source": "log"
+    },
+    {
+      "time": "10:00:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 90,
+      "line": 7979,
+      "source": "log"
+    },
+    {
+      "time": "10:01:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 91,
+      "line": 7996,
+      "source": "log"
+    },
+    {
+      "time": "10:02:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 92,
+      "line": 8006,
+      "source": "log"
+    },
+    {
+      "time": "10:03:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 93,
+      "line": 8016,
+      "source": "log"
+    },
+    {
+      "time": "10:04:06",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 94,
+      "line": 8027,
+      "source": "log"
+    },
+    {
+      "time": "10:04:41",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 95,
+      "line": 8038,
+      "source": "log"
+    },
+    {
+      "time": "10:05:32",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 96,
+      "line": 8049,
+      "source": "log"
+    },
+    {
+      "time": "10:06:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 97,
+      "line": 8059,
+      "source": "log"
+    },
+    {
+      "time": "10:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 97,
+      "line": 8078,
+      "source": "log"
+    },
+    {
+      "time": "10:07:13",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 98,
+      "line": 8083,
+      "source": "log"
+    },
+    {
+      "time": "10:07:56",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 99,
+      "line": 8093,
+      "source": "log"
+    },
+    {
+      "time": "10:09:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 100,
+      "line": 8112,
+      "source": "log"
+    },
+    {
+      "time": "10:10:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 101,
+      "line": 8122,
+      "source": "log"
+    },
+    {
+      "time": "10:10:57",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 102,
+      "line": 8129,
+      "source": "log"
+    },
+    {
+      "time": "10:11:46",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 103,
+      "line": 8139,
+      "source": "log"
+    },
+    {
+      "time": "10:12:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 104,
+      "line": 8153,
+      "source": "log"
+    },
+    {
+      "time": "10:13:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 105,
+      "line": 8163,
+      "source": "log"
+    },
+    {
+      "time": "10:13:58",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 106,
+      "line": 8173,
+      "source": "log"
+    },
+    {
+      "time": "10:14:55",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 107,
+      "line": 8186,
+      "source": "log"
+    },
+    {
+      "time": "10:20:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 108,
+      "line": 8196,
+      "source": "log"
+    },
+    {
+      "time": "10:21:03",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 109,
+      "line": 8207,
+      "source": "log"
+    },
+    {
+      "time": "10:22:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 110,
+      "line": 8220,
+      "source": "log"
+    },
+    {
+      "time": "10:25:21",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 111,
+      "line": 8234,
+      "source": "log"
+    },
+    {
+      "time": "10:25:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 112,
+      "line": 8244,
+      "source": "log"
+    },
+    {
+      "time": "10:26:46",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 113,
+      "line": 8254,
+      "source": "log"
+    },
+    {
+      "time": "10:27:25",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 114,
+      "line": 8264,
+      "source": "log"
+    },
+    {
+      "time": "10:28:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 115,
+      "line": 8283,
+      "source": "log"
+    },
+    {
+      "time": "10:29:02",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 116,
+      "line": 8294,
+      "source": "log"
+    },
+    {
+      "time": "10:29:41",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 117,
+      "line": 8304,
+      "source": "log"
+    },
+    {
+      "time": "10:30:38",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 118,
+      "line": 8315,
+      "source": "log"
+    },
+    {
+      "time": "10:31:37",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 119,
+      "line": 8325,
+      "source": "log"
+    },
+    {
+      "time": "10:32:25",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 120,
+      "line": 8335,
+      "source": "log"
+    },
+    {
+      "time": "10:33:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 121,
+      "line": 8345,
+      "source": "log"
+    },
+    {
+      "time": "10:34:09",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 122,
+      "line": 8356,
+      "source": "log"
+    },
+    {
+      "time": "10:35:00",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 123,
+      "line": 8372,
+      "source": "log"
+    },
+    {
+      "time": "10:35:51",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 124,
+      "line": 8385,
+      "source": "log"
+    },
+    {
+      "time": "10:36:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 125,
+      "line": 8395,
+      "source": "log"
+    },
+    {
+      "time": "10:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 125,
+      "line": 8408,
+      "source": "log"
+    },
+    {
+      "time": "10:37:13",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 126,
+      "line": 8413,
+      "source": "log"
+    },
+    {
+      "time": "10:37:59",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 127,
+      "line": 8424,
+      "source": "log"
+    },
+    {
+      "time": "10:40:13",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 128,
+      "line": 8435,
+      "source": "log"
+    },
+    {
+      "time": "10:41:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 129,
+      "line": 8446,
+      "source": "log"
+    },
+    {
+      "time": "10:49:39",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 130,
+      "line": 8456,
+      "source": "log"
+    },
+    {
+      "time": "10:57:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 131,
+      "line": 8466,
+      "source": "log"
+    },
+    {
+      "time": "10:59:57",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 132,
+      "line": 8481,
+      "source": "log"
+    },
+    {
+      "time": "11:00:55",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 133,
+      "line": 8492,
+      "source": "log"
+    },
+    {
+      "time": "11:01:52",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 134,
+      "line": 8502,
+      "source": "log"
+    },
+    {
+      "time": "11:05:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 135,
+      "line": 8512,
+      "source": "log"
+    },
+    {
+      "time": "11:06:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 136,
+      "line": 8523,
+      "source": "log"
+    },
+    {
+      "time": "11:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 136,
+      "line": 8532,
+      "source": "log"
+    },
+    {
+      "time": "11:08:39",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 137,
+      "line": 8538,
+      "source": "log"
+    },
+    {
+      "time": "11:10:44",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 138,
+      "line": 8548,
+      "source": "log"
+    },
+    {
+      "time": "11:11:00",
+      "type": "national",
+      "label": "Metade dos votos",
+      "detail": "registrados nos logs do país neste dia",
+      "key": "half",
+      "precision": "minute",
+      "source": "totals",
+      "votes": 138
+    },
+    {
+      "time": "11:12:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 139,
+      "line": 8555,
+      "source": "log"
+    },
+    {
+      "time": "11:14:14",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 140,
+      "line": 8565,
+      "source": "log"
+    },
+    {
+      "time": "11:15:18",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 141,
+      "line": 8578,
+      "source": "log"
+    },
+    {
+      "time": "11:16:20",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 142,
+      "line": 8588,
+      "source": "log"
+    },
+    {
+      "time": "11:18:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 143,
+      "line": 8613,
+      "source": "log"
+    },
+    {
+      "time": "11:19:14",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 144,
+      "line": 8621,
+      "source": "log"
+    },
+    {
+      "time": "11:23:09",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 145,
+      "line": 8634,
+      "source": "log"
+    },
+    {
+      "time": "11:24:57",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 146,
+      "line": 8641,
+      "source": "log"
+    },
+    {
+      "time": "11:26:13",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 147,
+      "line": 8660,
+      "source": "log"
+    },
+    {
+      "time": "11:27:00",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 148,
+      "line": 8670,
+      "source": "log"
+    },
+    {
+      "time": "11:28:09",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 149,
+      "line": 8683,
+      "source": "log"
+    },
+    {
+      "time": "11:28:41",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 150,
+      "line": 8693,
+      "source": "log"
+    },
+    {
+      "time": "11:29:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 151,
+      "line": 8702,
+      "source": "log"
+    },
+    {
+      "time": "11:30:51",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 152,
+      "line": 8713,
+      "source": "log"
+    },
+    {
+      "time": "11:32:05",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 153,
+      "line": 8723,
+      "source": "log"
+    },
+    {
+      "time": "11:34:00",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 154,
+      "line": 8734,
+      "source": "log"
+    },
+    {
+      "time": "11:34:49",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 155,
+      "line": 8741,
+      "source": "log"
+    },
+    {
+      "time": "11:35:28",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 156,
+      "line": 8750,
+      "source": "log"
+    },
+    {
+      "time": "11:36:16",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 157,
+      "line": 8759,
+      "source": "log"
+    },
+    {
+      "time": "11:36:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 158,
+      "line": 8770,
+      "source": "log"
+    },
+    {
+      "time": "11:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 158,
+      "line": 8779,
+      "source": "log"
+    },
+    {
+      "time": "11:38:45",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 159,
+      "line": 8794,
+      "source": "log"
+    },
+    {
+      "time": "11:43:30",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 160,
+      "line": 8804,
+      "source": "log"
+    },
+    {
+      "time": "11:44:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 161,
+      "line": 8818,
+      "source": "log"
+    },
+    {
+      "time": "11:45:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 162,
+      "line": 8828,
+      "source": "log"
+    },
+    {
+      "time": "11:46:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 163,
+      "line": 8835,
+      "source": "log"
+    },
+    {
+      "time": "11:47:06",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 164,
+      "line": 8846,
+      "source": "log"
+    },
+    {
+      "time": "11:47:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 165,
+      "line": 8856,
+      "source": "log"
+    },
+    {
+      "time": "11:52:12",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 166,
+      "line": 8869,
+      "source": "log"
+    },
+    {
+      "time": "11:54:31",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 167,
+      "line": 8882,
+      "source": "log"
+    },
+    {
+      "time": "12:01:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 168,
+      "line": 8896,
+      "source": "log"
+    },
+    {
+      "time": "12:02:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 169,
+      "line": 8906,
+      "source": "log"
+    },
+    {
+      "time": "12:03:37",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 170,
+      "line": 8919,
+      "source": "log"
+    },
+    {
+      "time": "12:04:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 171,
+      "line": 8926,
+      "source": "log"
+    },
+    {
+      "time": "12:05:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 172,
+      "line": 8937,
+      "source": "log"
+    },
+    {
+      "time": "12:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 172,
+      "line": 8946,
+      "source": "log"
+    },
+    {
+      "time": "12:10:32",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 173,
+      "line": 8955,
+      "source": "log"
+    },
+    {
+      "time": "12:13:50",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 174,
+      "line": 8971,
+      "source": "log"
+    },
+    {
+      "time": "12:14:47",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 175,
+      "line": 8980,
+      "source": "log"
+    },
+    {
+      "time": "12:15:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 176,
+      "line": 8988,
+      "source": "log"
+    },
+    {
+      "time": "12:17:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 177,
+      "line": 9002,
+      "source": "log"
+    },
+    {
+      "time": "12:21:56",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 178,
+      "line": 9027,
+      "source": "log"
+    },
+    {
+      "time": "12:23:31",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 179,
+      "line": 9037,
+      "source": "log"
+    },
+    {
+      "time": "12:24:51",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 180,
+      "line": 9047,
+      "source": "log"
+    },
+    {
+      "time": "12:25:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 181,
+      "line": 9057,
+      "source": "log"
+    },
+    {
+      "time": "12:26:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 182,
+      "line": 9068,
+      "source": "log"
+    },
+    {
+      "time": "12:27:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 183,
+      "line": 9085,
+      "source": "log"
+    },
+    {
+      "time": "12:30:27",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 184,
+      "line": 9095,
+      "source": "log"
+    },
+    {
+      "time": "12:31:33",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 185,
+      "line": 9102,
+      "source": "log"
+    },
+    {
+      "time": "12:36:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 186,
+      "line": 9125,
+      "source": "log"
+    },
+    {
+      "time": "12:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 186,
+      "line": 9134,
+      "source": "log"
+    },
+    {
+      "time": "12:39:04",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 187,
+      "line": 9148,
+      "source": "log"
+    },
+    {
+      "time": "12:39:37",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 188,
+      "line": 9158,
+      "source": "log"
+    },
+    {
+      "time": "12:40:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 189,
+      "line": 9168,
+      "source": "log"
+    },
+    {
+      "time": "12:42:28",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 190,
+      "line": 9178,
+      "source": "log"
+    },
+    {
+      "time": "12:43:12",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 191,
+      "line": 9192,
+      "source": "log"
+    },
+    {
+      "time": "12:43:46",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 192,
+      "line": 9203,
+      "source": "log"
+    },
+    {
+      "time": "12:44:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 193,
+      "line": 9214,
+      "source": "log"
+    },
+    {
+      "time": "12:45:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 194,
+      "line": 9225,
+      "source": "log"
+    },
+    {
+      "time": "12:46:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 195,
+      "line": 9235,
+      "source": "log"
+    },
+    {
+      "time": "12:52:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 196,
+      "line": 9242,
+      "source": "log"
+    },
+    {
+      "time": "12:53:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 197,
+      "line": 9252,
+      "source": "log"
+    },
+    {
+      "time": "12:55:16",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 198,
+      "line": 9268,
+      "source": "log"
+    },
+    {
+      "time": "12:57:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 199,
+      "line": 9279,
+      "source": "log"
+    },
+    {
+      "time": "13:00:06",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 200,
+      "line": 9289,
+      "source": "log"
+    },
+    {
+      "time": "13:01:31",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 201,
+      "line": 9299,
+      "source": "log"
+    },
+    {
+      "time": "13:04:28",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 202,
+      "line": 9325,
+      "source": "log"
+    },
+    {
+      "time": "13:05:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 203,
+      "line": 9332,
+      "source": "log"
+    },
+    {
+      "time": "13:06:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 204,
+      "line": 9343,
+      "source": "log"
+    },
+    {
+      "time": "13:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 204,
+      "line": 9352,
+      "source": "log"
+    },
+    {
+      "time": "13:23:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 205,
+      "line": 9364,
+      "source": "log"
+    },
+    {
+      "time": "13:24:18",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 206,
+      "line": 9374,
+      "source": "log"
+    },
+    {
+      "time": "13:27:30",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 207,
+      "line": 9383,
+      "source": "log"
+    },
+    {
+      "time": "13:36:39",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 208,
+      "line": 9393,
+      "source": "log"
+    },
+    {
+      "time": "13:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 208,
+      "line": 9402,
+      "source": "log"
+    },
+    {
+      "time": "13:44:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 209,
+      "line": 9412,
+      "source": "log"
+    },
+    {
+      "time": "13:45:40",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 210,
+      "line": 9430,
+      "source": "log"
+    },
+    {
+      "time": "13:46:15",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 211,
+      "line": 9440,
+      "source": "log"
+    },
+    {
+      "time": "13:47:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 212,
+      "line": 9453,
+      "source": "log"
+    },
+    {
+      "time": "13:49:20",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 213,
+      "line": 9463,
+      "source": "log"
+    },
+    {
+      "time": "13:50:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 214,
+      "line": 9473,
+      "source": "log"
+    },
+    {
+      "time": "13:51:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 215,
+      "line": 9484,
+      "source": "log"
+    },
+    {
+      "time": "13:54:43",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 216,
+      "line": 9495,
+      "source": "log"
+    },
+    {
+      "time": "13:55:00",
+      "type": "national",
+      "label": "100 milhões",
+      "detail": "de votos registrados no país",
+      "key": "hundred-million",
+      "precision": "minute",
+      "source": "totals",
+      "votes": 216
+    },
+    {
+      "time": "13:58:42",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 217,
+      "line": 9506,
+      "source": "log"
+    },
+    {
+      "time": "14:02:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 218,
+      "line": 9526,
+      "source": "log"
+    },
+    {
+      "time": "14:04:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 219,
+      "line": 9553,
+      "source": "log"
+    },
+    {
+      "time": "14:05:17",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 220,
+      "line": 9566,
+      "source": "log"
+    },
+    {
+      "time": "14:06:12",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 221,
+      "line": 9574,
+      "source": "log"
+    },
+    {
+      "time": "14:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 221,
+      "line": 9583,
+      "source": "log"
+    },
+    {
+      "time": "14:10:32",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 222,
+      "line": 9593,
+      "source": "log"
+    },
+    {
+      "time": "14:12:05",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 223,
+      "line": 9603,
+      "source": "log"
+    },
+    {
+      "time": "14:16:42",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 224,
+      "line": 9628,
+      "source": "log"
+    },
+    {
+      "time": "14:19:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 225,
+      "line": 9644,
+      "source": "log"
+    },
+    {
+      "time": "14:23:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 226,
+      "line": 9654,
+      "source": "log"
+    },
+    {
+      "time": "14:25:11",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 227,
+      "line": 9662,
+      "source": "log"
+    },
+    {
+      "time": "14:31:35",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 228,
+      "line": 9681,
+      "source": "log"
+    },
+    {
+      "time": "14:32:12",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 229,
+      "line": 9691,
+      "source": "log"
+    },
+    {
+      "time": "14:32:48",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 230,
+      "line": 9702,
+      "source": "log"
+    },
+    {
+      "time": "14:35:20",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 231,
+      "line": 9711,
+      "source": "log"
+    },
+    {
+      "time": "14:36:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 232,
+      "line": 9721,
+      "source": "log"
+    },
+    {
+      "time": "14:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 232,
+      "line": 9730,
+      "source": "log"
+    },
+    {
+      "time": "14:41:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 233,
+      "line": 9736,
+      "source": "log"
+    },
+    {
+      "time": "14:42:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 234,
+      "line": 9746,
+      "source": "log"
+    },
+    {
+      "time": "14:44:15",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 235,
+      "line": 9756,
+      "source": "log"
+    },
+    {
+      "time": "14:49:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 236,
+      "line": 9767,
+      "source": "log"
+    },
+    {
+      "time": "14:55:40",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 237,
+      "line": 9778,
+      "source": "log"
+    },
+    {
+      "time": "14:56:46",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 238,
+      "line": 9788,
+      "source": "log"
+    },
+    {
+      "time": "14:59:00",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 239,
+      "line": 9801,
+      "source": "log"
+    },
+    {
+      "time": "14:59:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 240,
+      "line": 9810,
+      "source": "log"
+    },
+    {
+      "time": "15:00:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 241,
+      "line": 9820,
+      "source": "log"
+    },
+    {
+      "time": "15:06:07",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 242,
+      "line": 9831,
+      "source": "log"
+    },
+    {
+      "time": "15:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 242,
+      "line": 9840,
+      "source": "log"
+    },
+    {
+      "time": "15:08:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 243,
+      "line": 9852,
+      "source": "log"
+    },
+    {
+      "time": "15:15:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 244,
+      "line": 9865,
+      "source": "log"
+    },
+    {
+      "time": "15:16:31",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 245,
+      "line": 9881,
+      "source": "log"
+    },
+    {
+      "time": "15:17:33",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 246,
+      "line": 9892,
+      "source": "log"
+    },
+    {
+      "time": "15:30:04",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 247,
+      "line": 9903,
+      "source": "log"
+    },
+    {
+      "time": "15:32:32",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 248,
+      "line": 9911,
+      "source": "log"
+    },
+    {
+      "time": "15:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 248,
+      "line": 9923,
+      "source": "log"
+    },
+    {
+      "time": "15:37:20",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 249,
+      "line": 9930,
+      "source": "log"
+    },
+    {
+      "time": "15:38:51",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 250,
+      "line": 9941,
+      "source": "log"
+    },
+    {
+      "time": "15:42:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 251,
+      "line": 9950,
+      "source": "log"
+    },
+    {
+      "time": "15:43:47",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 252,
+      "line": 9960,
+      "source": "log"
+    },
+    {
+      "time": "15:44:54",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 253,
+      "line": 9973,
+      "source": "log"
+    },
+    {
+      "time": "15:49:02",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 254,
+      "line": 9983,
+      "source": "log"
+    },
+    {
+      "time": "15:58:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 255,
+      "line": 9993,
+      "source": "log"
+    },
+    {
+      "time": "16:00:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 256,
+      "line": 10003,
+      "source": "log"
+    },
+    {
+      "time": "16:00:53",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 257,
+      "line": 10013,
+      "source": "log"
+    },
+    {
+      "time": "16:02:25",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 258,
+      "line": 10029,
+      "source": "log"
+    },
+    {
+      "time": "16:03:05",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 259,
+      "line": 10037,
+      "source": "log"
+    },
+    {
+      "time": "16:05:23",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 260,
+      "line": 10047,
+      "source": "log"
+    },
+    {
+      "time": "16:06:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 260,
+      "line": 10056,
+      "source": "log"
+    },
+    {
+      "time": "16:08:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 261,
+      "line": 10062,
+      "source": "log"
+    },
+    {
+      "time": "16:11:19",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 262,
+      "line": 10072,
+      "source": "log"
+    },
+    {
+      "time": "16:13:18",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 263,
+      "line": 10097,
+      "source": "log"
+    },
+    {
+      "time": "16:14:01",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 264,
+      "line": 10108,
+      "source": "log"
+    },
+    {
+      "time": "16:15:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 265,
+      "line": 10118,
+      "source": "log"
+    },
+    {
+      "time": "16:17:26",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 266,
+      "line": 10128,
+      "source": "log"
+    },
+    {
+      "time": "16:20:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 267,
+      "line": 10137,
+      "source": "log"
+    },
+    {
+      "time": "16:22:36",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 268,
+      "line": 10144,
+      "source": "log"
+    },
+    {
+      "time": "16:27:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 269,
+      "line": 10154,
+      "source": "log"
+    },
+    {
+      "time": "16:29:22",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 270,
+      "line": 10164,
+      "source": "log"
+    },
+    {
+      "time": "16:32:49",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 271,
+      "line": 10179,
+      "source": "log"
+    },
+    {
+      "time": "16:36:10",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 272,
+      "line": 10189,
+      "source": "log"
+    },
+    {
+      "time": "16:36:59",
+      "type": "network-report",
+      "label": "CONEXÃO À REDE REGISTRADA",
+      "votes": 272,
+      "line": 10198,
+      "source": "log"
+    },
+    {
+      "time": "16:40:29",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 273,
+      "line": 10215,
+      "source": "log"
+    },
+    {
+      "time": "16:50:16",
+      "type": "vote",
+      "label": "VOTO COMPUTADO",
+      "votes": 274,
+      "line": 10227,
+      "source": "log"
+    },
+    {
+      "time": "17:00:06",
+      "type": "close",
+      "label": "VOTAÇÃO ENCERRADA",
+      "votes": 274,
+      "line": 10229,
+      "source": "log"
+    },
+    {
+      "time": "17:00:42",
+      "type": "bulletin",
+      "label": "BOLETIM DE URNA IMPRESSO",
+      "votes": 274,
+      "line": 10247,
+      "source": "log"
+    },
+    {
+      "time": "19:09:38",
+      "type": "arrival",
+      "label": "RESULTADO REGISTRADO NO TSE",
+      "votes": 274,
+      "source": "cs"
+    },
+    {
+      "time": "23:27:02",
+      "type": "final",
+      "label": "100% DAS SEÇÕES TOTALIZADAS",
+      "votes": 274,
+      "source": "national-final"
+    }
+  ],
+  "notes": [
+    "Reconstrução editorial. A fita não é uma zerésima nem um boletim oficial.",
+    "Horários do relógio da urna, no fuso de Brasília. Não são um relógio auditado.",
+    "Cada VOTO COMPUTADO é um registro do log. A fita não identifica eleitores nem suas escolhas.",
+    "Os marcos nacionais têm precisão de um minuto e usam os logs coletados, não a apuração.",
+    "A segunda entrada em bateria não tem retorno explícito no evento energia. Há registros posteriores de conexão à rede. Não é possível afirmar a duração da falta de energia.",
+    "ha é o horário registrado no arquivo de seções do TSE, não uma prova da primeira transmissão.",
+    "23:27:02 é a geração do arquivo nacional final, que já mostra 100%. Não é o instante em que o resultado foi definido."
+  ],
+  "sources": {
+    "cs": {
+      "file": "mg-p003221-cs.json",
+      "sha256": "a48960d9f900fd3875385271b0560de9c0fb2b9c7cf49be140ab0bcef53ddd62"
+    },
+    "national-final": {
+      "file": "br-c0001-e006258-u.json",
+      "sha256": "67fae708b0c7977fc9847d36100c63313621bff971178c48f2da99969707c263"
+    },
+    "totals": {
+      "file": "totals.json",
+      "sha256": "bc9e527f6e2b9c38a5f3c153f658c26f4a0960b72c5dacfc326c3e08c0a56925"
+    },
+    "log": {
+      "file": "415049426366-o03221mg4123803310060-log.jez",
+      "member": "logd.dat",
+      "sha256": "e73d76a9ad884c08be5e10e556da88c4b930375f7654dfedae78cf2662a7746f"
+    }
+  }
+}
