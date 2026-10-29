@@ -39,11 +39,11 @@ class Linhas:
     def __init__(self) -> None:
         self.rows: list[tuple] = []
 
-    def add(self, uf, mun, zona, secao, ts, tipo, valor=None) -> None:
+    def add(self, uf, mun, zona, secao, ts, tipo, valor=None, membro="logd.dat") -> None:
         linha = len(self.rows) + 1
         self.rows.append((
             2026, 2, uf, mun, zona, secao, "hash1", linha, ts, "INFO", "02299969",
-            "VOTA", "msg", tipo, valor, "logd.dat",
+            "VOTA", "msg", tipo, valor, membro,
         ))
 
     def votos(self, uf, mun, zona, secao, horas: list[str], dia: dt.date = DIA) -> None:
@@ -243,3 +243,17 @@ def test_abroad_takes_its_time_zone_in_minutes(con):
     ]
     sp = _q(con, "SELECT fuso, fuso_minutos FROM main.fuso_municipio WHERE id_municipio_tse = '50308'")
     assert sp == [(-1, -60)]
+
+
+def test_battery_of_a_replaced_urna_ends_with_its_log(con):
+    l = Linhas()
+    # RS 88888: the first urna votes, goes on battery at 09:30 and its log ends at 10:00;
+    # a second urna (second log member) votes until 16:00.
+    l.votos("RS", "88888", "0001", "0001", ["08:00", "09:00"])
+    l.add("RS", "88888", "0001", "0001", _ts(DIA, "09:30"), "energia", "bateria")
+    l.add("RS", "88888", "0001", "0001", _ts(DIA, "10:00"), "encerramento")
+    for h in ["11:00", "16:00"]:
+        l.add("RS", "88888", "0001", "0001", _ts(DIA, h), "voto_computado", "Presidente", membro="logsub.dat")
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    rows = _q(con, "SELECT votos, quedas, min_bateria, n_logs FROM main.secao_dia WHERE id_municipio_tse = '88888'")
+    assert rows == [(4, 1, 30.0, 2)]  # 09:30 to 10:00, not to the last vote at 16:00
