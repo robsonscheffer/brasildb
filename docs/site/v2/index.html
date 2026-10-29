@@ -402,10 +402,10 @@ function tick() {
     const r = s.el.getBoundingClientRect();
     if (r.bottom < -vh || r.top > 2 * vh) continue;
     const p = clamp(-r.top / Math.max(1, r.height - vh)), out = s.render(p);
-    // The stage fades in over the first 5% and out over the last 8% of its scene, so its last
-    // frame never rides into the next fold (U4).
+    // The stage fades out over the last 8% of its scene, so its last frame never rides into
+    // the next fold (U4). It needs no fade-in: it slides up opaque from below.
     s.palco ||= s.el.querySelector(".palco");
-    if (s.palco) s.palco.style.opacity = Math.min(clamp(p / 0.05), clamp((1 - p) / 0.08));
+    if (s.palco) s.palco.style.opacity = clamp((1 - p) / 0.08);
     if (r.top <= 1 && r.bottom >= vh - 1) { clock = out; grande = s.el.hasAttribute("data-grande"); }
   }
   const rel = $("relogio");
