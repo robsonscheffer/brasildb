@@ -1126,18 +1126,21 @@ renderHoras();
     let anc = null;
     const k = clamp(Math.floor(t - R.A), 0, R.n - 1);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, ty = topo(dpr) + 16 * dpr;
-    const y0 = ty + 22 * dpr, y1 = Math.max(y0 + 27 * 7 * dpr, H - 0.1 * H), rh = (y1 - y0) / R.ufs.length;
+    const y0t = topo(dpr) + 38 * dpr, rh = (Math.max(y0t + 27 * 7 * dpr, H - 0.1 * H) - y0t) / R.ufs.length;
+    const fs = clamp(rh * 0.55, 12 * dpr, 16 * dpr); // labels grow with the rows, so the state and its time can be read
+    const x0 = 0.06 * W + fs * 2.6, x1 = 0.94 * W - fs * 4, ty = topo(dpr) + 16 * dpr;
+    const y0 = y0t, y1 = y0 + rh * R.ufs.length;
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Urnas transmitidas ao TSE, por estado", 0.06 * W, ty);
     const meu = state.town?.uf, cabe = rh >= 13 * dpr; // on a short screen only the named rows get a label
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
-      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${12 * dpr}px "JetBrains Mono"`;
-      if (cabe || eu || e?.uf === u.uf) ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
-      ctx.fillStyle = "rgba(236,232,220,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
-      ctx.fillStyle = eu ? "#fff1d6" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
+      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.7)"; ctx.font = `${(eu ? 600 : 400)} ${fs}px "JetBrains Mono"`;
+      if (cabe || eu || e?.uf === u.uf) ctx.fillText(u.uf, 0.06 * W, y + fs * 0.35);
+      const bh = clamp(rh * 0.2, 4 * dpr, 7 * dpr);
+      ctx.fillStyle = "rgba(236,232,220,.08)"; ctx.fillRect(x0, y - bh / 2, x1 - x0, bh);
+      ctx.fillStyle = eu ? "#fff1d6" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - bh / 2, (x1 - x0) * f, bh);
       const dele = e?.uf === u.uf; // the step's row: its leader line takes the place of the time label
-      if (f >= 1 && !dele) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      if (f >= 1 && !dele && (cabe || eu)) { ctx.fillStyle = "rgba(236,232,220,.75)"; ctx.font = `${fs}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 8 * dpr, y + fs * 0.35); }
       if (dele && !e.seu) anc = [x0 + (x1 - x0) * f, y];
       if (eu && mi && hm(mi.chega) <= t) {
         const i = clamp(Math.round(hm(mi.chega) - R.A), 0, R.n - 1), x = x0 + (x1 - x0) * u.cum[i] / u.tot;
