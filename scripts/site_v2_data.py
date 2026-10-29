@@ -255,9 +255,24 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
               c AS (SELECT minuto_bsb, sum(votos) OVER (ORDER BY minuto_bsb) acc, sum(votos) OVER () tot FROM v)
               SELECT min(minuto_bsb), any_value(tot) FROM c WHERE acc >= 0.9 * tot"""
     m, tot_s = f.q(sql)[0]
-    f.add("solimoes", 4, f"Alto Solimões, nove em dez às {hfala(m.strftime('%H:%M'))}",
-          f"Nos nove municípios do Alto Solimões, no Amazonas, nove de cada dez votos do dia já estavam dados. {fmt(tot_s)} votos no total.",
-          m.strftime("%H:%M"), {"uf": "AM", "municipio": "Alto Solimões", "lat": -4.25, "lon": -69.94}, tot_s, sql)
+    sql_br = f"""WITH v AS (SELECT minuto_bsb, sum(votos) votos FROM r2.votos_minuto WHERE {BR} GROUP BY 1),
+                 c AS (SELECT minuto_bsb, sum(votos) OVER (ORDER BY minuto_bsb) acc, sum(votos) OVER () tot FROM v)
+                 SELECT min(minuto_bsb) FROM c WHERE acc >= 0.9 * tot"""
+    m_br = f.q(sql_br)[0][0]
+    # The local clock of most of the nine towns (by town count): polls open at 8h Brasilia.
+    sql_fu = f"""SELECT fuso_minutos, count(*) n FROM r2.fuso_municipio WHERE sigla_uf = 'AM' AND id_municipio_tse IN
+                 (SELECT id_municipio_tse FROM br_bd_diretorios_brasil.municipio WHERE id_municipio IN ({ids}))
+                 GROUP BY 1 ORDER BY n DESC LIMIT 1"""
+    fu, n_fu = f.q(sql_fu)[0]
+    if n_fu * 2 <= len(SOLIMOES):
+        raise ValueError("no local clock holds most of Alto Solimões; rewrite the solimoes line")
+    local = m + timedelta(minutes=fu)
+    f.add("solimoes", 4, f"Alto Solimões, 90% às {hfala(m.strftime('%H:%M'))}",
+          f"Nos nove municípios do Alto Solimões, no Amazonas, nove em cada dez eleitores já tinham votado. "
+          f"O Brasil só chegou lá às {hfala(m_br.strftime('%H:%M'))}. Na maioria deles, o relógio local marcava "
+          f"{hfala(local.strftime('%H:%M'))}: a urna abriu às {8 + fu // 60}h da manhã.",
+          m.strftime("%H:%M"), {"uf": "AM", "municipio": "Alto Solimões", "lat": -4.25, "lon": -69.94}, tot_s,
+          sql + " ; " + sql_br + " ; " + sql_fu)
 
     sql = f"""SELECT s.sigla_uf, s.id_municipio_tse, s.zona, s.secao, s.votos, a.aptos
               FROM r2.secao_dia s JOIN r2.aptos a USING (sigla_uf, id_municipio_tse, zona, secao)
