@@ -826,7 +826,8 @@ async function afterAnswer() {
 }
 // A shared link reopens the reader's answer.
 (async () => {
-  const q = new URLSearchParams(location.search); const id = q.get("cidade"); if (!id) return;
+  const q = new URLSearchParams(location.search); const id = q.get("cidade");
+  if (!id) { if (q.has("hora")) { state.hora = +q.get("hora"); renderHoras(); drawCard(); } return; }
   towns = await loadTowns(); names = towns.nome.map(norm); byId = new Map(towns.id.map((x, i) => [String(x), i]));
   const i = byId.get(id); if (i == null) return;
   state.town = { i, id, uf: towns.uf[i], nome: towns.nome[i] };
@@ -961,8 +962,14 @@ $("horas").addEventListener("click", e => { const b = e.target.closest("button")
 async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
   if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${tw.nome}, ${tw.uf}`; }
-  if (n == null) { n = 0; for (let m = h * 60; m < h * 60 + 60; m++) n += TOT.national[m - TOT.start] || 0; lugar = "no Brasil"; }
-  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}. Você não estava sozinho.<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? "o último voto, 19h06" : `${h + 1}h`}</small>`;
+  // The hour in the whole country: how many voted and where it ranks in the day.
+  const fim = x => x === 18 ? 1147 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
+  const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
+  const dia = h >= 17 ? "Depois dos portões fechados, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
+    : rank >= 9 ? "Uma das horas mais calmas do dia." : `${pct}% dos votos do dia.`;
+  if (n == null) { n = br; lugar = "no Brasil"; }
+  const pais = lugar === "no Brasil" ? "" : ` No Brasil, ${fmt(br)} votos.`;
+  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? "o último voto, 19h06" : `${h + 1}h`}</small>`;
 }
 renderHoras();
 
