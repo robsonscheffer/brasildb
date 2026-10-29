@@ -5,7 +5,7 @@ SELECT e.ano,
        e.turno,
        e.sigla_uf,
        e.id_municipio_tse,
-       date_trunc('minute', e.data_hora - to_hours(f.fuso)) AS minuto_bsb,
+       date_trunc('minute', e.data_hora - to_minutes(f.fuso_minutos)) AS minuto_bsb,
        count(*) AS votos
 FROM br_tse_urna_logs.eventos e
 JOIN main.eleicoes el ON el.ano = e.ano AND el.turno = e.turno

@@ -5,7 +5,7 @@
 -- lasts until the next energia line of the same log, so a flicker counts as a few seconds.
 CREATE OR REPLACE VIEW main.secao_dia AS
 WITH dia AS (
-    SELECT e.*, e.data_hora - to_hours(f.fuso) AS hora_bsb
+    SELECT e.*, e.data_hora - to_minutes(f.fuso_minutos) AS hora_bsb
     FROM br_tse_urna_logs.eventos e
     JOIN main.eleicoes el ON el.ano = e.ano AND el.turno = e.turno
     JOIN main.fuso_municipio f

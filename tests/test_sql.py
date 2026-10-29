@@ -224,3 +224,22 @@ def test_apply_skip_missing(tmp_path):
     with pytest.raises(duckdb.CatalogException):
         sqlrun.apply(con, tmp_path)
     sqlrun.apply(con, tmp_path, skip_missing=True)
+
+
+def test_abroad_takes_its_time_zone_in_minutes(con):
+    l = Linhas()
+    l.votos("ZZ", "30805", "0001", "0001", ["08:04"])  # Wellington, +16h
+    l.votos("ZZ", "29173", "0001", "0494", ["08:00"])  # Katmandu, +8h45
+    l.votos("ZZ", "99999", "0001", "0001", ["08:00"])  # a city not in fuso_exterior: left out
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    fuso = _q(con, "SELECT id_municipio_tse, fuso, fuso_minutos FROM main.fuso_municipio "
+                   "WHERE sigla_uf = 'ZZ' ORDER BY 1")
+    assert fuso == [("29173", 9, 525), ("30805", 16, 960)]
+    minutos = _q(con, "SELECT id_municipio_tse, minuto_bsb FROM main.votos_minuto "
+                      "WHERE sigla_uf = 'ZZ' ORDER BY 1")
+    assert minutos == [
+        ("29173", dt.datetime(2026, 10, 24, 23, 15)),  # Saturday night in Brasilia
+        ("30805", dt.datetime(2026, 10, 24, 16, 4)),
+    ]
+    sp = _q(con, "SELECT fuso, fuso_minutos FROM main.fuso_municipio WHERE id_municipio_tse = '50308'")
+    assert sp == [(-1, -60)]
