@@ -170,10 +170,21 @@
   .eco { margin-top: 18px; color: var(--accent); min-height: 1.5em; font-family: var(--serif); font-size: 22px; }
 
   /* 7. The map */
-  .legenda { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 0 20px; background: rgba(7,10,18,.72); transition: opacity .5s; }
-  .legenda div { max-width: 30ch; font-family: var(--serif); font-size: clamp(24px, 4.4vw, 34px); line-height: 1.15; }
-  .legenda .esc { display: flex; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
-  .legenda .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
+  /* A title card opens every chart fold (U6): its number and name, what the reader will see, how to move on. */
+  .abre { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 var(--gx); background: rgba(7,10,18,.8); transition: opacity .5s; }
+  .abre > div { max-width: 40ch; }
+  .abre .k::before { display: none; }
+  .abre h2 { font-family: var(--serif); font-size: clamp(34px, 5.4vw, 64px); line-height: 1.02; font-weight: 400; margin: 14px 0 0; text-wrap: balance; }
+  .abre p { margin: 16px auto 0; color: var(--muted); font-size: clamp(16px, 2vw, 19px); max-width: 40ch; }
+  .abre p b { color: var(--fg); font-weight: 500; }
+  .abre .esc { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+  .abre .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
+  .abre .seta { width: 1px; height: 32px; margin: 24px auto 0; background: linear-gradient(var(--accent), transparent); animation: cai 1.6s ease-in-out infinite; }
+  /* The step button (U8): the next note, or the next fold after the last one. The arrow keys do the same. */
+  .prox { position: absolute; z-index: 2; right: 150px; bottom: 28px; display: flex; gap: 10px; align-items: center; background: rgba(7,10,18,.7); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer; transition: border-color .15s, color .15s; }
+  .prox:hover { border-color: var(--accent); color: var(--accent); }
+  .prox kbd { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+  @media (max-width: 640px) { .prox { right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); } .prox kbd { display: none; } }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
   /* Hour tap */
@@ -284,13 +295,14 @@
 <section class="cena" id="abertura" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c3"></canvas>
-    <div class="passos" id="c3passos"></div>
+    <div class="passos" id="c3passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. <b>Role</b> para avançar o relógio, ou use as setas do teclado.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
 <!-- 4. The turn -->
 <section class="pergunta gx" id="onde-votou">
-  <span class="k">E você?</span>
+  <span class="k">03 · onde votou</span>
   <h2 class="big">Onde você votou?</h2>
   <p class="mid" style="margin-top:14px;color:var(--muted)">Digite sua cidade e veja o seu dia.</p>
   <div class="campo">
@@ -317,19 +329,13 @@
   <div class="palco duplo">
     <canvas id="c7"></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
-    <div class="legenda" id="legenda">
-      <div>
-        Cada luz é uma cidade. Quanto maior, mais eleitores.<br><br>
-        Ela brilha mais no minuto em que mais gente votou ali. Role e veja a sua acender.
-        <div class="esc"><span>calma</span><i></i><span>pico</span></div>
-      </div>
-    </div>
-    <div class="passos" id="c7passos"></div>
+    <div class="passos" id="c7passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="abre" id="abre-mapa"><div><span class="k">04 · o dia no mapa</span><h2>Cada luz é uma cidade.</h2><p>Quanto maior, mais eleitores. Ela brilha mais no minuto em que mais gente votou ali. <b>Role</b> e veja a sua acender.</p><div class="esc"><span>calma</span><i></i><span>pico</span></div><div class="seta"></div></div></div>
   </div>
 </section>
 
 <section class="flow gx" id="quando-votou" style="min-height:100svh">
-  <span class="k">Mais ou menos que horas?</span>
+  <span class="k">05 · quando votou</span>
   <p class="lead" id="horalead">Que horas você votou? Toque na hora e descubra quantos votaram com você.</p>
   <div class="horas" id="horas"></div>
   <div class="comvoce" id="comvoce"></div>
@@ -339,7 +345,8 @@
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c8"></canvas>
-    <div class="passos" id="c8passos"></div>
+    <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. A fila ainda vota.</h2><p>Das 16h ao último voto, às 19h06. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -370,6 +377,7 @@
       </div>
     </div>
     <div class="vnota" id="vnota"></div>
+    <div class="abre" id="abre-encerramento"><div><span class="k">07 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e envia.</h2><p>O caminho do resultado até Brasília. <b>Role</b> para acompanhar.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -377,13 +385,14 @@
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c9"></canvas>
-    <div class="passos" id="c9passos"></div>
+    <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">08 · transmissão</span><h2>A noite: cada urna manda seu resultado.</h2><p>Os 27 estados se completam um a um. <b>Role</b> para ver a noite passar.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
 <!-- 9. The card -->
 <section class="cartao gx" id="compartilhamento">
-  <span class="k">Para guardar</span>
+  <span class="k">09 · para guardar</span>
   <p class="mid" style="margin:14px 0 26px">Você fez parte dessa história. Guarde o seu momento.</p>
   <canvas id="card" width="1080" height="1350" aria-label="Seu cartão"></canvas>
   <div class="acoes">
@@ -442,7 +451,35 @@ function near(el, fn, margin = "150% 0px") {
 // Scenes: a tall section reports its progress 0..1 while its stage is stuck. The scene that
 // holds the screen returns the time it shows, and the one clock at the top follows it.
 const scenes = [];
-function scene(el, render) { scenes.push({ el, render }); }
+// `salto` lists the scene's stops as progress values, for the step button and the arrow keys (U8).
+function scene(el, render, salto) { scenes.push({ el, render, salto }); }
+// A title card covers the first 6% of its fold; the scene's own progress starts after it.
+const ABRE = 0.06, apos = p => clamp((p - ABRE) / (1 - ABRE - 0.05)), antes = q => ABRE + q * (1 - ABRE - 0.05);
+function abrir(id, p) { const a = $(id); a.style.opacity = p < ABRE ? 1 : 0; a.style.pointerEvents = p < ABRE ? "auto" : "none"; }
+function pular(d) {
+  const vh = innerHeight, y = scrollY;
+  for (const s of scenes) {
+    if (s.el.hidden || !s.salto) continue;
+    const r = s.el.getBoundingClientRect();
+    if (!(r.top <= 1 && r.bottom >= vh - 1)) continue;
+    const p = clamp(-r.top / Math.max(1, r.height - vh)), stops = s.salto();
+    let k = -1; stops.forEach((q, i) => { if (q <= p + 0.004) k = i; });
+    const n = d < 0 && k >= 0 && p - stops[k] > 0.01 ? k : k + d; // going back first returns to the start of this step
+    if (n >= 0 && n < stops.length) { ir(s.el.offsetTop + stops[n] * (s.el.offsetHeight - vh)); return; }
+    break;
+  }
+  const vis = dobras.filter(x => !x.hidden);
+  const alvo = d > 0 ? vis.find(x => x.offsetTop > y + 2) : [...vis].reverse().find(x => x.offsetTop < y - 2);
+  if (alvo) ir(alvo.offsetTop);
+}
+const ir = y => scrollTo({ top: Math.round(y), behavior: "smooth" });
+addEventListener("keydown", e => {
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  const d = ["ArrowDown", "ArrowRight", "PageDown"].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
+  if (!d) return; e.preventDefault(); pular(d);
+});
+for (const b of document.querySelectorAll(".prox")) b.addEventListener("click", () => pular(1));
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
   for (const s of scenes) {
@@ -502,6 +539,7 @@ function medir() {
 }
 const topo = dpr => (TOPO + 22) * dpr;
 $("rt").addEventListener("transitionend", () => { medir(); tick(); });
+new ResizeObserver(() => { if (medir()) tick(); }).observe($("relogio")); // a cancelled transition never ends
 addEventListener("scroll", () => { medir(); tick(); }, { passive: true });
 addEventListener("resize", () => { for (const f of resizers) f(); tick(); });
 const resizers = [];
@@ -579,7 +617,7 @@ function minha() {
     if (p < 0.3) return { txt: first.hora, sub: "<b>1</b> voto" };
     if (p > 0.8) return { txt: "08:01", sub: `<b>${fmt(pm.votos)}</b> votos no primeiro minuto` };
     return { txt: linhas[k - 1].hora, sub: `<b>${fmt(Math.max(1, pm.votos * q))}</b> votos` };
-  });
+  }, () => [0, 0.1, 0.3, 0.8, 0.88]);
 }
 
 /* ---------- Agenda: a scene that stops on each note ---------- */
@@ -590,17 +628,22 @@ function agenda(items, A, B, hold = 60) {
   const segs = []; let u = 0, prev = A;
   for (const e of its) { segs.push({ u0: u, u1: u + (e.t - prev), t0: prev, t1: e.t, cur: segs.length ? segs[segs.length - 1].cur : null }); u += e.t - prev; segs.push({ u0: u, u1: u + hold, t0: e.t, t1: e.t, cur: e }); u += hold; prev = e.t; }
   segs.push({ u0: u, u1: u + (B - prev), t0: prev, t1: B, cur: its.length ? its[its.length - 1] : null }); u += B - prev;
-  return p => {
+  const fn = p => {
     const x = clamp(p) * u, s = segs.find(g => x <= g.u1) || segs[segs.length - 1];
     return { t: s.u1 > s.u0 ? lerp(s.t0, s.t1, clamp((x - s.u0) / (s.u1 - s.u0))) : s.t1, cur: s.cur };
   };
+  // The progress at which an item's hold begins, for the step controls.
+  fn.pAt = e => { const s = segs.find(g => g.cur === e && g.t0 === g.t1); return s ? (s.u0 + 0.3 * hold) / u : null; };
+  fn.paradas = f => its.map(e => f(fn.pAt(e)));
+  return fn;
 }
 // The steps of a chart (U2): every note of the scene in one list, the current one lit and
 // brought to the middle of its column (to the top of the sheet on a phone).
 function passos(host, items, cur) {
   if (host._items !== items) {
     host._items = items; host._cur = undefined;
-    host.innerHTML = `<ol>${items.map(e => `<li${e.seu ? ' class="seu"' : ""}>${e.h ? `<div class="h">${e.h}</div>` : ""}<h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}</li>`).join("")}</ol>`;
+    if (host._ol) host._ol.remove();
+    host.insertAdjacentHTML("afterbegin", `<ol>${items.map(e => `<li${e.seu ? ' class="seu"' : ""}>${e.h ? `<div class="h">${e.h}</div>` : ""}<h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}</li>`).join("")}</ol>`);
     host._ol = host.firstElementChild; host._lis = [...host._ol.children];
     // The list slides to the new step; the leader line is redrawn once it has arrived.
     host._ol.addEventListener("transitionend", e => { if (e.propertyName === "transform") tick(); });
@@ -644,7 +687,8 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
   ];
   const ag = agenda(its, 478.5, 540, 10);
   scene(el, p => {
-    const { t, cur: e } = ag(clamp(p / 0.95));
+    abrir("abre-abertura", p);
+    const { t, cur: e } = ag(apos(p));
     passos(host, its, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
     const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
@@ -662,7 +706,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
     if (e && e.t >= 480) { const m = Math.min(540, Math.round(e.t)); ligar(c, ctx, [x0 + (m - 480) * bw + (bw - 2 * dpr) / 2, yb - alt(m)], host, dpr, yt - 24 * dpr); }
     return { t: Math.max(480, t), txt: t < 480 ? "07:59" : null };
-  });
+  }, () => [0, ...ag.paradas(antes)]);
 }
 
 /* ---------- 4. The question ---------- */
@@ -785,14 +829,14 @@ async function afterAnswer() {
     }
     const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
     its.sort((a, b) => a.t - b.t);
-    planoDe = key; plano = { ag: agenda(its, 480, 1146, 55), dia, lista: [...its, ...dia] };
+    planoDe = key; plano = { ag: agenda(its, 480, 1147, 55), dia, lista: [...its, ...dia] };
     return plano;
   }
 
   const L = 16, buckets = Array.from({ length: L + 1 }, () => []);
+  const saltos = () => { const { ag, dia } = planejar(); return [0, ...ag.paradas(q => ABRE + q * 0.8), ...dia.map((_, i) => 0.86 + (i + 0.5) / dia.length * 0.14)]; };
   scene(el, p => {
-    $("legenda").style.opacity = p < 0.06 ? 1 : 0;
-    $("legenda").style.pointerEvents = p < 0.06 ? "auto" : "none";
+    abrir("abre-mapa", p);
     const { ag, dia, lista } = planejar(), fim = p > 0.86;
     const a = ag(clamp((p - 0.06) / 0.8)), t = fim ? 1146 : a.t;
     const e = p < 0.06 ? null : fim ? dia[Math.min(dia.length - 1, Math.floor((p - 0.86) / 0.14 * dia.length))] : a.cur;
@@ -839,7 +883,7 @@ async function afterAnswer() {
     }
     ligar(c, ctx, anc, host, dpr);
     return clock;
-  });
+  }, saltos);
 }
 
 /* ---------- Hour tap ---------- */
@@ -880,7 +924,8 @@ renderHoras();
   ];
   const ag = agenda(passos_, A, B, 55);
   scene(el, p => {
-    const { t, cur: e } = ag(clamp(p / 0.95));
+    abrir("abre-fechamento", p);
+    const { t, cur: e } = ag(apos(p));
     passos(host, passos_, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
     const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
@@ -909,7 +954,7 @@ renderHoras();
     if (e) { const m = clamp(Math.round(e.t), A, B - 1); ligar(c, ctx, [X(m), Y(nat[m - S] || 0)], host, dpr, yt - 46 * dpr); }
     const ate = t >= 1020 ? somaMin(nat, 1020, Math.floor(t) + 1) : 0;
     return { t, sub: t >= 1020 ? `<b>${fmt(ate)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
-  });
+  }, () => [0, ...ag.paradas(antes)]);
 }
 
 /* ---------- 7. Your urna's trip: closes, prints, transmits ---------- */
@@ -927,8 +972,10 @@ renderHoras();
   let ultimo = -2;
   scene(el, p => {
     const mi = minha(); if (!mi || !state.town) return null;
+    abrir("abre-encerramento", p);
+    $("abre-urna").textContent = mi.exata ? "A sua urna fecha, imprime e envia." : `A urna de ${state.town.nome} fecha, imprime e envia.`;
     const ls = linhas(mi), n = ls.length;
-    const fase1 = clamp(p / 0.5), k = Math.min(n, Math.floor(fase1 * (n + 0.999)));
+    const fase1 = clamp((p - ABRE) / 0.44), k = Math.min(n, Math.floor(fase1 * (n + 0.999)));
     const viaja = clamp((p - 0.55) / 0.33), chegou = p >= 0.88;
     if (k !== ultimo) {
       ultimo = k;
@@ -950,7 +997,7 @@ renderHoras();
       : `<p>${hfala(ls[0].hora)}. A sua urna encerra. Ela já sabe o resultado.</p>${tipica}`;
     const t = chegou ? b : viaja > 0 ? lerp(last, b, viaja) : seg(ls[Math.max(0, k - 1)].hora);
     return { txt: hms(t), sub: chegou ? "resultado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : state.town.nome };
-  });
+  }, () => [0, ABRE, ABRE + 0.44 * 0.55, 0.62, 0.9]);
 }
 
 /* ---------- 8. The night: every state's bulletins arriving ---------- */
@@ -982,7 +1029,8 @@ renderHoras();
       R.lista = [...R.passos, ...extra].sort((a, b) => a.t - b.t);
       R.ag = agenda(R.lista, R.A, R.A + R.n - 1, 50); R.key = key;
     }
-    const { t, cur: e } = R.ag(clamp(p / 0.95));
+    abrir("abre-transmissao", p);
+    const { t, cur: e } = R.ag(apos(p));
     passos(host, R.lista, e);
     let anc = null;
     const k = clamp(Math.floor(t - R.A), 0, R.n - 1);
@@ -1008,7 +1056,7 @@ renderHoras();
     });
     ligar(c, ctx, anc, host, dpr);
     return { t, sub: `<b>${fmt(R.nac[k])}</b> de ${fmt(CH.total)} urnas no TSE` };
-  });
+  }, () => R?.ag ? [0, ...R.ag.paradas(antes)] : [0]);
 }
 
 /* ---------- 9. The card ---------- */
