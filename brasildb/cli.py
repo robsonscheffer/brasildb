@@ -46,14 +46,17 @@ async def _section_lists(settings, election, ufs):
     return out
 
 
-def _collected_in_lake(settings, election) -> set[paths.SectionKey]:
-    """Sections already written to the lake: the durable record used to resume."""
+def _collected_in_lake(settings, election, done=("ok", "agregada", "sem_log")) -> set[paths.SectionKey]:
+    """Sections already written to the lake: the durable record used to resume. A section
+    counts by its latest status, so a later run can re-check one."""
     con = lake.connect(settings.lake)
     try:
         rows = con.execute(
             "SELECT lower(sigla_uf), id_municipio_tse, zona, secao FROM br_tse_urna_logs.secoes_coleta "
-            "WHERE ano = ? AND turno = ? AND status IN ('ok', 'agregada', 'sem_log')",
-            [election.ano, election.turno]).fetchall()
+            "WHERE ano = ? AND turno = ? "
+            "QUALIFY row_number() OVER (PARTITION BY sigla_uf, id_municipio_tse, zona, secao "
+            "ORDER BY coletado_em DESC) = 1 AND status IN (SELECT unnest(?))",
+            [election.ano, election.turno, list(done)]).fetchall()
     except Exception:  # noqa: BLE001  no table yet
         return set()
     return {paths.SectionKey(*r) for r in rows}
@@ -155,7 +158,7 @@ def cmd_collect_logs(a) -> None:
     entries += [x for uf in set(municipios.values()) - full for x in by_uf[uf]
                 if x.key.id_municipio_tse in municipios]
     entries = sorted(set(entries), key=lambda x: x.key)
-    done = _collected_in_lake(s, e)
+    done = _collected_in_lake(s, e, ("ok", "agregada") if a.retry_sem_log else ("ok", "agregada", "sem_log"))
     todo = [x for x in entries if x.key not in done]
     print(f"{len(entries)} sections in scope, {len(todo)} to collect")
     w = BatchWriter(s, e, run_id=f"r{int(time.time())}", size=a.batch)
@@ -277,6 +280,8 @@ def main(argv=None) -> None:
                    help="also take this fraction of sections from every other state")
     c.add_argument("--seed", type=int, default=1)
     c.add_argument("--batch", type=int, default=200, help="sections per Parquet write")
+    c.add_argument("--retry-sem-log", action="store_true",
+                   help="collect again the sections whose latest status is sem_log")
     c.set_defaults(fn=cmd_collect_logs)
 
     r = sub.add_parser("reparse", help="rebuild eventos from the raw archives into another lake")

@@ -179,6 +179,44 @@ async def test_two_hashes_give_two_logs(monkeypatch):
     assert result.logs[1][2] == b"second"
 
 
+async def test_unlisted_log_is_fetched_by_its_name(monkeypatch):
+    no_sleep(monkeypatch)
+    aux = {"hashes": [{"hash": HASH, "arq": [{"nm": "o03221rr0308500080001-bu.dat", "tp": "bu"},
+                                             {"nm": "o03221rr0308500080001-vota.vsc", "tp": "vota"}]}]}
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(AUX_URL).mock(return_value=httpx.Response(200, json=aux))
+        router.get(LOG_URL).mock(return_value=httpx.Response(200, content=LOG_BYTES))
+        async with httpx.AsyncClient() as client:
+            result = await fetch_section(client, NoLimit(), BASE, ELECTION, ENTRY)
+    assert fetch.log_name(ELECTION.id_pleito, KEY) == LOG_NAME
+    assert result.status == "ok"
+    assert result.logs == [(HASH, LOG_NAME, LOG_BYTES)]
+
+
+async def test_unlisted_log_missing_is_sem_log(monkeypatch):
+    no_sleep(monkeypatch)
+    aux = {"hashes": [{"hash": HASH, "arq": [{"nm": "o03221rr0308500080001-bu.dat", "tp": "bu"}]}]}
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(AUX_URL).mock(return_value=httpx.Response(200, json=aux))
+        route = router.get(LOG_URL).mock(return_value=httpx.Response(404))
+        async with httpx.AsyncClient() as client:
+            result = await fetch_section(client, NoLimit(), BASE, ELECTION, ENTRY)
+    assert result.status == "sem_log"
+    assert route.call_count == 1
+
+
+async def test_apuracao_only_section_is_not_probed(monkeypatch):
+    no_sleep(monkeypatch)
+    aux = {"hashes": [{"hash": HASH, "arq": [{"nm": "o03221rr0308500080001-busa.dat", "tp": "busa"},
+                                             {"nm": "o03221rr0308500080001-logsa.jez", "tp": "logsa"}]}]}
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(AUX_URL).mock(return_value=httpx.Response(200, json=aux))
+        async with httpx.AsyncClient() as client:
+            result = await fetch_section(client, NoLimit(), BASE, ELECTION, ENTRY)
+        assert router.calls.call_count == 1
+    assert result.status == "sem_log"
+
+
 async def test_rate_limiter_spaces_requests():
     limiter = RateLimiter(rps=50)  # 20 ms apart
     loop = asyncio.get_running_loop()
@@ -258,3 +296,21 @@ async def test_collect_parses_in_worker_processes(tmp_path, monkeypatch):
     assert result.parsed == cli.parse_section(result, None)
     assert result.parsed and {r["arquivo_hash"] for r in result.parsed} == {HASH}
     assert (tmp_path / "raw" / "rr" / f"{HASH[:12]}-{LOG_NAME}").read_bytes() == LOG_BYTES
+
+
+def test_resume_uses_latest_status_and_can_retry_sem_log(tmp_path):
+    import pyarrow as pa
+    from datetime import datetime
+
+    from brasildb import lake
+
+    s = settings(tmp_path)
+    other = SectionKey("rr", "03085", "0008", "0002")
+    rows = [dict(ano=2026, turno=2, sigla_uf=k.sigla_uf.upper(), id_municipio_tse=k.id_municipio_tse,
+                 zona=k.zona, secao=k.secao, secao_principal=None, status=st, n_hashes=0, erro=None,
+                 coletado_em=datetime(2026, 10, 26, h))
+            for k, st, h in [(KEY, "erro", 1), (KEY, "ok", 2), (other, "sem_log", 1)]]
+    lake.write_table(s.lake, "br_tse_urna_logs", "secoes_coleta",
+                     pa.Table.from_pylist(rows, cli.arrow_schema("br_tse_urna_logs", "secoes_coleta")), "t")
+    assert cli._collected_in_lake(s, ELECTION) == {KEY, other}
+    assert cli._collected_in_lake(s, ELECTION, ("ok", "agregada")) == {KEY}
