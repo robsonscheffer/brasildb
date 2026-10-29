@@ -134,10 +134,21 @@ def cidades(towns, shares):
             "nome": towns["nome"][i], "votos": votos, "aptos": towns["aptos"][i],
             "secoes": towns["secoes"][i], "pico": hhmm(int(towns["pico_min"][i])),
             "metade": metade, "ultimo_voto": f"17:{rng.randint(5, 59):02d}", "horas": horas,
-            "fechamento": f"17:{rng.randint(1, 25):02d}", "chegada": hhmm(17 * 60 + 30 + rng.randint(0, 150)),
+            "fechamento": f"17:{rng.randint(0, 10):02d}", "chegada": hhmm(17 * 60 + 30 + rng.randint(0, 150)),
         }
     for uf, cs in by_uf.items():
         dump(OUT / f"cidades/{uf}.json", {"mock": True, "uf": uf, "horas": HORAS, "cidades": cs})
+
+
+def fim_log(close: int, rng) -> list[dict]:
+    """The urna's last log lines, from the close to the result media. Mock wording."""
+    t = close * 60 + rng.randint(0, 40)
+    out = []
+    for texto, gap in [("Encerramento da votação", 0), ("Boletim de urna impresso", 35), ("Boletim de urna impresso (cópias)", 50),
+                       ("Resultado gravado na mídia", 40), ("Urna desligada", 30)]:
+        t += gap + rng.randint(0, 20)
+        out.append({"hora": f"{t // 3600:02d}:{t % 3600 // 60:02d}:{t % 60:02d}", "texto": texto})
+    return out
 
 
 def secoes():
@@ -147,12 +158,13 @@ def secoes():
         ss = {}
         for k in range(1, n + 1):
             votos = rng.randint(180, 330)
-            close = 17 * 60 + rng.randint(0, 40)
-            arr = 17 * 60 + 20 + rng.randint(0, 200)
+            close = 17 * 60 + rng.randint(0, 12)
+            arr = close + rng.randint(15, 200)
             ss[f"{k:04d}"] = {
                 "municipio": mun, "abertura": "08:00", "primeiro_voto": f"08:0{rng.randint(0, 4)}",
                 "ultimo_voto": hhmm(close - rng.randint(1, 5)), "encerramento": hhmm(close),
                 "votos": votos, "aptos": votos + rng.randint(40, 90), "chegada": hhmm(arr),
+                "fim_log": fim_log(close, rng),
             }
         dump(OUT / f"secoes/{uf}/{zona}.json", {"mock": True, "uf": uf, "zona": zona, "secoes": ss})
 

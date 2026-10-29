@@ -13,7 +13,7 @@
     --bg: #0a0c13;
     --bg2: #11141e;
     --fg: #efe8da;
-    --muted: #8e8a80;
+    --muted: #b5afa3;
     --line: #232736;
     --accent: #9fe8d2;      /* the urna screen light */
     --accent-dim: rgba(159,232,210,.16);
@@ -82,15 +82,6 @@
   .notas p[hidden] { display: none; }
   .notas p .h { font-family: var(--mono); font-size: 13px; color: var(--accent); display: block; }
 
-  /* The day as one axis */
-  .tnota { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left)); right: 16px; top: 71%; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
-  .tnota.on { opacity: 1; transform: none; }
-  .tnota .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
-  .tnota h3 { margin: 4px 0 0; font-size: clamp(22px, 4.6vw, 32px); line-height: 1.12; font-weight: 600; }
-  .tnota p { margin: 6px 0 0; font-size: clamp(17px, 3.4vw, 21px); line-height: 1.3; }
-  .tnota.marco h3 { font-weight: 400; color: var(--accent); }
-  @media (min-aspect-ratio: 1/1) { .tnota { top: 64%; max-width: 40ch; } }
-
   /* 6. The question */
   .pergunta { min-height: 100svh; display: grid; align-content: center; max-width: 640px; margin: 0 auto; }
   .campo { position: relative; margin-top: 28px; }
@@ -117,8 +108,12 @@
   .legenda div { max-width: 30ch; font-size: clamp(20px, 4vw, 28px); line-height: 1.3; }
   .legenda .esc { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
   .legenda .esc i { width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgba(159,232,210,.12), var(--accent), #f4fffb); }
-  .meu { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left)); right: 16px; bottom: 7vh; max-width: 30ch; font-size: clamp(18px, 3.6vw, 24px); line-height: 1.3; opacity: 0; transition: opacity .5s; }
-  .meu.on { opacity: 1; }
+  .mcap { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left)); right: 16px; bottom: 7vh; max-width: 32ch; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
+  .mcap.on { opacity: 1; transform: none; }
+  .mcap .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
+  .mcap h3 { margin: 4px 0 0; font-size: clamp(21px, 4.4vw, 30px); line-height: 1.15; font-weight: 600; }
+  .mcap p { margin: 6px 0 0; font-size: clamp(17px, 3.4vw, 21px); line-height: 1.3; }
+  .mcap.seu h3 { color: var(--accent); }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
   /* Hour tap */
@@ -128,10 +123,26 @@
   .comvoce { margin-top: 18px; font-size: clamp(22px, 4.4vw, 30px); line-height: 1.25; min-height: 2.5em; }
   .comvoce small { display: block; font-size: 14px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
 
-  /* Your urna's trip */
-  .viagem .fim { position: absolute; left: 0; right: 0; bottom: 9vh; padding: 0 max(16px, env(safe-area-inset-left)); font-size: clamp(22px, 4.6vw, 32px); line-height: 1.2; max-width: 26ch; opacity: 0; transition: opacity .5s; }
-  .viagem .fim.on { opacity: 1; }
-  .viagem .fim small { display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+  /* Your urna's trip: the urna, its paper, the transmission */
+  .viagem .palco { align-content: start; }
+  .cena3 { position: absolute; left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); top: 25%; display: grid; grid-template-columns: minmax(150px, 220px) 1fr 84px; align-items: start; gap: 10px; max-width: 760px; }
+  .urna { background: #1b1f2c; border: 1px solid #343a4d; border-radius: 10px; padding: 10px; position: relative; }
+  .urna .tela { background: #0d1a17; border-radius: 4px; height: 96px; overflow: hidden; padding: 6px 8px; font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--accent); display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 18px rgba(159,232,210,.18); }
+  .urna .tela div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .urna .tela div span { opacity: .6; margin-right: 6px; }
+  .urna .tecl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
+  .urna .tecl i { height: 10px; background: #2a3042; border-radius: 2px; }
+  .urna .tecl i:nth-last-child(1) { background: #3f7d5c; } .urna .tecl i:nth-last-child(2) { background: #c9a227; } .urna .tecl i:nth-last-child(3) { background: #e8e4dc; }
+  .papel { margin: 0 10px; background: #efe8da; color: #1b1b1b; font-family: var(--mono); font-size: 10px; line-height: 1.45; padding: 0 8px; overflow: hidden; height: 0; border-radius: 0 0 3px 3px; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+  .papel b { display: block; font-weight: 500; letter-spacing: .06em; margin: 6px 0 4px; }
+  .sinal { position: relative; height: 2px; margin-top: 60px; background: repeating-linear-gradient(90deg, rgba(239,232,218,.25) 0 4px, transparent 4px 9px); }
+  .sinal i { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #f4fffb; box-shadow: 0 0 14px 4px rgba(159,232,210,.7); opacity: 0; }
+  .tse { border: 1px solid #343a4d; border-radius: 10px; padding: 10px 8px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 30px; transition: border-color .3s, color .3s; }
+  .tse b { display: block; font-family: var(--serif); font-size: 20px; color: var(--fg); font-weight: 600; }
+  .tse.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 24px rgba(159,232,210,.25); }
+  .vnota { position: absolute; left: max(16px, env(safe-area-inset-left)); right: 16px; bottom: 8vh; max-width: 30ch; }
+  .vnota p { margin: 0; font-size: clamp(19px, 4vw, 26px); line-height: 1.25; }
+  .vnota small { display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
 
   /* 10. The card */
   .cartao { min-height: 100svh; display: grid; align-content: center; justify-items: center; text-align: center; padding-top: 10vh; padding-bottom: 10vh; }
@@ -180,16 +191,7 @@
       <p data-t="480"><span class="h">08:00</span><span class="num">473.844</span> urnas abrem no mesmo minuto.</p>
       <p data-t="481"><span class="h">08:00 em Brasília</span>No Acre, ainda são 6h da manhã.</p>
       <p data-t="483"><span class="h">08:03</span>Um milhão de votos.</p>
-      <p data-t="487"><span class="h">08:07</span>O pico. 420 mil votos por minuto.</p>
     </div>
-  </div>
-</section>
-
-<!-- 3. The day as one axis: the curve, the map, the facts on both -->
-<section class="cena" id="linha" style="--len:1100vh" data-grande>
-  <div class="palco">
-    <canvas id="c4"></canvas>
-    <div class="tnota" id="tnota"></div>
   </div>
 </section>
 
@@ -217,7 +219,7 @@
 </section>
 
 <!-- 5. The map -->
-<section class="cena mapa" id="mapa" style="--len:720vh" data-grande>
+<section class="cena mapa" id="mapa" style="--len:1300vh" data-grande>
   <div class="palco">
     <canvas id="c7"></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
@@ -228,7 +230,7 @@
         <div class="esc"><span>calma</span><i></i><span>pico</span></div>
       </div>
     </div>
-    <div class="meu" id="meu"></div>
+    <div class="mcap" id="mcap"></div>
   </div>
 </section>
 
@@ -248,10 +250,14 @@
 </section>
 
 <!-- 7. Your urna's trip to Brasília (only after a town answer) -->
-<section class="cena viagem" id="viagem" style="--len:240vh" data-grande hidden>
+<section class="cena viagem" id="viagem" style="--len:320vh" data-grande hidden>
   <div class="palco">
-    <canvas id="c85"></canvas>
-    <div class="fim" id="viagemfim"></div>
+    <div class="cena3">
+      <div><div class="urna"><div class="tela" id="utela"></div><div class="tecl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="papel" id="papel"></div></div>
+      <div class="sinal" id="sinal"><i></i><i></i><i></i></div>
+      <div class="tse" id="tse"><b>TSE</b>Brasília<div id="tsehora">&nbsp;</div></div>
+    </div>
+    <div class="vnota" id="vnota"></div>
   </div>
 </section>
 
@@ -259,11 +265,7 @@
 <section class="cena" id="noite" style="--len:320vh" data-grande>
   <div class="palco">
     <canvas id="c9"></canvas>
-    <div class="notas gx" id="c9notas">
-      <p data-q="0.02">Cada urna imprime um <a class="termo" href="como.html#boletim">boletim de urna</a>: o resultado daquela seção, em papel. Depois, envia o mesmo resultado para Brasília.</p>
-      <p data-q="0.40" id="c9seu"></p>
-      <p data-q="0.97"><span class="h">23:27</span>Todos os boletins chegaram. 100% das urnas contadas.</p>
-    </div>
+    <div class="notas gx" id="c9notas"></div>
   </div>
 </section>
 
@@ -422,6 +424,33 @@ function minha() {
   });
 }
 
+/* ---------- Agenda: a scene that stops on each note ---------- */
+// Scroll runs the clock from A to B, and holds on each item so close notes still get their turn.
+// Returns p -> { t, cur, k } where cur is the item on screen.
+function agenda(items, A, B, hold = 60) {
+  const its = items.filter(e => e.t >= A && e.t <= B).sort((a, b) => a.t - b.t);
+  const segs = []; let u = 0, prev = A;
+  for (const e of its) { segs.push({ u0: u, u1: u + (e.t - prev), t0: prev, t1: e.t, cur: segs.length ? segs[segs.length - 1].cur : null }); u += e.t - prev; segs.push({ u0: u, u1: u + hold, t0: e.t, t1: e.t, cur: e }); u += hold; prev = e.t; }
+  segs.push({ u0: u, u1: u + (B - prev), t0: prev, t1: B, cur: its.length ? its[its.length - 1] : null }); u += B - prev;
+  return p => {
+    const x = clamp(p) * u, s = segs.find(g => x <= g.u1) || segs[segs.length - 1];
+    return { t: s.u1 > s.u0 ? lerp(s.t0, s.t1, clamp((x - s.u0) / (s.u1 - s.u0))) : s.t1, cur: s.cur };
+  };
+}
+// One note at a time in a box: a small place-and-time line, a title, a sentence.
+function nota(box, e) {
+  if (box._e === e) return; box._e = e;
+  box.classList.remove("on");
+  if (!e) return;
+  box.innerHTML = `${e.h ? `<div class="h">${e.h}</div>` : ""}<h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}`;
+  box.classList.toggle("seu", !!e.seu);
+  requestAnimationFrame(() => box.classList.add("on"));
+}
+const somaMin = (arr, a, b) => { let n = 0; for (let m = a; m < b; m++) n += arr[m - TOT.start] || 0; return n; };
+const PICO = TOT.national.indexOf(Math.max(...TOT.national)) + TOT.start;
+const quando = v => CUM.findIndex(x => x >= v) + TOT.start;
+const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pernambuco", MG: "em Minas", PB: "na Paraíba" };
+
 /* ---------- 2. 08:00 all at once ---------- */
 {
   const el = $("oito"), c = $("c3"), notas = [...$("c3notas").children];
@@ -429,98 +458,32 @@ function minha() {
   scene(el, p => {
     const t = lerp(478.5, 540, clamp(p / 0.92));
     const past = notas.filter(n => t >= +n.dataset.t);
-    notas.forEach(n => n.classList.toggle("on", past.slice(-2).includes(n)));
-    notas.forEach(n => (n.hidden = !past.slice(-2).includes(n)));
+    notas.forEach(n => { const on = past.slice(-2).includes(n); n.classList.toggle("on", on); n.hidden = !on; });
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.58 * H, yt = 0.30 * H;
-    const max = Math.max(...nat.slice(480 - S, 541 - S));
-    const bw = (x1 - x0) / 61;
+    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.62 * H, yt = 0.40 * H;
+    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Votos por minuto, das 8h às 9h", x0, 0.31 * H);
+    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.fillText("cada barra é um minuto", x0, 0.31 * H + 18 * dpr);
+    const max = Math.max(...nat.slice(480 - S, 541 - S)), bw = (x1 - x0) / 61;
     for (let m = 480; m <= Math.min(540, t); m++) {
       const v = nat[m - S] / max, h = (yb - yt) * v;
-      ctx.fillStyle = m === 487 ? "#f4fffb" : `rgba(${ACC},${0.25 + 0.75 * v})`;
+      ctx.fillStyle = m === PICO ? "#f4fffb" : `rgba(${ACC},${0.25 + 0.75 * v})`;
       ctx.fillRect(x0 + (m - 480) * bw, yb - h, Math.max(1, bw - 2 * dpr), h);
     }
-    ctx.fillStyle = "rgba(239,232,218,.35)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`;
-    for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), x0 + (m - 480) * bw, yb + 18 * dpr);
+    if (t >= PICO) {
+      const x = x0 + (PICO - 480) * bw + bw;
+      ctx.fillStyle = "#f4fffb"; ctx.font = `600 ${14 * dpr}px Fraunces`;
+      ctx.fillText(`${hhmm(PICO)}, o minuto mais cheio: ${fmt(nat[PICO - S])} votos`, x - bw / 2 - 4 * dpr, yt - 10 * dpr);
+    }
+    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`;
+    for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
     return { t: Math.max(480, t), txt: t < 480 ? "07:59" : null };
-  });
-}
-
-/* ---------- 3. The day as one axis ---------- */
-{
-  const el = $("linha"), c = $("c4"), nota = $("tnota");
-  const A = 480, B = 960, nat = TOT.national, S = TOT.start;
-  // Smoothed votes per minute, 15-minute window.
-  const sm = []; for (let m = A; m <= B; m++) { let a = 0, n = 0; for (let d = -7; d <= 7; d++) { const v = nat[m + d - S]; if (v != null) { a += v; n++; } } sm.push(a / n); }
-  const smax = Math.max(...sm);
-  const at = v => CUM.findIndex(x => x >= v) + S;
-  const evs = [
-    { t: at(VOTOS / 2), marco: true, titulo: "Metade do país já votou.", texto: "", lugar: { uf: "BR" } },
-    { t: at(1e8), marco: true, titulo: "100 milhões de votos.", texto: "", lugar: { uf: "BR" } },
-    ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora).map(i => ({ ...i, t: hm(i.hora) })),
-  ].filter(e => e.t >= A && e.t < B).sort((a, b) => a.t - b.t);
-  const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora);
-  let mostra = null;
-  function texto(e, diaTodo) {
-    if (mostra === e) return; mostra = e;
-    nota.classList.remove("on");
-    if (!e) return;
-    nota.className = "tnota" + (e.marco ? " marco" : "");
-    nota.innerHTML = `<div class="h">${diaTodo ? "no dia todo · " : ""}${onde(e.lugar)}</div><h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}`;
-    requestAnimationFrame(() => nota.classList.add("on"));
-  }
-  scene(el, p => {
-    const fim = p > 0.8, t = lerp(A + 60, B, clamp(p / 0.78));
-    let cur = null;
-    if (!fim) { for (const e of evs) if (e.t <= t && t - e.t < 50) cur = e; }
-    const dcur = fim ? dia[Math.min(dia.length - 1, Math.floor((p - 0.8) / 0.2 * dia.length))] : null;
-    texto(cur || dcur, !!dcur);
-    const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const wide = W > H;
-    const cv = wide ? { x: 0.06 * W, y: 0.30 * H, w: 0.44 * W, h: 0.26 * H } : { x: 0.06 * W, y: 0.24 * H, w: 0.88 * W, h: 0.16 * H };
-    const mp = wide ? { x: 0.54 * W, y: 0.10 * H, w: 0.42 * W, h: 0.80 * H } : { x: 0.04 * W, y: 0.43 * H, w: 0.92 * W, h: 0.26 * H };
-    const X = m => cv.x + (m - A) / (B - A) * cv.w, Y = v => cv.y + cv.h - cv.h * v / smax;
-    // The curve: the whole day faint, lit up to now.
-    const tt = fim ? B : t;
-    ctx.beginPath(); ctx.moveTo(X(A), Y(0)); sm.forEach((v, i) => ctx.lineTo(X(A + i), Y(v))); ctx.lineTo(X(B), Y(0));
-    ctx.strokeStyle = "rgba(239,232,218,.14)"; ctx.lineWidth = 1 * dpr; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(X(A), Y(0)); for (let i = 0; A + i <= tt; i++) ctx.lineTo(X(A + i), Y(sm[i])); ctx.lineTo(X(tt), Y(0)); ctx.closePath();
-    ctx.fillStyle = "rgba(159,232,210,.30)"; ctx.fill();
-    ctx.fillStyle = "rgba(239,232,218,.35)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`;
-    for (const m of [480, 600, 720, 840, 960]) ctx.fillText(`${m / 60}h`, X(m) - 6 * dpr, cv.y + cv.h + 16 * dpr);
-    if (!fim) { ctx.strokeStyle = "rgba(239,232,218,.5)"; ctx.beginPath(); ctx.moveTo(X(t), cv.y - 6 * dpr); ctx.lineTo(X(t), cv.y + cv.h); ctx.stroke(); }
-    // The map, with every fact as a point; the one in view lit and tied to its minute.
-    let P = null;
-    if (BORDERS) {
-      P = projectIn(mp.x, mp.y, mp.w, mp.h);
-      const atual = cur || dcur, all = atual && atual.lugar.lat == null;
-      drawBorders(ctx, BORDERS, P, all ? "rgba(159,232,210,.55)" : "rgba(239,232,218,.12)", 1 * dpr);
-      for (const e of [...evs, ...dia]) {
-        if (e.lugar.lat == null || (e.t != null && e.t > tt)) continue;
-        ctx.fillStyle = "rgba(159,232,210,.45)"; ctx.beginPath(); ctx.arc(P.X(e.lugar.lon), P.Y(e.lugar.lat), 2.4 * dpr, 0, 6.283); ctx.fill();
-      }
-      if (atual && !all) { const x = P.X(atual.lugar.lon), y = P.Y(atual.lugar.lat); glow(ctx, x, y, 22 * dpr); ctx.fillStyle = "#f4fffb"; ctx.beginPath(); ctx.arc(x, y, 3.4 * dpr, 0, 6.283); ctx.fill(); }
-    }
-    // Pins on the curve; the current one joined to its place.
-    for (const e of evs) {
-      if (e.t > tt) continue;
-      const x = X(e.t), y = Y(sm[Math.round(e.t - A)]), on = e === cur;
-      ctx.fillStyle = on ? "#f4fffb" : e.marco ? "rgba(239,232,218,.55)" : `rgb(${ACC})`;
-      ctx.beginPath(); ctx.arc(x, y, (on ? 4.5 : 2.6) * dpr, 0, 6.283); ctx.fill();
-      if (on && P && e.lugar.lat != null) {
-        ctx.strokeStyle = "rgba(244,255,251,.35)"; ctx.lineWidth = 1 * dpr; ctx.setLineDash([3 * dpr, 4 * dpr]);
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(P.X(e.lugar.lon), P.Y(e.lugar.lat)); ctx.stroke(); ctx.setLineDash([]);
-      }
-    }
-    if (fim) return { txt: "o dia todo", sub: `<b>${fmt(VOTOS)}</b> votos` , pequeno: false };
-    return { t };
   });
 }
 
 /* ---------- 4. The question ---------- */
 let towns = null, names = null, byId = null;
 const ready = (async () => {
-  await new Promise(r => near($("linha"), r, "50% 0px"));
+  await new Promise(r => near($("oito"), r, "50% 0px"));
   towns = await loadTowns();
   names = towns.nome.map(norm);
   byId = new Map(towns.id.map((id, i) => [String(id), i]));
@@ -587,7 +550,7 @@ async function afterAnswer() {
 
 /* ---------- 5. The map ---------- */
 {
-  const el = $("mapa"), c = $("c7");
+  const el = $("mapa"), c = $("c7"), box = $("mcap");
   let M = null; // decoded map data, built once
   async function build() {
     const [t, img, borders] = await Promise.all([loadTowns(), loadFrames(), loadBorders()]);
@@ -602,24 +565,57 @@ async function afterAnswer() {
   function layout() {
     if (!M) return;
     const { W, H, dpr } = fit(c), wide = W > H;
-    const top = wide ? 0.08 * H : 0.24 * H, bot = wide ? 0.08 * H : 0.18 * H;
-    M.P = wide ? projectIn(0.34 * W, top, 0.62 * W, H - top - bot) : projectIn(0.03 * W, top, 0.94 * W, H - top - bot);
+    const top = wide ? 0.08 * H : 0.22 * H, bot = wide ? 0.08 * H : 0.26 * H;
+    M.P = wide ? projectIn(0.36 * W, top, 0.6 * W, H - top - bot) : projectIn(0.03 * W, top, 0.94 * W, H - top - bot);
     const amax = Math.sqrt(Math.max(...M.t.aptos)), rmax = 0.02 * Math.min(W, H);
     for (let i = 0; i < M.N; i++) { M.x[i] = M.P.X(M.t.lon[i]); M.y[i] = M.P.Y(M.t.lat[i]); M.r[i] = Math.max(0.9 * dpr, rmax * Math.sqrt(M.t.aptos[i]) / amax); }
   }
   resizers.push(layout);
   near(el, build, "100% 0px");
+
+  // What the map is showing, minute by minute. Facts come from curiosidades.json; counts from totals.
+  const cur = id => curios.itens.find(i => i.id === id);
+  let plano = null, planoDe = null;
+  function planejar() {
+    const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0);
+    if (planoDe === key) return plano;
+    const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: i.texto, lugar: i.lugar });
+    const its = [
+      { t: 480, h: "Brasil", titulo: "O país acende de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
+      { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
+      ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora).map(fato),
+      { t: quando(VOTOS / 2), h: "Brasil", titulo: "Metade do país já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
+      { t: quando(1e8), h: "Brasil", titulo: "100 milhões de votos.", texto: "", lugar: { uf: "BR" } },
+      { t: 1020, h: "Brasil", titulo: "17h. Os portões fecham.", texto: "As luzes se apagam em poucos minutos. Quem já estava na fila ainda vota.", lugar: { uf: "BR" } },
+      fato(cur("ultimo_voto")),
+    ];
+    const tw = state.town;
+    if (tw && towns) {
+      const cz = state.cz, i = tw.i;
+      its.push({ t: towns.pico_min[i], h: `${tw.uf} · ${tw.nome}`, seu: true, titulo: `${tw.nome}, o seu minuto mais cheio.`,
+        texto: cz ? `${fmt(cz.votos)} pessoas votaram lá no dia. Metade até ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
+        lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
+    }
+    const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
+    planoDe = key; plano = { ag: agenda(its, 480, 1146, 55), dia };
+    return plano;
+  }
+
   const L = 16, buckets = Array.from({ length: L + 1 }, () => []);
   scene(el, p => {
-    $("legenda").style.opacity = p < 0.1 ? 1 : 0;
-    $("legenda").style.pointerEvents = p < 0.1 ? "auto" : "none";
-    const q = clamp((p - 0.1) / 0.8), t = lerp(480, 1146, q);
-    meu(p);
-    if (!M) return p < 0.1 ? null : { t };
+    $("legenda").style.opacity = p < 0.06 ? 1 : 0;
+    $("legenda").style.pointerEvents = p < 0.06 ? "auto" : "none";
+    const { ag, dia } = planejar(), fim = p > 0.86;
+    const a = ag(clamp((p - 0.06) / 0.8)), t = fim ? 1146 : a.t;
+    const e = p < 0.06 ? null : fim ? dia[Math.min(dia.length - 1, Math.floor((p - 0.86) / 0.14 * dia.length))] : a.cur;
+    nota(box, e);
+    const clock = p < 0.06 ? null : fim ? { txt: "o dia todo", sub: `<b>${fmt(VOTOS)}</b> votos` } : { t };
+    if (!M) return clock;
     const S = TOT.start, m0 = clamp(Math.floor(t - S), 0, M.MM - 1), m1 = Math.min(M.MM - 1, m0 + 1), f = t - S - m0;
     const { ctx, W, H, dpr } = fit(c);
     ctx.fillStyle = "#0a0c13"; ctx.fillRect(0, 0, W, H);
-    drawBorders(ctx, M.borders, M.P, "rgba(239,232,218,.08)", 1 * dpr);
+    const tudo = e && e.lugar.lat == null;
+    drawBorders(ctx, M.borders, M.P, tudo ? "rgba(159,232,210,.30)" : "rgba(239,232,218,.08)", 1 * dpr);
     for (const b of buckets) b.length = 0;
     for (let i = 0; i < M.N; i++) { const v = M.lit[m0 * M.N + i] * (1 - f) + M.lit[m1 * M.N + i] * f; buckets[Math.min(L, Math.round(v * L))].push(i); }
     for (let k = 5; k <= L; k++) {
@@ -634,23 +630,23 @@ async function afterAnswer() {
       for (const i of buckets[k]) { const r = M.r[i] * (0.85 + 0.4 * v); ctx.moveTo(M.x[i] + r, M.y[i]); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); }
       ctx.fill();
     }
+    // The place the note talks about, ringed in the accent.
+    if (e && !tudo && !e.seu) {
+      const x = M.P.X(e.lugar.lon), y = M.P.Y(e.lugar.lat);
+      glow(ctx, x, y, 26 * dpr, .45);
+      ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(x, y, 12 * dpr, 0, 6.283); ctx.stroke();
+      ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px Fraunces`;
+      const lab = e.lugar.municipio || "", lw = ctx.measureText(lab).width;
+      ctx.fillText(lab, x + 16 * dpr + lw > W ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
+    }
     const tw = state.town;
     if (tw) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
       ctx.fillStyle = "#efe8da"; ctx.font = `600 ${14 * dpr}px Fraunces`; ctx.fillText(tw.nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
     }
-    return p < 0.1 ? null : { t };
+    return clock;
   });
-  function meu(p) {
-    const box = $("meu"), tw = state.town, cz = state.cz;
-    box.classList.toggle("on", p > 0.9 && !!tw);
-    if (!tw || box.dataset.for === tw.id + state.secao) return;
-    box.dataset.for = tw.id + state.secao;
-    let h = cz ? `Em ${tw.nome}, <b class="num">${fmt(cz.votos)}</b> pessoas votaram. Metade já tinha votado às ${hfala(cz.metade)}.` : `${tw.nome}.`;
-    if (state.sec) h += ` Na sua urna, ${state.sec.votos} votaram.`;
-    box.innerHTML = h;
-  }
 }
 
 /* ---------- Hour tap ---------- */
@@ -673,106 +669,144 @@ renderHoras();
 /* ---------- 6. The close ---------- */
 {
   const el = $("fim"), c = $("c8"), host = $("c8notas");
-  for (const it of curios.itens.filter(i => i.tela === 8)) {
-    const p = document.createElement("p"); p.dataset.t = hm(it.hora);
-    p.innerHTML = `<span class="h">${it.hora.slice(0, 5)}${it.lugar.municipio ? ", " + it.lugar.municipio : ""}</span>${it.titulo}. ${it.texto}`;
-    host.append(p);
-  }
-  const notas = [...host.children];
+  host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
+  const cur = id => curios.itens.find(i => i.id === id);
+  const fila = somaMin(nat, 1020, 1030), depois = somaMin(nat, 1035, 1147);
+  const porUF = Object.entries(TOT.uf).map(([u, v]) => [u, somaMin(v, 1035, 1147)]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
+  const passos = [
+    fato(cur("primeira_fim")),
+    { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham.", seg: [1019, 1021],
+      texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto. Às 17h05, ${fmt(nat[1025 - S])}.` },
+    { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "A fila termina de votar.", seg: [1020, 1030],
+      texto: `Quem já estava na fila às 17h ainda vota. Em dez minutos, ${fmt(fila)} votos. Depois disso, quase nada.` },
+    { ...fato(cur("stf"), [1035, 1147]), texto: `A decisão chega com a maioria das urnas já fechada. Até as 19h06, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
+    fato(cur("noronha")),
+    fato(cur("ultimo_voto")),
+  ];
+  const ag = agenda(passos, A, B, 55);
   scene(el, p => {
-    const t = lerp(A, B, clamp(p / 0.92));
-    let after = 0; for (let m = 1020; m <= t; m++) after += nat[m - S] || 0;
-    const past = notas.filter(n => t >= +n.dataset.t);
-    notas.forEach(n => { const on = past.slice(-2).includes(n); n.classList.toggle("on", on); n.hidden = !on; });
+    const { t, cur: e } = ag(clamp(p / 0.95));
+    nota(host, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.52 * H, yt = 0.30 * H;
+    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.54 * H, yt = 0.32 * H;
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
-    ctx.beginPath(); ctx.moveTo(X(A), yb);
-    for (let m = A; m <= t && m < B; m++) ctx.lineTo(X(m), Y(nat[m - S] || 0));
-    ctx.lineTo(X(Math.min(t, B - 1)), yb); ctx.closePath();
-    ctx.fillStyle = "rgba(159,232,210,.35)"; ctx.fill();
+    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, 0.24 * H);
+    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, 0.24 * H + 18 * dpr);
+    const area = (a, b, fill) => { ctx.beginPath(); ctx.moveTo(X(a), yb); for (let m = a; m <= b; m++) ctx.lineTo(X(m), Y(nat[m - S] || 0)); ctx.lineTo(X(b), yb); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+    const tt = Math.min(t, B - 1);
+    area(A, tt, "rgba(159,232,210,.28)");
+    if (e?.seg && e.seg[0] <= tt) area(e.seg[0], Math.min(e.seg[1], tt), "rgba(244,255,251,.85)");
     ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.lineWidth = 1 * dpr;
-    // Labels staggered so 17:00 and 17:15 never touch.
     [[1020, "17:00", 0], [1035, "17:15", 1], [1146, "19:06", 0]].forEach(([m, lab, row]) => {
       const ly = yt - 8 * dpr - row * 15 * dpr;
-      ctx.strokeStyle = "rgba(239,232,218,.25)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
-      ctx.fillStyle = "rgba(239,232,218,.5)"; ctx.fillText(lab, m > 1100 ? X(m) - 40 * dpr : X(m) + 4 * dpr, ly);
+      ctx.strokeStyle = "rgba(239,232,218,.3)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
+      ctx.fillStyle = "rgba(239,232,218,.7)"; ctx.fillText(lab, m > 1100 ? X(m) - 40 * dpr : X(m) + 4 * dpr, ly);
     });
-    // Your urna's close, pinned under the axis.
+    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.fillText("16:00", x0, yb + 16 * dpr);
     const mi = minha();
     if (mi && hm(mi.fecha) <= t) {
       const x = X(hm(mi.fecha));
       ctx.strokeStyle = "#ffffff"; ctx.beginPath(); ctx.moveTo(x, yt); ctx.lineTo(x, yb + 22 * dpr); ctx.stroke();
       ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, yb, 4 * dpr, 0, 6.283); ctx.fill();
-      ctx.font = `600 ${13 * dpr}px Fraunces`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "" : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 200 * dpr), yb + 36 * dpr);
+      ctx.font = `600 ${13 * dpr}px Fraunces`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "às " : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 210 * dpr), yb + 36 * dpr);
     }
-    return { t, sub: t >= 1020 ? `<b>${fmt(after)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
+    const ate = t >= 1020 ? somaMin(nat, 1020, Math.floor(t) + 1) : 0;
+    return { t, sub: t >= 1020 ? `<b>${fmt(ate)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
   });
 }
 
-/* ---------- 7. Your urna's trip ---------- */
+/* ---------- 7. Your urna's trip: closes, prints, transmits ---------- */
 {
-  const el = $("viagem"), c = $("c85"), fim = $("viagemfim");
+  const el = $("viagem"), tela = $("utela"), papel = $("papel"), sinal = [...$("sinal").children], tse = $("tse"), vn = $("vnota");
+  const seg = s => { const [h, m, x] = s.split(":").map(Number); return h * 3600 + m * 60 + (x || 0); };
+  const hms = x => [x / 3600, (x % 3600) / 60, x % 60].map(v => String(Math.floor(v)).padStart(2, "0")).join(":");
+  // A town-only answer gets a typical urna: the same steps from the town's typical close.
+  function linhas(mi) {
+    if (state.sec?.fim_log) return state.sec.fim_log;
+    const t0 = seg(mi.fecha + ":00");
+    return [["Encerramento da votação", 0], ["Boletim de urna impresso", 50], ["Boletim de urna impresso (cópias)", 110], ["Resultado gravado na mídia", 160], ["Urna desligada", 195]]
+      .map(([texto, d]) => ({ hora: hms(t0 + d), texto }));
+  }
+  let ultimo = -2;
   scene(el, p => {
-    const mi = minha(); if (!mi || !BORDERS || !state.town) return null;
-    const a = hm(mi.fecha), b = hm(mi.chega), q = clamp((p - 0.1) / 0.7), t = lerp(a, b, q);
-    const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const wide = W > H, P = wide ? projectIn(0.3 * W, 0.08 * H, 0.66 * W, 0.84 * H) : projectIn(0.04 * W, 0.24 * H, 0.92 * W, 0.5 * H);
-    drawBorders(ctx, BORDERS, P, "rgba(239,232,218,.12)", 1 * dpr);
-    const T = towns || null, i = state.town.i;
-    const x0 = P.X(T.lon[i]), y0 = P.Y(T.lat[i]), x1 = P.X(BSB[0]), y1 = P.Y(BSB[1]);
-    // An arc from the town to Brasília; the point is the bulletin travelling.
-    const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 0.12 * Math.hypot(x1 - x0, y1 - y0) - 20 * dpr;
-    const bez = s => [(1 - s) ** 2 * x0 + 2 * (1 - s) * s * mx + s * s * x1, (1 - s) ** 2 * y0 + 2 * (1 - s) * s * my + s * s * y1];
-    ctx.strokeStyle = "rgba(239,232,218,.25)"; ctx.setLineDash([3 * dpr, 5 * dpr]); ctx.lineWidth = 1 * dpr;
-    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(mx, my, x1, y1); ctx.stroke(); ctx.setLineDash([]);
-    ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 2 * dpr; ctx.beginPath();
-    for (let s = 0; s <= q; s += 0.01) { const [x, y] = bez(s); s ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
-    const [px, py] = bez(q); glow(ctx, px, py, 18 * dpr, .8); ctx.fillStyle = "#f4fffb"; ctx.beginPath(); ctx.arc(px, py, 3.6 * dpr, 0, 6.283); ctx.fill();
-    ctx.fillStyle = "#efe8da"; ctx.font = `600 ${14 * dpr}px Fraunces`;
-    ctx.fillText(state.town.nome, x0 + 8 * dpr, y0 + 16 * dpr);
-    ctx.fillText("Brasília", x1 + 8 * dpr, y1 + 5 * dpr);
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x0, y0, 3 * dpr, 0, 6.283); ctx.arc(x1, y1, 3 * dpr, 0, 6.283); ctx.fill();
-    const min = Math.round(b - a);
-    fim.classList.toggle("on", p > 0.8);
-    fim.innerHTML = mi.exata
-      ? `${Math.floor(min / 60) ? `${Math.floor(min / 60)}h` : ""}${String(min % 60).padStart(Math.floor(min / 60) ? 2 : 1, "0")}${Math.floor(min / 60) ? "" : " minutos"} da sua urna até o TSE.<small>fechou ${mi.fecha} · chegou ${mi.chega}</small>`
-      : `Os boletins de ${state.town.nome} chegaram ao TSE por volta das ${hfala(mi.chega)}.<small>valor típico das urnas da cidade · digite zona e seção para ver a sua</small>`;
-    return { t, sub: q < 1 ? `boletim a caminho de Brasília` : `boletim em Brasília` };
+    const mi = minha(); if (!mi || !state.town) return null;
+    const ls = linhas(mi), n = ls.length;
+    const fase1 = clamp(p / 0.5), k = Math.min(n, Math.floor(fase1 * (n + 0.999)));
+    const viaja = clamp((p - 0.55) / 0.33), chegou = p >= 0.88;
+    if (k !== ultimo) {
+      ultimo = k;
+      tela.innerHTML = ls.slice(0, Math.max(1, k)).map(l => `<div><span>${l.hora}</span>${l.texto}</div>`).join("");
+    }
+    const imp = ls.findIndex(l => /impresso/i.test(l.texto));
+    const papelH = k > imp ? Math.min(150, 40 + (k - imp) * 34) : 0;
+    papel.style.height = `${papelH}px`;
+    papel.innerHTML = `<b>BOLETIM DE URNA</b>${state.town.nome}, ${state.town.uf}<br>${state.sec ? `Zona ${state.zona} · Seção ${state.secao}<br>Eleitores aptos ${state.sec.aptos}<br>Compareceram ${state.sec.votos}<br>` : "Urna típica da cidade<br>"}Encerramento ${ls[0].hora}`;
+    sinal.forEach((d, j) => { const q = clamp(viaja * 1.3 - j * 0.15); d.style.left = `calc(${q * 100}% - 5px)`; d.style.opacity = viaja > 0 && viaja < 1 && q > 0 && q < 1 ? 1 : 0; });
+    tse.classList.toggle("on", chegou);
+    $("tsehora").textContent = chegou ? mi.chega : " ";
+    const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
+    const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
+    const tipica = mi.exata ? "" : `<small>urna típica de ${state.town.nome} · digite zona e seção para ver a sua</small>`;
+    vn.innerHTML = chegou ? `<p>O resultado da sua urna chega ao TSE às ${hfala(mi.chega)}. ${durTxt} depois de ela fechar.</p>${tipica}`
+      : viaja > 0 ? `<p>O mesmo resultado sai da urna e segue para o TSE, em Brasília.</p>${tipica}`
+      : k > imp ? `<p>A urna imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>: quantos votaram ali, em papel. Uma cópia fica na porta da seção.</p>${tipica}`
+      : `<p>${hfala(ls[0].hora)}. A sua urna encerra a votação.</p>${tipica}`;
+    const t = chegou ? b : viaja > 0 ? lerp(last, b, viaja) : seg(ls[Math.max(0, k - 1)].hora);
+    return { txt: hms(t), sub: chegou ? "resultado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : state.town.nome };
   });
 }
 
-/* ---------- 8. The night ---------- */
+/* ---------- 8. The night: every state's bulletins arriving ---------- */
 {
-  const el = $("noite"), c = $("c9"), notas = [...$("c9notas").children];
+  const el = $("noite"), c = $("c9"), host = $("c9notas");
+  host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
   near(el, loadChegada);
+  let R = null; // per-state cumulative curves and the notes, built once the file is in
+  function montar() {
+    const A = hm(CH.inicio), n = CH.nacional.length, acc = v => { const o = []; let a = 0; for (const x of v) { a += x; o.push(a); } return o; };
+    const nac = acc(CH.nacional);
+    const ufs = Object.entries(CH.uf).map(([uf, v]) => { const cum = acc(v), tot = cum[cum.length - 1]; return { uf, cum, tot, fim: cum.findIndex(x => x >= tot) }; })
+      .sort((a, b) => a.fim - b.fim);
+    const at = i => hhmm(A + i);
+    const passos = [
+      { t: A, h: `${CH.inicio} · Brasília`, titulo: "O primeiro resultado chega.", texto: `Cada urna envia ao TSE o mesmo resultado do <a class="termo" href="como.html#boletim">boletim de urna</a>. ${fmt(CH.total)} urnas, uma por uma.` },
+      { t: A + nac.findIndex(x => x >= CH.total / 2), h: "Brasil", titulo: "Metade das urnas já chegou.", texto: "" },
+      { t: A + ufs[0].fim, h: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as urnas do estado chegaram às ${hfala(at(ufs[0].fim))}.` },
+      { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último.`, texto: "" },
+      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: "Todas as urnas chegaram.", texto: `${fmt(CH.total)} de ${fmt(CH.total)}.` },
+    ];
+    R = { A, n, nac, ufs, passos, key: null, ag: null };
+  }
   scene(el, p => {
     if (!CH) { loadChegada().then(tick); return null; }
-    const A = hm(CH.inicio), n = CH.nacional.length;
-    const q = clamp(p / 0.92), k = Math.floor(q * (n - 1));
-    const cum = []; let a = 0; for (const v of CH.nacional) { a += v; cum.push(a); }
-    const mi = minha(), seu = $("c9seu");
-    seu.innerHTML = mi ? `<span class="h">${mi.chega.slice(0, 5)}</span>${mi.exata ? "O boletim da sua urna chega." : `Os boletins de ${state.town.nome} chegam, por volta desta hora.`}`
-      : "Cada ponto da linha é uma urna chegando.";
-    if (mi) seu.dataset.q = clamp((hm(mi.chega) - A) / (n - 1), 0.05, 0.9);
-    const pq = notas.map(nn => +nn.dataset.q), atual = pq.reduce((j, v, i) => (q >= v ? i : j), -1);
-    notas.forEach((nn, i) => { nn.classList.toggle("on", i === atual); nn.hidden = i !== atual; });
-    const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.58 * H, yt = 0.30 * H;
-    const X = i => x0 + i / (n - 1) * (x1 - x0), Y = v => yb - (yb - yt) * v / CH.total;
-    ctx.strokeStyle = "rgba(239,232,218,.12)"; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.moveTo(x0, yt); ctx.lineTo(x1, yt); ctx.moveTo(x0, yb); ctx.lineTo(x1, yb); ctx.stroke();
-    ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 2.2 * dpr; ctx.beginPath();
-    for (let i = 0; i <= k; i++) i ? ctx.lineTo(X(i), Y(cum[i])) : ctx.moveTo(X(i), Y(cum[i]));
-    ctx.stroke();
-    if (mi) {
-      const i = Math.round(hm(mi.chega) - A);
-      if (i >= 0 && i <= k) { glow(ctx, X(i), Y(cum[i]), 16 * dpr, .8); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(X(i), Y(cum[i]), 4.5 * dpr, 0, 6.283); ctx.fill(); }
+    if (!R) montar();
+    const mi = minha(), key = mi ? mi.chega + state.town.uf : "";
+    if (R.key !== key) {
+      const extra = mi ? [{ t: hm(mi.chega), seu: true, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna chega." : `As urnas de ${state.town.nome} chegam.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
+      R.ag = agenda([...R.passos, ...extra], R.A, R.A + R.n - 1, 50); R.key = key;
     }
-    ctx.fillStyle = "rgba(239,232,218,.4)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`;
-    ctx.fillText(CH.inicio, x0, yb + 18 * dpr); ctx.fillText(CH.fim, x1 - 40 * dpr, yb + 18 * dpr); ctx.fillText("100%", x0, yt - 6 * dpr);
-    return { t: A + k, sub: `<b>${fmt(cum[k])}</b> de ${fmt(CH.total)} boletins em Brasília` };
+    const { t, cur: e } = R.ag(clamp(p / 0.95));
+    nota(host, e);
+    const k = clamp(Math.floor(t - R.A), 0, R.n - 1);
+    const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
+    const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, y0 = 0.27 * H, y1 = 0.73 * H, rh = (y1 - y0) / R.ufs.length;
+    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Urnas que chegaram ao TSE, por estado", 0.06 * W, 0.235 * H);
+    const meu = state.town?.uf;
+    R.ufs.forEach((u, j) => {
+      const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
+      ctx.fillStyle = eu ? "#ffffff" : "rgba(239,232,218,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "IBM Plex Mono"`; ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
+      ctx.fillStyle = "rgba(239,232,218,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
+      ctx.fillStyle = eu ? "#f4fffb" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
+      if (f >= 1) { ctx.fillStyle = "rgba(239,232,218,.7)"; ctx.font = `${10 * dpr}px "IBM Plex Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      if (eu && mi && hm(mi.chega) <= t) {
+        const i = clamp(Math.round(hm(mi.chega) - R.A), 0, R.n - 1), x = x0 + (x1 - x0) * u.cum[i] / u.tot;
+        glow(ctx, x, y, 14 * dpr, .9); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 3.5 * dpr, 0, 6.283); ctx.fill();
+      }
+    });
+    return { t, sub: `<b>${fmt(R.nac[k])}</b> de ${fmt(CH.total)} urnas no TSE` };
   });
 }
 
