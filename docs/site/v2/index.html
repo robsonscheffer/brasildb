@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O dia de uma urna</title>
+<meta name="description" content="O segundo turno de 2026 contado por uma urna: a fita da seção 315 da zona 28 de Belo Horizonte, voto a voto, com a queda de luz, a troca de urna e a chegada do resultado em Brasília.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter+Tight:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: #070a12; --fg: #ece8dc; --muted: #9a9ca6; --accent: #ffb43c;
+    --paper: #f1ecdf; --ink: #1d1a15; --ink-2: #6b665a; --band: #1d1a15;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body { font-family: "Inter Tight", system-ui, sans-serif; font-size: 16px; line-height: 1.45; }
+  a { color: var(--accent); }
+
+  /* The sticky head: the clock of the line you are reading, and the country at that minute. */
+  .head {
+    position: sticky; top: 0; z-index: 5; background: linear-gradient(var(--bg) 70%, rgba(7,10,18,0));
+    padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 22px max(16px, env(safe-area-inset-left, 0px));
+    display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 4px 18px; max-width: 760px; margin: 0 auto;
+  }
+  .clock { font-size: clamp(40px, 9vw, 72px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .clock small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
+  .nat { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .nat b { color: var(--fg); font-weight: 600; display: block; font-size: 18px; }
+  .nat .here { color: var(--accent); }
+
+  .intro { max-width: 560px; margin: 8px auto 28px; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 10px; }
+  .intro h1 { margin: 0; font-size: clamp(28px, 6vw, 40px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; text-wrap: balance; }
+  .intro p { margin: 0; color: var(--muted); max-width: 48ch; }
+
+  /* The tape: the urna's paper, printed as you scroll. */
+  .tape-wrap { padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+  .tape {
+    max-width: 520px; margin: 0 auto 80px; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5;
+    padding: 28px 18px 40px; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,.5);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 22px, rgba(0,0,0,.025) 22px 23px);
+  }
+  .tape::before, .tape::after { content: ""; position: absolute; top: 0; bottom: 0; width: 10px; background: radial-gradient(circle at 5px 10px, var(--bg) 3px, transparent 3.5px) 0 0/10px 20px; }
+  .tape::before { left: 0; } .tape::after { right: 0; }
+  .z { text-align: center; text-transform: uppercase; letter-spacing: .06em; display: grid; gap: 2px; padding: 0 0 14px; border-bottom: 1px dashed var(--ink-2); margin-bottom: 14px; }
+  .z b { font-size: 15px; font-weight: 600; }
+  .z span { color: var(--ink-2); font-size: 12px; }
+  .ln { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; opacity: .14; transition: opacity .5s; white-space: nowrap; }
+  .ln.on { opacity: 1; }
+  .ln .t { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .ln .g { color: var(--ink-2); font-size: 12px; }
+  .ln.vote .g { opacity: .85; }
+  .ln.sys { color: var(--ink-2); }
+  .ln.band { background: var(--band); color: var(--paper); margin: 6px -18px; padding: 6px 18px; grid-template-columns: 64px 1fr; }
+  .ln.band .t { color: rgba(241,236,223,.7); }
+  .ln.warn { background: var(--accent); color: var(--ink); margin: 6px -18px; padding: 6px 18px; font-weight: 600; grid-template-columns: 64px 1fr; }
+  .ln.warn .t { color: rgba(29,26,21,.7); }
+  .ln.nat { color: var(--ink-2); grid-template-columns: 1fr; text-align: center; margin: 10px 0; font-size: 12px; letter-spacing: .04em; white-space: normal; }
+  .note { font-family: "Inter Tight", system-ui, sans-serif; font-size: 15px; line-height: 1.4; color: var(--ink); margin: 14px 0; padding-left: 12px; border-left: 3px solid var(--accent); opacity: .14; transition: opacity .5s; text-wrap: pretty; white-space: normal; }
+  .note.on { opacity: 1; }
+  .cut { text-align: center; color: var(--ink-2); margin: 18px 0 8px; font-size: 12px; letter-spacing: .1em; }
+  .pending { border: 1px dashed var(--ink-2); padding: 6px 10px; color: var(--ink-2); white-space: normal; grid-template-columns: 1fr; }
+
+  .after { max-width: 560px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 60px max(16px, env(safe-area-inset-left, 0px)); color: var(--muted); font-size: 15px; display: grid; gap: 10px; }
+  .after p { margin: 0; }
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="clock"><span id="clock">07:14</span><small>horário de Brasília</small></div>
+  <div class="nat"><b id="nat">0</b>votos no Brasil até este minuto<br><span class="here" id="here">0 nesta seção</span></div>
+</header>
+
+<section class="intro">
+  <h1>O dia de uma urna</h1>
+  <p>Belo Horizonte, zona 28, seção 315. Esta é a fita que a urna escreveu no segundo turno, do
+    primeiro voto à chegada do resultado em Brasília. O que está no log está aqui. Role para ler.</p>
+</section>
+
+<div class="tape-wrap"><article class="tape" id="tape"></article></div>
+
+<section class="after">
+  <p>Cada urna grava um log com a hora de cada voto e de tudo o que acontece com ela: luz, bateria,
+    troca, impressão do boletim. O TSE publica esses arquivos. Esta página é uma seção lida linha a
+    linha; o log não diz em quem ninguém votou.</p>
+  <p>Dados: TSE, logs das urnas e horários de recebimento dos boletins. Versão 1, o mapa do país:
+    <a href="../">O Brasil votando</a>.</p>
+</section>
+
+<script>
+(async function () {
+  const [d, totals] = await Promise.all([
+    fetch("data/secao.json").then(r => r.json()),
+    fetch("../data/totals.json").then(r => r.json()),
+  ]);
+  const { meta, lines } = d;
+  const cumul = []; let acc = 0; for (const v of totals.national) { acc += v; cumul.push(acc); }
+  const natAt = hhmm => { const [h, m] = hhmm.split(":").map(Number); const i = h * 60 + m - totals.start; return i < 0 ? 0 : cumul[Math.min(cumul.length - 1, i)]; };
+  const fmt = n => n.toLocaleString("pt-BR");
+  const pad = s => String(s).padStart(3, "0");
+  const secs = t => { const [h, m, s] = t.split(":").map(Number); return h * 3600 + m * 60 + s; };
+  const gap = g => g == null ? "" : g < 60 ? `+${g}s` : `+${Math.floor(g / 60)}min`;
+
+  // Notes in the margin of the tape, at a time. The copy is the story; the lines are the proof.
+  const notes = [
+    ["07:19:36", "Antes de abrir, a urna imprime a zerésima: a prova de que não há nenhum voto gravado."],
+    ["08:00:01", "8h em ponto, como em todo o país. O primeiro eleitor vota 37 segundos depois."],
+    ["08:34:15", "Quando a biometria não reconhece o dedo, o mesário habilita o eleitor à mão. Acontece 12 vezes nesta seção."],
+    ["12:50:21", "A chuva de granizo chega a Belo Horizonte. A luz pisca pela primeira vez."],
+    ["13:07:49", "A luz cai de vez. A urna segue votando na bateria interna. Ninguém da fila percebe."],
+    ["15:15:01", "Duas horas depois, ainda na bateria. A urna avisa de novo, e de novo."],
+    ["16:00:33", "A bateria não aguenta. Os mesários trocam a urna: a de contingência assume, e os votos da primeira ficam gravados nela. O TRE-MG trocou 91 urnas em Minas neste dia."],
+    ["16:45:03", "A luz volta, 3 horas e 37 minutos depois de cair de vez."],
+    ["17:05:27", "17h05. Quem estava na fila às 17h já votou. O mesário encerra a votação."],
+    ["17:07:43", "O boletim de urna sai impresso. Uma via vai para o mural da seção; os números seguem para Brasília."],
+  ];
+  const nat = [
+    ["08:03:00", "Brasil: 1 milhão de votos"],
+    ["08:07:00", "Brasil: o pico do dia, 420 mil votos por minuto"],
+    ["11:11:00", "Brasil: metade do país já votou"],
+    ["13:55:00", "Brasil: 100 milhões"],
+  ];
+  const tail = [
+    ["17:20:00", "nat", "Brasil: o TSE pausa a totalização por decisão do STF; seções ainda abertas votam até as 19h"],
+    ["19:06:00", "nat", "Brasil: o último voto do dia, em São Paulo"],
+    [meta.chegada_brasilia, "band", "resultado desta seção recebido em Brasília"],
+    [meta.totalizacao, "band", "totalização: 100% das seções"],
+  ];
+
+  const tape = document.getElementById("tape");
+  const html = [];
+  html.push(`<div class="z"><b>Urna eletrônica ${meta.modelo}</b><span>2º turno, 25 de outubro de 2026</span><span>${meta.municipio}, ${meta.uf} · zona ${meta.zona} · seção ${meta.secao}</span></div>`);
+  let ni = 0, mi = 0, nvotes = 0, seenLigada = false, u = 1;
+  const ligadaSkip = l => { if (l[1] !== "ligada") return false; if (seenLigada) return true; seenLigada = true; return false; };
+  for (const l of lines) {
+    const [t, k, a, g, urna] = l;
+    if (ligadaSkip(l)) continue;
+    while (mi < nat.length && secs(nat[mi][0]) <= secs(t)) { html.push(`<div class="ln nat" data-t="${nat[mi][0]}">${nat[mi][1]}</div>`); mi++; }
+    while (ni < notes.length && secs(notes[ni][0]) <= secs(t)) { html.push(`<div class="note" data-t="${notes[ni][0]}">${notes[ni][1]}</div>`); ni++; }
+    if (urna !== u) { u = urna; html.push(`<div class="cut">· · · urna ${u} · · ·</div>`); }
+    if (k === "voto") { nvotes = a; html.push(`<div class="ln vote" data-t="${t}" data-v="${a}"><span class="t">${t}</span><span>voto computado  ${pad(a)}/${meta.votos}</span><span class="g">${gap(g)}</span></div>`); }
+    else if (k === "energia") html.push(a === "bateria"
+      ? `<div class="ln warn" data-t="${t}"><span class="t">${t}</span><span>urna operando na bateria interna</span></div>`
+      : `<div class="ln sys" data-t="${t}"><span class="t">${t}</span><span>urna operando na rede elétrica</span><span></span></div>`);
+    else if (k === "relatorio") html.push(`<div class="ln band" data-t="${t}"><span class="t">${t}</span><span>imprimindo ${a === "BU" ? "boletim de urna" : "zerésima"}</span></div>`);
+    else if (k === "contingencia") html.push(`<div class="ln band" data-t="${t}"><span class="t">${t}</span><span>urna de contingência: carga executada</span></div>`);
+    else if (k === "encerramento") html.push(`<div class="ln band" data-t="${t}"><span class="t">${t}</span><span>operador selecionou: encerrar votação</span></div>`);
+    else if (k === "pronta") html.push(`<div class="ln band" data-t="${t}"><span class="t">${t}</span><span>urna pronta para a eleição</span></div>`);
+    else if (k === "ligada") html.push(`<div class="ln sys" data-t="${t}"><span class="t">${t}</span><span>urna ligada</span><span></span></div>`);
+    else if (k === "manual") html.push(`<div class="ln sys" data-t="${t}"><span class="t">${t}</span><span>habilitação manual do eleitor</span><span></span></div>`);
+  }
+  for (const [t, k, text] of tail) html.push(`<div class="ln ${k}" data-t="${t}">${k === "band" ? `<span class="t">${t}</span><span>${text}</span>` : text}</div>`);
+  html.push(`<div class="ln pending" data-t="${meta.totalizacao}">resultado: os dois nomes e a hora em que ficou definido entram aqui, do boletim oficial, no mesmo tipo e na mesma cor</div>`);
+  html.push(`<div class="z" style="border: 0; margin-top: 18px"><span>fim da fita</span></div>`);
+  tape.innerHTML = html.join("");
+
+  // Reveal lines as they enter; the clock follows the first line under the head.
+  const els = [...tape.querySelectorAll("[data-t]")];
+  const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) e.target.classList.add("on"); }, { rootMargin: "0px 0px -12% 0px" });
+  els.forEach(e => io.observe(e));
+  const head = document.querySelector(".head");
+  let lastT = "";
+  function follow() {
+    const y = head.getBoundingClientRect().bottom;
+    let cur = null;
+    for (const e of els) { if (e.getBoundingClientRect().top >= y) { cur = e; break; } }
+    if (!cur) cur = els[els.length - 1];
+    const t = cur.dataset.t.slice(0, 5);
+    if (t === lastT) return; lastT = t;
+    document.getElementById("clock").textContent = t;
+    document.getElementById("nat").textContent = fmt(natAt(t));
+    let v = 0; for (const e of els) { if (e === cur) break; if (e.dataset.v) v = +e.dataset.v; }
+    document.getElementById("here").textContent = `${v} nesta seção`;
+  }
+  addEventListener("scroll", () => requestAnimationFrame(follow), { passive: true });
+  follow();
+  window.diary = { lines: els.length, votes: meta.votos, follow };
+})();
+</script>
+</body>
+</html>
