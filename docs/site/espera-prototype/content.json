@@ -1,0 +1,73 @@
+{
+  "date": "25 de outubro de 2026",
+  "scenes": [
+    {
+      "id": "rua",
+      "title": "Enquanto você esperava.",
+      "media": "niteroi",
+      "time": "Noite · momento da captura não confirmado",
+      "source": "https://aseguirniteroi.com.br/noticias/apos-virada-historica-niteroi-volta-as-ruas-para-comemorar-vitoria-do-lula/",
+      "credit": "Felipe Nacif · crédito publicado por A Seguir Niterói",
+      "rights": "Sem autorização de uso. Cópia de pesquisa privada.",
+      "alt": "Vista alta da orla de Icaraí, com pessoas reunidas na rua, edifícios, fumaça e fogos."
+    },
+    {
+      "id": "publicacao",
+      "title": "Na rua. E nas telas.",
+      "media": "pt",
+      "time": "25/10/2026 · horário não confirmado",
+      "source": "https://www.instagram.com/reel/De7ay00NKkd/",
+      "credit": "@ptbrasil · capa publicada de um reel",
+      "rights": "Sem autorização de uso. Áudio e conteúdo audiovisual ainda não conferidos.",
+      "alt": "Capa original do reel atribuído a @ptbrasil; conteúdo do vídeo ainda não conferido."
+    },
+    {
+      "id": "apuracao",
+      "title": "Antes do resultado inteiro, vieram as partes.",
+      "time": "Horários das atualizações jornalísticas · Brasília",
+      "source": "https://www.infomoney.com.br/politica/ao-vivo-eleicoes-segundo-turno-2026/",
+      "partials": [
+        {
+          "time": "19h03",
+          "lula": 55.53,
+          "flavio": 44.47,
+          "counted": 0.37
+        },
+        {
+          "time": "19h47",
+          "lula": 49.97,
+          "flavio": 50.03,
+          "counted": 13.98
+        },
+        {
+          "time": "20h28",
+          "lula": 50.14,
+          "flavio": 49.86,
+          "counted": 50.12
+        }
+      ]
+    },
+    {
+      "id": "festa",
+      "title": "Não estávamos sozinhos.",
+      "media": "bh",
+      "time": "Noite · momento da captura não confirmado",
+      "source": "https://www.em.com.br/politica/2026/10/7527715-bh-comemora-reeleicao-de-lula-maior-vitoria-do-povo-brasileiro.html",
+      "credit": "Marcos Vieira/EM/DA.Press · crédito publicado",
+      "rights": "Sem autorização de uso. Origem e momento da captura por confirmar.",
+      "alt": "Plano aberto de pessoas reunidas na Rua Sapucaí, em Belo Horizonte, à noite."
+    }
+  ],
+  "result": {
+    "source": "https://resultados.tse.jus.br/oficial/ele2026/6258/dados/br/br-c0001-e006258-u.json",
+    "scope": "Resultado final nacional · TSE · votos válidos",
+    "lula": {
+      "percent": 51.79,
+      "votes": "64.256.232"
+    },
+    "flavio": {
+      "percent": 48.21,
+      "votes": "59.826.041"
+    }
+  }
+}
