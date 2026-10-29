@@ -7,151 +7,197 @@
 <meta name="description" content="127.854.844 votos. Cada um anotado com hora, minuto e segundo. Um deles foi o seu.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   :root {
-    --bg: #0a0c13;
-    --bg2: #11141e;
-    --fg: #efe8da;
-    --muted: #b5afa3;
-    --line: #232736;
-    --accent: #9fe8d2;      /* the urna screen light */
-    --accent-dim: rgba(159,232,210,.16);
-    --serif: "Fraunces", Georgia, serif;
-    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --bg: #070a12;
+    --bg2: #0f1320;
+    --fg: #ece8dc;
+    --muted: #9a9ca6;
+    --line: #262a38;
+    --accent: #ffb43c;      /* the v1 amber: a lit window at night */
+    --accent-dim: rgba(255,180,60,.16);
+    --hot: #fff1d6;
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --gx: max(20px, env(safe-area-inset-left));
+    --topo: 64px;           /* the clock's measured bottom; tick() keeps it fresh */
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html { background: var(--bg); }
-  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--serif); font-size: 19px; line-height: 1.5; font-optical-sizing: auto; -webkit-font-smoothing: antialiased; }
-  a { color: var(--accent); }
-  .gx { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  html { background: var(--bg); scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  /* Film grain and a soft vignette: the page reads as one dark room, not a flat colour. */
+  body::before { content: ""; position: fixed; inset: -50%; z-index: 20; pointer-events: none; opacity: .055; mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 19; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  .gx { padding-left: var(--gx); padding-right: max(20px, env(safe-area-inset-right)); }
   .termo { color: inherit; text-decoration: underline dotted var(--accent); text-underline-offset: 4px; }
-  .k { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .big { font-size: clamp(40px, 10vw, 96px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 600; margin: 0; }
-  .mid { font-size: clamp(24px, 5vw, 40px); line-height: 1.12; font-weight: 500; margin: 0; }
+  .k { font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .k::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--accent); margin-right: 10px; vertical-align: middle; }
+  .big { font-family: var(--serif); font-size: clamp(52px, 11.5vw, 124px); line-height: .96; letter-spacing: -0.015em; font-weight: 400; margin: 0; text-wrap: balance; }
+  .mid { font-family: var(--serif); font-size: clamp(27px, 5.4vw, 46px); line-height: 1.08; font-weight: 400; margin: 0; text-wrap: balance; }
   .num { font-variant-numeric: tabular-nums lining-nums; }
   .acc { color: var(--accent); }
+  em, .it { font-style: italic; }
 
-  .topo { position: fixed; z-index: 10; top: max(14px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); pointer-events: none; }
-  .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: max(16px, env(safe-area-inset-left)); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #ffcf8a; border: 1px solid #5a4630; background: rgba(10,12,19,.85); border-radius: 999px; padding: 4px 10px; }
+  .topo { position: fixed; z-index: 10; top: max(16px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); pointer-events: none; }
+  .topo::before { display: none; }
+  .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: var(--gx); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid #4a3a1e; background: rgba(7,10,18,.85); border-radius: 999px; padding: 4px 10px; }
 
   /* The one clock. It runs the whole day; it grows when a scene is about time. */
-  .relogio { position: fixed; z-index: 9; top: max(12px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); pointer-events: none; opacity: 0; transition: opacity .4s; }
+  .relogio { position: fixed; z-index: 9; top: max(14px, env(safe-area-inset-top)); left: var(--gx); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .relogio.on { opacity: 1; }
   .relogio .rt { font-family: var(--mono); font-size: 15px; color: var(--accent); line-height: 1; transition: font-size .35s; }
-  .relogio .rs { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 4px; transition: font-size .35s; }
+  .relogio .rs { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 5px; transition: font-size .35s; }
   .relogio .rs b { color: var(--fg); font-weight: 500; }
-  .relogio.grande { top: max(44px, calc(env(safe-area-inset-top) + 32px)); }
-  .relogio.grande .rt { font-family: var(--serif); font-size: clamp(56px, 14vw, 120px); font-weight: 300; letter-spacing: -0.04em; color: var(--fg); line-height: .9; }
-  .relogio.grande .rs { font-family: var(--serif); font-size: clamp(16px, 3.4vw, 20px); margin-top: 8px; }
+  .relogio.grande { top: max(36px, calc(env(safe-area-inset-top) + 24px)); }
+  .relogio.grande .rt { font-family: var(--sans); font-size: clamp(52px, 11vw, 104px); font-weight: 800; letter-spacing: -0.045em; color: var(--fg); line-height: .92; }
+  .relogio.grande .rs { font-family: var(--sans); font-size: clamp(15px, 3vw, 18px); margin-top: 8px; }
 
   /* A scene is a tall section whose stage sticks while the reader scrolls through it. */
   .cena { position: relative; height: var(--len, 300vh); }
   .palco { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; }
   .palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .flow { padding-top: 18vh; padding-bottom: 18vh; max-width: 760px; margin: 0 auto; }
-  .flow > .k { display: block; margin-bottom: 14px; }
-  .flow > p.lead { font-size: clamp(20px, 3.6vw, 26px); color: var(--fg); max-width: 32ch; }
-  .fase { position: absolute; inset: 0; display: grid; align-content: center; padding: 0 max(16px, env(safe-area-inset-left)); opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(10px); pointer-events: none; }
+  .flow > .k { display: block; margin-bottom: 16px; }
+  .flow > p.lead { font-family: var(--serif); font-size: clamp(24px, 4.2vw, 34px); line-height: 1.15; color: var(--fg); max-width: 30ch; }
+  .fase { position: absolute; inset: 0; display: grid; align-content: center; padding: 0 var(--gx); opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(10px); pointer-events: none; }
   .fase.on { opacity: 1; transform: none; pointer-events: auto; }
 
   /* 1. The hook */
-  .dobra { max-width: 900px; margin: 0 auto; width: 100%; }
-  .dobra p { margin: 18px 0 0; max-width: 20ch; }
-  .dobra p.acc { margin-top: 26px; }
+  .dobra { max-width: 980px; margin: 0 auto; width: 100%; }
+  .dobra h1 { font-size: clamp(56px, 13vw, 150px); }
+  .dobra p { margin: 22px 0 0; max-width: 22ch; }
+  .dobra p.acc { margin-top: 10px; font-style: italic; }
   .primeiro { justify-items: center; text-align: center; }
-  .primeiro .ph { font-size: clamp(64px, 18vw, 160px); font-weight: 300; letter-spacing: -0.04em; line-height: .9; color: var(--accent); }
-  .primeiro .pl { font-family: var(--mono); font-size: 14px; color: var(--muted); margin-top: 18px; }
-  .primeiro .pt { font-size: clamp(24px, 5vw, 40px); margin-top: 10px; font-weight: 500; }
-  .enx { position: absolute; left: 0; right: 0; top: 18%; bottom: 26%; padding: 0 max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; font-family: var(--mono); font-size: 13px; line-height: 1.75; -webkit-mask-image: linear-gradient(transparent, #000 45%); mask-image: linear-gradient(transparent, #000 45%); }
-  .enx div { display: grid; grid-template-columns: 9ch 1fr; gap: 1ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .primeiro .ph { font-family: var(--sans); font-size: clamp(64px, 18vw, 176px); font-weight: 800; letter-spacing: -0.05em; line-height: .9; color: var(--accent); }
+  .primeiro .pl { font-family: var(--mono); font-size: 13px; letter-spacing: .04em; color: var(--muted); margin-top: 20px; }
+  .primeiro .pt { font-family: var(--serif); font-size: clamp(26px, 5vw, 44px); margin-top: 12px; font-style: italic; }
+  .enx { position: absolute; left: 0; right: 0; top: 18%; bottom: 26%; padding: 0 var(--gx); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; font-family: var(--mono); font-size: 13px; line-height: 1.8; -webkit-mask-image: linear-gradient(transparent, #000 45%); mask-image: linear-gradient(transparent, #000 45%); }
+  .enx div { display: grid; grid-template-columns: 9ch 1fr; gap: 1.5ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
   .enx div b { font-weight: 400; color: var(--fg); }
   .enx div.um b, .enx div.um span { color: var(--accent); }
   .enx div i { font-style: normal; color: var(--accent); opacity: .7; }
-  .cap1 { position: absolute; left: 0; right: 0; bottom: 8vh; padding: 0 max(16px, env(safe-area-inset-left)); }
-  .cap1 p { margin: 0 0 8px; font-size: clamp(22px, 4.6vw, 32px); line-height: 1.2; max-width: 24ch; opacity: 0; transform: translateY(8px); transition: opacity .5s, transform .5s; }
+  .cap1 { position: absolute; left: 0; right: 0; bottom: 8vh; padding: 0 var(--gx); }
+  .cap1 p { margin: 0 0 8px; font-family: var(--serif); font-size: clamp(26px, 5vw, 40px); line-height: 1.1; max-width: 24ch; opacity: 0; transform: translateY(8px); transition: opacity .5s, transform .5s; }
   .cap1 p.on { opacity: 1; transform: none; }
   .hint { position: absolute; bottom: 4vh; left: 0; right: 0; text-align: center; transition: opacity .4s; }
+  .hint::before { display: none; }
+  .hint::after { content: ""; display: block; width: 1px; height: 28px; margin: 10px auto 0; background: linear-gradient(var(--accent), transparent); animation: cai 1.6s ease-in-out infinite; }
+  @keyframes cai { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
 
   /* Sticky charts */
   .notas { position: absolute; z-index: 2; left: 0; right: 0; bottom: 7vh; display: grid; gap: 10px; }
-  .notas p { margin: 0; font-size: clamp(18px, 3.6vw, 24px); line-height: 1.25; max-width: 30ch; opacity: 0; transform: translateY(8px); transition: opacity .45s, transform .45s; }
+  .notas p { margin: 0; font-family: var(--serif); font-size: clamp(22px, 4.2vw, 30px); line-height: 1.15; max-width: 30ch; opacity: 0; transform: translateY(8px); transition: opacity .45s, transform .45s; }
   .notas p.on { opacity: 1; transform: none; }
   .notas p[hidden] { display: none; }
-  .notas p .h { font-family: var(--mono); font-size: 13px; color: var(--accent); display: block; }
+  .notas p .h { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); display: block; margin-bottom: 4px; }
 
   /* 6. The question */
-  .pergunta { min-height: 100svh; display: grid; align-content: center; max-width: 640px; margin: 0 auto; }
-  .campo { position: relative; margin-top: 28px; }
-  .campo input, .mais input { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font: inherit; font-size: 22px; outline: none; }
-  .campo input:focus, .mais input:focus { border-color: var(--accent); }
-  .hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px 0; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 14px; z-index: 5; }
+  .pergunta { min-height: 100svh; display: grid; align-content: center; max-width: 680px; margin: 0 auto; }
+  .pergunta .k { margin-bottom: 14px; }
+  .campo { position: relative; margin-top: 32px; }
+  .campo input, .mais input { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; font: inherit; font-size: 22px; outline: none; transition: border-color .2s, box-shadow .2s; }
+  .campo input:focus, .mais input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .campo input::placeholder, .mais input::placeholder { color: var(--muted); }
+  .hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px 0; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; z-index: 5; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
   .hits:empty { display: none; }
-  .hits li { padding: 8px 18px; cursor: pointer; }
-  .hits li span { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: 8px; }
+  .hits li { padding: 10px 20px; cursor: pointer; }
+  .hits li span { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: 10px; }
   .hits li.on, .hits li:hover { background: var(--accent-dim); }
-  details.mais { margin-top: 16px; color: var(--muted); }
-  details.mais summary { cursor: pointer; font-size: 17px; }
-  .mais .par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  .mais input { font-size: 18px; padding: 12px 14px; }
+  details.mais { margin-top: 18px; color: var(--muted); }
+  details.mais summary { cursor: pointer; font-size: 17px; list-style: none; }
+  details.mais summary::-webkit-details-marker { display: none; }
+  details.mais summary::before { content: "+"; display: inline-block; width: 1.4em; color: var(--accent); font-family: var(--mono); }
+  details.mais[open] summary::before { content: "–"; }
+  .mais .par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .mais input { font-size: 18px; padding: 12px 16px; }
   .mais small { display: block; margin-top: 8px; font-size: 14px; }
-  .acoes { display: flex; gap: 18px; align-items: center; margin-top: 26px; flex-wrap: wrap; }
-  .btn { background: var(--accent); color: var(--bg); border: 0; border-radius: 999px; padding: 12px 22px; font: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
-  .btn[disabled] { opacity: .4; cursor: default; }
-  .pular { color: var(--muted); font-size: 17px; }
-  .eco { margin-top: 18px; color: var(--accent); min-height: 1.5em; }
+  .acoes { display: flex; gap: 20px; align-items: center; margin-top: 28px; flex-wrap: wrap; }
+  .btn { background: var(--accent); color: var(--bg); border: 0; border-radius: 999px; padding: 13px 24px; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; transition: transform .15s, filter .15s; }
+  .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn[disabled] { opacity: .35; cursor: default; transform: none; filter: none; }
+  .pular { color: var(--muted); font-size: 16px; }
+  .eco { margin-top: 18px; color: var(--accent); min-height: 1.5em; font-family: var(--serif); font-size: 22px; }
 
   /* 7. The map */
-  .legenda { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 0 16px; background: rgba(10,12,19,.72); transition: opacity .5s; }
-  .legenda div { max-width: 30ch; font-size: clamp(20px, 4vw, 28px); line-height: 1.3; }
-  .legenda .esc { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
-  .legenda .esc i { width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgba(159,232,210,.12), var(--accent), #f4fffb); }
-  .mcap { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left)); right: 16px; bottom: 7vh; max-width: 32ch; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
+  .legenda { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 0 20px; background: rgba(7,10,18,.72); transition: opacity .5s; }
+  .legenda div { max-width: 30ch; font-family: var(--serif); font-size: clamp(24px, 4.4vw, 34px); line-height: 1.15; }
+  .legenda .esc { display: flex; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+  .legenda .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
+  .mcap { position: absolute; z-index: 2; left: var(--gx); right: 20px; bottom: 7vh; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
   .mcap.on { opacity: 1; transform: none; }
-  .mcap .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
-  .mcap h3 { margin: 4px 0 0; font-size: clamp(21px, 4.4vw, 30px); line-height: 1.15; font-weight: 600; }
-  .mcap p { margin: 6px 0 0; font-size: clamp(17px, 3.4vw, 21px); line-height: 1.3; }
+  .mcap .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
+  .mcap h3 { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(26px, 5vw, 40px); line-height: 1.05; font-weight: 400; text-wrap: balance; }
+  .mcap p { margin: 8px 0 0; font-size: clamp(16px, 3.2vw, 19px); line-height: 1.4; color: #cfccc3; max-width: 44ch; }
   .mcap.seu h3 { color: var(--accent); }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
   /* Hour tap */
-  .horas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .horas button { background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-family: var(--mono); font-size: 15px; cursor: pointer; }
-  .horas button.on { border-color: var(--accent); color: var(--accent); }
-  .comvoce { margin-top: 18px; font-size: clamp(22px, 4.4vw, 30px); line-height: 1.25; min-height: 2.5em; }
-  .comvoce small { display: block; font-size: 14px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+  .horas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .horas button { background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; font-family: var(--mono); font-size: 15px; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+  .horas button:hover { border-color: var(--muted); }
+  .horas button.on { border-color: var(--accent); color: var(--bg); background: var(--accent); }
+  .comvoce { margin-top: 22px; font-family: var(--serif); font-size: clamp(26px, 4.8vw, 36px); line-height: 1.12; min-height: 2.5em; }
+  .comvoce small { display: block; font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 10px; }
 
   /* Your urna's trip: the urna, its paper, the transmission */
   .viagem .palco { align-content: start; }
-  .cena3 { position: absolute; left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); top: 25%; display: grid; grid-template-columns: minmax(150px, 220px) 1fr 84px; align-items: start; gap: 10px; max-width: 760px; }
-  .urna { background: #1b1f2c; border: 1px solid #343a4d; border-radius: 10px; padding: 10px; position: relative; }
-  .urna .tela { background: #0d1a17; border-radius: 4px; height: 96px; overflow: hidden; padding: 6px 8px; font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--accent); display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 18px rgba(159,232,210,.18); }
+  .cena3 { position: absolute; left: var(--gx); right: max(20px, env(safe-area-inset-right)); top: var(--topo); display: grid; grid-template-columns: minmax(230px, 300px) 1fr 150px; align-items: start; gap: 18px; max-width: 880px; margin: 0 auto; padding-top: 24px; }
+  /* The urna eletrônica: beige body, the screen on the left, the keypad on the right, a paper slot below. */
+  .urna { position: relative; background: linear-gradient(180deg, #e6e1d3, #cfc9b8); border-radius: 12px 12px 8px 8px; padding: 12px 12px 10px; display: grid; grid-template-columns: 1fr 86px; gap: 10px; box-shadow: 0 1px 0 #fff6 inset, 0 24px 48px rgba(0,0,0,.55), 0 2px 0 #9f977f; }
+  .urna::before { content: "URNA ELETRÔNICA"; position: absolute; top: -18px; left: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--muted); }
+  .urna .tela { grid-row: 1 / 3; background: #0f1a14; border-radius: 6px; height: 128px; overflow: hidden; padding: 8px 9px; font-family: var(--mono); font-size: 10px; line-height: 1.55; color: var(--accent); display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 0 3px #2a2a28, inset 0 0 26px rgba(255,180,60,.22); }
   .urna .tela div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .urna .tela div span { opacity: .6; margin-right: 6px; }
-  .urna .tecl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
-  .urna .tecl i { height: 10px; background: #2a3042; border-radius: 2px; }
-  .urna .tecl i:nth-last-child(1) { background: #3f7d5c; } .urna .tecl i:nth-last-child(2) { background: #c9a227; } .urna .tecl i:nth-last-child(3) { background: #e8e4dc; }
-  .papel { margin: 0 10px; background: #efe8da; color: #1b1b1b; font-family: var(--mono); font-size: 10px; line-height: 1.45; padding: 0 8px; overflow: hidden; height: 0; border-radius: 0 0 3px 3px; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
-  .papel b { display: block; font-weight: 500; letter-spacing: .06em; margin: 6px 0 4px; }
-  .sinal { position: relative; height: 2px; margin-top: 60px; background: repeating-linear-gradient(90deg, rgba(239,232,218,.25) 0 4px, transparent 4px 9px); }
-  .sinal i { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #f4fffb; box-shadow: 0 0 14px 4px rgba(159,232,210,.7); opacity: 0; }
-  .tse { border: 1px solid #343a4d; border-radius: 10px; padding: 10px 8px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 30px; transition: border-color .3s, color .3s; }
-  .tse b { display: block; font-family: var(--serif); font-size: 20px; color: var(--fg); font-weight: 600; }
-  .tse.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 24px rgba(159,232,210,.25); }
-  .vnota { position: absolute; left: max(16px, env(safe-area-inset-left)); right: 16px; bottom: 8vh; max-width: 30ch; }
-  .vnota p { margin: 0; font-size: clamp(19px, 4vw, 26px); line-height: 1.25; }
-  .vnota small { display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .urna .tecl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .urna .tecl i { height: 18px; border-radius: 3px; background: #2b2b2e; color: #e8e4dc; font: 500 9px/18px var(--mono); font-style: normal; text-align: center; box-shadow: 0 1px 0 #000a; }
+  .urna .fn { display: grid; gap: 4px; }
+  .urna .fn i { display: block; height: 14px; border-radius: 3px; font: 500 7px/14px var(--mono); font-style: normal; text-align: center; letter-spacing: .06em; box-shadow: 0 1px 0 #0008; }
+  .urna .fn i.b { background: #f1ede4; color: #222; }
+  .urna .fn i.c { background: #e38a1f; color: #221a0a; }
+  .urna .fn i.v { background: #2f8c4f; color: #e8fbe9; }
+  .urna .fenda { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: #1a1a1c; box-shadow: inset 0 1px 2px #000; }
+  .papel { margin: 0 14px; width: 150px; background: #f4f0e6; color: #1b1b1b; font-family: var(--mono); font-size: 9.5px; line-height: 1.45; padding: 0 9px; overflow: hidden; height: 0; border-radius: 0 0 3px 3px; box-shadow: 0 10px 24px rgba(0,0,0,.45); transition: height .25s; }
+  .papel b { display: block; font-weight: 500; letter-spacing: .08em; margin: 7px 0 4px; }
+  .sinal { position: relative; height: 2px; margin-top: 86px; background: repeating-linear-gradient(90deg, rgba(236,232,220,.22) 0 4px, transparent 4px 10px); }
+  .sinal i { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 16px 5px rgba(255,180,60,.75); opacity: 0; }
+  /* The TSE: a building mark, no logo. A long low block on thin columns, the way it stands on the Esplanada. */
+  .tse { position: relative; margin-top: 52px; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--muted); transition: color .3s; }
+  .tse svg { display: block; width: 100%; height: auto; margin-bottom: 8px; }
+  .tse svg .p { fill: none; stroke: var(--muted); stroke-width: 1.4; transition: stroke .3s; }
+  .tse svg .f { fill: var(--muted); transition: fill .3s; }
+  .tse svg .w { fill: transparent; transition: fill .3s; }
+  .tse b { display: block; font-family: var(--sans); font-size: 20px; color: var(--fg); font-weight: 800; letter-spacing: -0.01em; }
+  .tse.on { color: var(--accent); }
+  .tse.on svg .p { stroke: var(--accent); } .tse.on svg .f { fill: var(--accent); } .tse.on svg .w { fill: var(--accent); }
+  .tse.on svg { filter: drop-shadow(0 0 18px rgba(255,180,60,.55)); }
+  .vnota { position: absolute; left: var(--gx); right: 20px; bottom: 8vh; max-width: 32ch; }
+  .vnota p { margin: 0; font-family: var(--serif); font-size: clamp(24px, 4.6vw, 34px); line-height: 1.1; }
+  .vnota small { display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; }
 
   /* 10. The card */
   .cartao { min-height: 100svh; display: grid; align-content: center; justify-items: center; text-align: center; padding-top: 10vh; padding-bottom: 10vh; }
-  .cartao canvas { width: min(420px, 88vw); aspect-ratio: 4 / 5; border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .cartao .k::before { display: none; }
+  .cartao canvas { width: min(420px, 88vw); aspect-ratio: 4 / 5; border-radius: 18px; box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 1px var(--line); }
   .cartao .acoes { justify-content: center; }
-  footer { border-top: 1px solid var(--line); padding-top: 28px; padding-bottom: 60px; color: var(--muted); font-size: 16px; max-width: 760px; margin: 0 auto; }
+  footer { border-top: 1px solid var(--line); padding-top: 28px; padding-bottom: 60px; color: var(--muted); font-size: 15px; max-width: 760px; margin: 0 auto; }
 
+  @media (max-width: 640px) {
+    .cena3 { grid-template-columns: 1fr; gap: 14px; padding-top: 30px; }
+    .urna .tela { height: 110px; }
+    .sinal { margin: 8px 20px; height: 48px; width: 2px; background: repeating-linear-gradient(180deg, rgba(236,232,220,.22) 0 4px, transparent 4px 10px); }
+    .sinal i { left: -4px !important; top: var(--q, 0); }
+    .tse { margin-top: 0; width: 130px; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
@@ -253,9 +299,27 @@
 <section class="cena viagem" id="viagem" style="--len:320vh" data-grande hidden>
   <div class="palco">
     <div class="cena3">
-      <div><div class="urna"><div class="tela" id="utela"></div><div class="tecl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="papel" id="papel"></div></div>
+      <div>
+        <div class="urna" aria-label="Urna eletrônica">
+          <div class="tela" id="utela"></div>
+          <div class="tecl"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i></i><i>0</i><i></i></div>
+          <div class="fn"><i class="b">BRANCO</i><i class="c">CORRIGE</i><i class="v">CONFIRMA</i></div>
+          <div class="fenda"></div>
+        </div>
+        <div class="papel" id="papel"></div>
+      </div>
       <div class="sinal" id="sinal"><i></i><i></i><i></i></div>
-      <div class="tse" id="tse"><b>TSE</b>Brasília<div id="tsehora">&nbsp;</div></div>
+      <div class="tse" id="tse">
+        <svg viewBox="0 0 120 64" aria-hidden="true">
+          <rect class="w" x="4" y="12" width="112" height="22" rx="1"/>
+          <rect class="p" x="4" y="12" width="112" height="22" rx="1"/>
+          <path class="p" d="M12 34v22M28 34v22M44 34v22M60 34v22M76 34v22M92 34v22M108 34v22"/>
+          <path class="f" d="M0 56h120v2H0z"/>
+          <path class="f" d="M48 2h24v3H48z"/>
+          <path class="p" d="M60 5v7"/>
+        </svg>
+        <b>TSE</b>Brasília<div id="tsehora">&nbsp;</div>
+      </div>
     </div>
     <div class="vnota" id="vnota"></div>
   </div>
@@ -296,7 +360,7 @@ const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const VOTOS = 127854844;
 const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0, KX = Math.cos(15 * Math.PI / 180);
 const BSB = [-47.88, -15.79];
-const ACC = [159, 232, 210];
+const ACC = [255, 180, 60];
 
 // Data: every fetch goes through get(), which tracks mock files for the pill.
 const mocks = new Set();
@@ -342,10 +406,22 @@ function tick() {
   }
   const rel = $("relogio");
   rel.classList.toggle("on", !!clock);
+  const was = rel.classList.contains("grande");
   rel.classList.toggle("grande", !!clock && grande && !clock.pequeno);
   if (clock) { $("rt").textContent = clock.txt || hhmm(clock.t); $("rs").innerHTML = clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`; }
+  if (was !== rel.classList.contains("grande")) requestAnimationFrame(tick);
 }
-addEventListener("scroll", tick, { passive: true });
+// The charts lay out below the clock's real bottom, never a fixed fraction of the height (R2).
+// TOPO is in CSS px; the clock's size animates, so the scene re-renders when that ends.
+let TOPO = 64;
+function medir() {
+  const r = $("relogio").getBoundingClientRect(), b = Math.ceil(r.bottom);
+  if (b > 0 && b !== TOPO) { TOPO = b; document.documentElement.style.setProperty("--topo", `${b}px`); return true; }
+  return false;
+}
+const topo = dpr => (TOPO + 22) * dpr;
+$("rt").addEventListener("transitionend", () => { medir(); tick(); });
+addEventListener("scroll", () => { medir(); tick(); }, { passive: true });
 addEventListener("resize", () => { for (const f of resizers) f(); tick(); });
 const resizers = [];
 
@@ -368,7 +444,7 @@ function drawBorders(ctx, borders, P, color, width) {
 }
 function glow(ctx, x, y, r, a = .7) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-  g.addColorStop(0, `rgba(159,232,210,${a})`); g.addColorStop(1, "rgba(159,232,210,0)");
+  g.addColorStop(0, `rgba(255,180,60,${a})`); g.addColorStop(1, "rgba(255,180,60,0)");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
 }
 function onde(l) {
@@ -460,21 +536,22 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     const past = notas.filter(n => t >= +n.dataset.t);
     notas.forEach(n => { const on = past.slice(-2).includes(n); n.classList.toggle("on", on); n.hidden = !on; });
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.62 * H, yt = 0.40 * H;
-    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Votos por minuto, das 8h às 9h", x0, 0.31 * H);
-    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.fillText("cada barra é um minuto", x0, 0.31 * H + 18 * dpr);
+    const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
+    const yt = ty + 52 * dpr, yb = Math.max(yt + 70 * dpr, Math.min(0.62 * H, H - 0.34 * H));
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 8h às 9h", x0, ty);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("cada barra é um minuto", x0, ty + 18 * dpr);
     const max = Math.max(...nat.slice(480 - S, 541 - S)), bw = (x1 - x0) / 61;
     for (let m = 480; m <= Math.min(540, t); m++) {
       const v = nat[m - S] / max, h = (yb - yt) * v;
-      ctx.fillStyle = m === PICO ? "#f4fffb" : `rgba(${ACC},${0.25 + 0.75 * v})`;
+      ctx.fillStyle = m === PICO ? "#fff1d6" : `rgba(${ACC},${0.25 + 0.75 * v})`;
       ctx.fillRect(x0 + (m - 480) * bw, yb - h, Math.max(1, bw - 2 * dpr), h);
     }
     if (t >= PICO) {
       const x = x0 + (PICO - 480) * bw + bw;
-      ctx.fillStyle = "#f4fffb"; ctx.font = `600 ${14 * dpr}px Fraunces`;
+      ctx.fillStyle = "#fff1d6"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
       ctx.fillText(`${hhmm(PICO)}, o minuto mais cheio: ${fmt(nat[PICO - S])} votos`, x - bw / 2 - 4 * dpr, yt - 10 * dpr);
     }
-    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`;
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`;
     for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
     return { t: Math.max(480, t), txt: t < 480 ? "07:59" : null };
   });
@@ -613,9 +690,9 @@ async function afterAnswer() {
     if (!M) return clock;
     const S = TOT.start, m0 = clamp(Math.floor(t - S), 0, M.MM - 1), m1 = Math.min(M.MM - 1, m0 + 1), f = t - S - m0;
     const { ctx, W, H, dpr } = fit(c);
-    ctx.fillStyle = "#0a0c13"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#070a12"; ctx.fillRect(0, 0, W, H);
     const tudo = e && e.lugar.lat == null;
-    drawBorders(ctx, M.borders, M.P, tudo ? "rgba(159,232,210,.30)" : "rgba(239,232,218,.08)", 1 * dpr);
+    drawBorders(ctx, M.borders, M.P, tudo ? "rgba(255,180,60,.30)" : "rgba(236,232,220,.08)", 1 * dpr);
     for (const b of buckets) b.length = 0;
     for (let i = 0; i < M.N; i++) { const v = M.lit[m0 * M.N + i] * (1 - f) + M.lit[m1 * M.N + i] * f; buckets[Math.min(L, Math.round(v * L))].push(i); }
     for (let k = 5; k <= L; k++) {
@@ -625,7 +702,7 @@ async function afterAnswer() {
     }
     for (let k = 0; k <= L; k++) {
       const v = k / L;
-      ctx.fillStyle = v === 0 ? "rgba(159,232,210,.10)" : `rgba(${Math.round(159 + 85 * v)},${Math.round(232 + 23 * v)},${Math.round(210 + 41 * v)},${0.2 + 0.8 * v})`;
+      ctx.fillStyle = v === 0 ? "rgba(255,180,60,.10)" : `rgba(255,${Math.round(180 + 61 * v)},${Math.round(60 + 154 * v)},${0.2 + 0.8 * v})`;
       ctx.beginPath();
       for (const i of buckets[k]) { const r = M.r[i] * (0.85 + 0.4 * v); ctx.moveTo(M.x[i] + r, M.y[i]); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); }
       ctx.fill();
@@ -635,7 +712,7 @@ async function afterAnswer() {
       const x = M.P.X(e.lugar.lon), y = M.P.Y(e.lugar.lat);
       glow(ctx, x, y, 26 * dpr, .45);
       ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(x, y, 12 * dpr, 0, 6.283); ctx.stroke();
-      ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px Fraunces`;
+      ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
       const lab = e.lugar.municipio || "", lw = ctx.measureText(lab).width;
       ctx.fillText(lab, x + 16 * dpr + lw > W ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
     }
@@ -643,7 +720,7 @@ async function afterAnswer() {
     if (tw) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
-      ctx.fillStyle = "#efe8da"; ctx.font = `600 ${14 * dpr}px Fraunces`; ctx.fillText(tw.nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
+      ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(tw.nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
     }
     return clock;
   });
@@ -691,27 +768,28 @@ renderHoras();
     const { t, cur: e } = ag(clamp(p / 0.95));
     nota(host, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, yb = 0.54 * H, yt = 0.32 * H;
+    const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
+    const yt = ty + 62 * dpr, yb = Math.max(yt + 70 * dpr, Math.min(0.56 * H, H - 0.36 * H));
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
-    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, 0.24 * H);
-    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, 0.24 * H + 18 * dpr);
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, ty);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, ty + 18 * dpr);
     const area = (a, b, fill) => { ctx.beginPath(); ctx.moveTo(X(a), yb); for (let m = a; m <= b; m++) ctx.lineTo(X(m), Y(nat[m - S] || 0)); ctx.lineTo(X(b), yb); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
     const tt = Math.min(t, B - 1);
-    area(A, tt, "rgba(159,232,210,.28)");
-    if (e?.seg && e.seg[0] <= tt) area(e.seg[0], Math.min(e.seg[1], tt), "rgba(244,255,251,.85)");
-    ctx.font = `${11 * dpr}px "IBM Plex Mono"`; ctx.lineWidth = 1 * dpr;
+    area(A, tt, "rgba(255,180,60,.28)");
+    if (e?.seg && e.seg[0] <= tt) area(e.seg[0], Math.min(e.seg[1], tt), "rgba(255,241,214,.85)");
+    ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.lineWidth = 1 * dpr;
     [[1020, "17:00", 0], [1035, "17:15", 1], [1146, "19:06", 0]].forEach(([m, lab, row]) => {
       const ly = yt - 8 * dpr - row * 15 * dpr;
-      ctx.strokeStyle = "rgba(239,232,218,.3)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
-      ctx.fillStyle = "rgba(239,232,218,.7)"; ctx.fillText(lab, m > 1100 ? X(m) - 40 * dpr : X(m) + 4 * dpr, ly);
+      ctx.strokeStyle = "rgba(236,232,220,.3)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
+      ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.fillText(lab, m > 1100 ? X(m) - 40 * dpr : X(m) + 4 * dpr, ly);
     });
-    ctx.fillStyle = "rgba(239,232,218,.6)"; ctx.fillText("16:00", x0, yb + 16 * dpr);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.fillText("16:00", x0, yb + 16 * dpr);
     const mi = minha();
     if (mi && hm(mi.fecha) <= t) {
       const x = X(hm(mi.fecha));
       ctx.strokeStyle = "#ffffff"; ctx.beginPath(); ctx.moveTo(x, yt); ctx.lineTo(x, yb + 22 * dpr); ctx.stroke();
       ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, yb, 4 * dpr, 0, 6.283); ctx.fill();
-      ctx.font = `600 ${13 * dpr}px Fraunces`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "às " : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 210 * dpr), yb + 36 * dpr);
+      ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "às " : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 210 * dpr), yb + 36 * dpr);
     }
     const ate = t >= 1020 ? somaMin(nat, 1020, Math.floor(t) + 1) : 0;
     return { t, sub: t >= 1020 ? `<b>${fmt(ate)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
@@ -744,7 +822,7 @@ renderHoras();
     const papelH = k > imp ? Math.min(150, 40 + (k - imp) * 34) : 0;
     papel.style.height = `${papelH}px`;
     papel.innerHTML = `<b>BOLETIM DE URNA</b>${state.town.nome}, ${state.town.uf}<br>${state.sec ? `Zona ${state.zona} · Seção ${state.secao}<br>Eleitores aptos ${state.sec.aptos}<br>Compareceram ${state.sec.votos}<br>` : "Urna típica da cidade<br>"}Encerramento ${ls[0].hora}`;
-    sinal.forEach((d, j) => { const q = clamp(viaja * 1.3 - j * 0.15); d.style.left = `calc(${q * 100}% - 5px)`; d.style.opacity = viaja > 0 && viaja < 1 && q > 0 && q < 1 ? 1 : 0; });
+    sinal.forEach((d, j) => { const q = clamp(viaja * 1.3 - j * 0.15); d.style.left = `calc(${q * 100}% - 5px)`; d.style.setProperty("--q", `calc(${q * 100}% - 5px)`); d.style.opacity = viaja > 0 && viaja < 1 && q > 0 && q < 1 ? 1 : 0; });
     tse.classList.toggle("on", chegou);
     $("tsehora").textContent = chegou ? mi.chega : " ";
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
@@ -792,15 +870,16 @@ renderHoras();
     nota(host, e);
     const k = clamp(Math.floor(t - R.A), 0, R.n - 1);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, y0 = 0.27 * H, y1 = 0.73 * H, rh = (y1 - y0) / R.ufs.length;
-    ctx.fillStyle = "#efe8da"; ctx.font = `500 ${16 * dpr}px Fraunces`; ctx.fillText("Urnas que chegaram ao TSE, por estado", 0.06 * W, 0.235 * H);
+    const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, ty = topo(dpr) + 16 * dpr;
+    const y0 = ty + 22 * dpr, y1 = Math.max(y0 + 27 * 7 * dpr, H - 0.30 * H), rh = (y1 - y0) / R.ufs.length;
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Urnas que chegaram ao TSE, por estado", 0.06 * W, ty);
     const meu = state.town?.uf;
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
-      ctx.fillStyle = eu ? "#ffffff" : "rgba(239,232,218,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "IBM Plex Mono"`; ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
-      ctx.fillStyle = "rgba(239,232,218,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
-      ctx.fillStyle = eu ? "#f4fffb" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
-      if (f >= 1) { ctx.fillStyle = "rgba(239,232,218,.7)"; ctx.font = `${10 * dpr}px "IBM Plex Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "JetBrains Mono"`; ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
+      ctx.fillStyle = "rgba(236,232,220,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
+      ctx.fillStyle = eu ? "#fff1d6" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
+      if (f >= 1) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${10 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
       if (eu && mi && hm(mi.chega) <= t) {
         const i = clamp(Math.round(hm(mi.chega) - R.A), 0, R.n - 1), x = x0 + (x1 - x0) * u.cum[i] / u.tot;
         glow(ctx, x, y, 14 * dpr, .9); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 3.5 * dpr, 0, 6.283); ctx.fill();
@@ -813,24 +892,24 @@ renderHoras();
 /* ---------- 9. The card ---------- */
 async function drawCard() {
   const c = $("card"), ctx = c.getContext("2d"), W = c.width, H = c.height;
-  await Promise.all([document.fonts.load('600 120px Fraunces'), document.fonts.load('300 120px Fraunces'), document.fonts.load('400 30px "IBM Plex Mono"')]).catch(() => {});
-  ctx.fillStyle = "#0a0c13"; ctx.fillRect(0, 0, W, H);
+  await Promise.all([document.fonts.load('400 120px "Instrument Serif"'), document.fonts.load('italic 400 120px "Instrument Serif"'), document.fonts.load('600 40px "Inter Tight"'), document.fonts.load('400 30px "JetBrains Mono"')]).catch(() => {});
+  ctx.fillStyle = "#070a12"; ctx.fillRect(0, 0, W, H);
   // A field of faint points, one light among them.
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 900; i++) { ctx.fillStyle = `rgba(159,232,210,${0.04 + 0.12 * rnd()})`; ctx.beginPath(); ctx.arc(80 + rnd() * 920, 140 + rnd() * 520, 1.2 + rnd() * 2.2, 0, 6.283); ctx.fill(); }
-  const g = ctx.createRadialGradient(560, 400, 0, 560, 400, 70); g.addColorStop(0, "rgba(159,232,210,.9)"); g.addColorStop(1, "rgba(159,232,210,0)");
+  for (let i = 0; i < 900; i++) { ctx.fillStyle = `rgba(255,180,60,${0.04 + 0.12 * rnd()})`; ctx.beginPath(); ctx.arc(80 + rnd() * 920, 140 + rnd() * 520, 1.2 + rnd() * 2.2, 0, 6.283); ctx.fill(); }
+  const g = ctx.createRadialGradient(560, 400, 0, 560, 400, 70); g.addColorStop(0, "rgba(255,180,60,.9)"); g.addColorStop(1, "rgba(255,180,60,0)");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(560, 400, 70, 0, 6.283); ctx.fill();
-  ctx.fillStyle = "#f4fffb"; ctx.beginPath(); ctx.arc(560, 400, 7, 0, 6.283); ctx.fill();
-  ctx.fillStyle = "#8e8a80"; ctx.font = '400 28px "IBM Plex Mono"'; ctx.fillText("O BRASIL VOTANDO · 25 OUT 2026", 80, 100);
-  ctx.fillStyle = "#efe8da"; ctx.font = "300 76px Fraunces"; ctx.fillText("Você foi um dos", 80, 800);
-  ctx.fillStyle = "#9fe8d2"; ctx.font = "600 132px Fraunces"; ctx.fillText(fmt(VOTOS), 80, 940);
+  ctx.fillStyle = "#fff1d6"; ctx.beginPath(); ctx.arc(560, 400, 7, 0, 6.283); ctx.fill();
+  ctx.fillStyle = "#8e8a80"; ctx.font = '400 28px "JetBrains Mono"'; ctx.fillText("O BRASIL VOTANDO · 25 OUT 2026", 80, 100);
+  ctx.fillStyle = "#ece8dc"; ctx.font = "italic 400 78px \"Instrument Serif\""; ctx.fillText("Você foi um dos", 80, 800);
+  ctx.fillStyle = "#ffb43c"; ctx.font = "400 150px \"Instrument Serif\""; ctx.fillText(fmt(VOTOS), 80, 940);
   const linhas = [];
   if (state.town) linhas.push(`em ${state.town.nome}, ${state.town.uf}`);
   if (state.sec) linhas.push(`zona ${state.zona}, seção ${state.secao}`);
   if (state.hora != null) linhas.push(`por volta das ${state.hora}h`);
-  ctx.fillStyle = "#efe8da"; ctx.font = "400 46px Fraunces";
+  ctx.fillStyle = "#ece8dc"; ctx.font = "400 44px \"Inter Tight\"";
   linhas.forEach((l, i) => ctx.fillText(l, 80, 1030 + i * 60));
-  ctx.fillStyle = "#8e8a80"; ctx.font = '400 26px "IBM Plex Mono"'; ctx.fillText("robsonscheffer.github.io/brasildb", 80, 1270);
+  ctx.fillStyle = "#8e8a80"; ctx.font = '400 26px "JetBrains Mono"'; ctx.fillText("robsonscheffer.github.io/brasildb", 80, 1270);
 }
 $("share").addEventListener("click", async () => {
   await drawCard();
