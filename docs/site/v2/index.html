@@ -953,7 +953,7 @@ async function afterAnswer() {
 function renderHoras() {
   const tw = state.town, box = $("horas");
   $("horalead").textContent = tw ? `Que horas você votou em ${tw.nome}, ${tw.uf}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
-  const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+  const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote, 19h06
   box.innerHTML = bands.map(h => `<button data-h="${h}" class="${state.hora === h ? "on" : ""}">${h}h</button>`).join("");
   if (state.hora != null) comVoce(state.hora);
 }
@@ -962,7 +962,7 @@ async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
   if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${tw.nome}, ${tw.uf}`; }
   if (n == null) { n = 0; for (let m = h * 60; m < h * 60 + 60; m++) n += TOT.national[m - TOT.start] || 0; lugar = "no Brasil"; }
-  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}. Você não estava sozinho.<small>aproximado: todos os votos entre ${h}h e ${h + 1}h</small>`;
+  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}. Você não estava sozinho.<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? "o último voto, 19h06" : `${h + 1}h`}</small>`;
 }
 renderHoras();
 
