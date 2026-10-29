@@ -608,6 +608,14 @@ function glow(ctx, x, y, r, a = .7) {
   g.addColorStop(0, `rgba(255,180,60,${a})`); g.addColorStop(1, "rgba(255,180,60,0)");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
 }
+// A label on the map: text on a dark pill, so it reads over a dense area. Returns its width.
+function rotulo(ctx, txt, x, y, dpr, cor) {
+  ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
+  const w = ctx.measureText(txt).width, px = 6 * dpr, h = 20 * dpr;
+  ctx.fillStyle = "rgba(7,10,18,.82)"; ctx.beginPath(); ctx.roundRect(x - px, y - h / 2, w + 2 * px, h, 4 * dpr); ctx.fill();
+  ctx.fillStyle = cor; ctx.fillText(txt, x, y + 4.5 * dpr);
+  return w;
+}
 function onde(l) {
   const parts = [l.uf === "BR" ? "Brasil" : l.municipio ? `${l.municipio}, ${l.uf}` : l.uf];
   if (l.zona) parts.push(`zona ${l.zona}`);
@@ -924,17 +932,17 @@ async function afterAnswer() {
       const x = M.P.X(e.lugar.lon), y = M.P.Y(e.lugar.lat);
       glow(ctx, x, y, 26 * dpr, .45);
       ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(x, y, 12 * dpr, 0, 6.283); ctx.stroke();
-      ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
-      const lab = e.lugar.municipio ? `${e.lugar.municipio}, ${e.lugar.uf}` : "", lw = ctx.measureText(lab).width, dir = x + 16 * dpr + lw > W ? -1 : 1;
-      ctx.fillText(lab, dir < 0 ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
-      anc = dir < 0 ? [x + 12 * dpr, y] : [x + 20 * dpr + lw, y]; // the line leaves after the label
+      ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
+      const lab = e.lugar.municipio ? `${e.lugar.municipio}, ${e.lugar.uf}` : "", lw = ctx.measureText(lab).width, dir = x + 22 * dpr + lw > W ? -1 : 1;
+      if (lab) rotulo(ctx, lab, dir < 0 ? x - 22 * dpr - lw : x + 22 * dpr, y, dpr, `rgb(${ACC})`);
+      anc = dir < 0 ? [x + 12 * dpr, y] : [x + 30 * dpr + lw, y]; // the line leaves after the label
     }
     const tw = state.town;
     if (tw) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
-      ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`; const nome = `${tw.nome}, ${tw.uf}`; ctx.fillText(nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
-      if (e?.seu) anc = [M.x[i] + r + 10 * dpr + ctx.measureText(nome).width, M.y[i]];
+      const nw = rotulo(ctx, `${tw.nome}, ${tw.uf}`, M.x[i] + r + 10 * dpr, M.y[i], dpr, "#ffffff");
+      if (e?.seu) anc = [M.x[i] + r + 18 * dpr + nw, M.y[i]];
     }
     ligar(c, ctx, anc, host, dpr);
     return clock;
