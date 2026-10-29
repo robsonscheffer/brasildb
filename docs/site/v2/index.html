@@ -310,9 +310,14 @@
 <section class="cena" id="primeiro" style="--len:560vh">
   <div class="palco duplo">
     <div class="fase dobra on" id="dobra">
-      <h1 class="big num">Um domingo. 127.854.844 votos.</h1>
+      <h1 class="big num" id="total">Um domingo. 128.235.456 votos.</h1>
       <p class="mid">Nenhum vale mais que o outro.</p>
       <p class="mid acc">O seu está aqui.</p>
+    </div>
+    <div class="fase primeiro" id="pext">
+      <div class="ph num" id="peh"></div>
+      <div class="pl" id="pel"></div>
+      <div class="pt" id="pet"></div>
     </div>
     <div class="fase primeiro" id="pvoto">
       <div class="ph num" id="pph">08:00:19</div>
@@ -430,7 +435,7 @@
 <section class="cartao gx" id="compartilhamento">
   <span class="k">09 · para guardar</span>
   <p class="mid" style="margin:14px 0 26px">Você fez parte dessa história. Guarde o seu momento.</p>
-  <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: você foi um dos 127.854.844 votos, com a sua cidade e hora."></canvas>
+  <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: você foi um dos 128.235.456 votos, com a sua cidade e hora."></canvas>
   <div class="acoes">
     <button class="btn" id="share">Compartilhar meu momento</button>
     <a class="pular" href="como.html">Como funciona e como fizemos</a>
@@ -475,6 +480,10 @@ const loadCidades = uf => (cidadesUF[uf] ||= get(`data/cidades/${uf}.json`));
 
 // First screen: the hook, the facts and the national curve (37 KB gzip) that drives the clock.
 const [urna, curios, TOT] = await Promise.all([get("data/urna.json"), get("data/curiosidades.json"), get("../data/totals.json")]);
+// All votes, Brazil and abroad (VOTOS is Brazil only: the map and the hours are Brazil).
+const TOTAL = curios.itens.find(i => i.id === "total")?.valor || VOTOS;
+$("total").textContent = `Um domingo. ${fmt(TOTAL)} votos.`;
+$("card").setAttribute("aria-label", `Seu cartão: você foi um dos ${fmt(TOTAL)} votos, com a sua cidade e hora.`);
 const CUM = []; { let a = 0; for (const v of TOT.national) { a += v; CUM.push(a); } }
 const votosAte = t => CUM[clamp(Math.floor(t) - TOT.start, 0, CUM.length - 1)];
 let BORDERS = null; loadBorders().then(b => { BORDERS = b; tick(); });
@@ -545,12 +554,14 @@ function tick() {
   trilha(vh);
 }
 // The rewind cue: a fold that starts more than half an hour before the last one ended names the jump.
+// A clock on the day before the vote (Saturday, abroad) carries dia: -1.
 let ultimoT = null, rewTimer = 0;
 function rebobina(clock) {
-  const t = clock && clock.t != null ? clock.t : clock && clock.txt ? hm(clock.txt) : null;
-  if (t == null) { ultimoT = null; return; }
+  const t0 = clock && clock.t != null ? clock.t : clock && clock.txt ? hm(clock.txt) : null;
+  if (t0 == null) { ultimoT = null; return; }
+  const t = t0 + (clock.dia || 0) * 1440;
   if (ultimoT != null && ultimoT - t > 30) {
-    $("rew").textContent = `de volta às ${hfala(hhmm(t))}`; $("rew").classList.add("on");
+    $("rew").textContent = `de volta às ${hfala(hhmm(t0))}`; $("rew").classList.add("on");
     clearTimeout(rewTimer); rewTimer = setTimeout(() => $("rew").classList.remove("on"), 1400);
   }
   ultimoT = t;
@@ -617,7 +628,7 @@ function rotulo(ctx, txt, x, y, dpr, cor) {
   return w;
 }
 function onde(l) {
-  const parts = [l.uf === "BR" ? "Brasil" : l.municipio ? `${l.municipio}, ${l.uf}` : l.uf];
+  const parts = [l.uf === "BR" ? "Brasil" : l.uf === "ZZ" ? (l.municipio ? `${l.municipio}, ${l.pais}` : "exterior") : l.municipio ? `${l.municipio}, ${l.uf}` : l.uf];
   if (l.zona) parts.push(`zona ${l.zona}`);
   if (l.secao) parts.push(`seção ${l.secao}`);
   return parts.join(" · ");
@@ -644,39 +655,61 @@ function minha() {
 {
   const el = $("primeiro"), s = urna.secao, pm = urna.primeiro_minuto, c = $("c1"), host = $("c1passos");
   const first = urna.linhas.find(l => l.texto === "O voto foi computado");
+  const cur = id => curios.itens.find(i => i.id === id), fx = cur("primeiro_voto"), ant = cur("exterior_antes");
+  const fora = fx?.lugar.uf === "ZZ", lx = fx?.lugar;
   const its = [
+    ...(fora ? [
+      { h: `sábado, ${fx.hora} · ${onde(lx)}`, titulo: "O primeiro voto da eleição.", texto: fx.texto },
+      { h: "08:00 · exterior", titulo: ant.titulo + ".", texto: ant.texto },
+    ] : []),
     { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${+first.hora.slice(6)} segundos depois de a urna abrir, alguém em ${s.municipio}, ${s.uf} votou.` },
     { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Cada linha é uma urna.` },
     { h: "08:01 · Brasil", titulo: "Esse foi só o primeiro minuto.", texto: "Faltavam onze horas de eleição." },
   ];
   $("pph").textContent = first.hora;
+  if (fora) {
+    $("pel").textContent = `${lx.municipio}, ${lx.pais} · sábado, hora de Brasília`;
+    $("pet").textContent = `O primeiro voto da eleição saiu de ${lx.municipio}.`;
+  }
+  // Without a vote abroad before Brazil, the hook keeps its old stops.
+  const F = fora ? [0.08, 0.17, 0.26, 0.38] : [0.1, 0.1, 0.1, 0.3];
   $("ppt").textContent = `O primeiro voto do Brasil saiu de ${s.municipio}, ${s.uf}.`;
   $("ppl").innerHTML = `${s.municipio}, ${s.uf} ·<a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
   const linhas = [{ hora: first.hora, municipio: s.municipio, uf: s.uf, um: true }, ...pm.linhas];
   const enx = $("enx"), VIS = 22;
   let shown = -1;
   scene(el, p => {
-    $("dobra").classList.toggle("on", p < 0.1);
-    $("pvoto").classList.toggle("on", p >= 0.1 && p < 0.3);
+    const [f0, f1, f2, f3] = F, ext = p >= f0 && p < f2, cedo = p < f1;
+    $("dobra").classList.toggle("on", p < f0);
+    $("pext").classList.toggle("on", ext);
+    if (ext) {
+      $("peh").textContent = cedo ? fx.hora : fmt(ant.valor);
+      $("pel").textContent = cedo ? `${lx.municipio}, ${lx.pais} · sábado, hora de Brasília` : "votos no exterior antes das 8h";
+      $("pet").textContent = cedo ? `O primeiro voto da eleição saiu de ${lx.municipio}.` : "Antes de o Brasil abrir.";
+    }
+    $("pvoto").classList.toggle("on", p >= f2 && p < f3);
     $("hint").style.opacity = p < 0.03 ? 1 : 0;
-    const q = clamp((p - 0.3) / 0.48), k = p < 0.3 ? 0 : Math.max(1, Math.round(q * linhas.length));
+    const q = clamp((p - f3) / (0.8 - f3)), k = p < f3 ? 0 : Math.max(1, Math.round(q * linhas.length));
     if (k !== shown) {
       shown = k;
       enx.innerHTML = linhas.slice(Math.max(0, k - VIS), k).map(l =>
         `<div class="${l.um ? "um" : ""}"><span>${l.hora}</span><span><i>●</i> <b>${l.municipio}</b>, ${l.uf} · voto computado</span></div>`).join("");
     }
-    const e = p < 0.1 ? null : p < 0.3 ? its[0] : p < 0.8 ? its[1] : its[2];
+    const o = fora ? 2 : 0, e = p < f0 ? null : p < f1 ? its[0] : p < f2 ? its[1] : p < f3 ? its[o] : p < 0.8 ? its[o + 1] : its[o + 2];
     passos(host, its, e);
     // The leader line: from the big time, then from the newest log line.
     const { ctx, dpr, W, H } = fit(c); ctx.clearRect(0, 0, W, H);
-    if (e === its[0]) { const cr = c.getBoundingClientRect(), r = $("pph").getBoundingClientRect(); ligar(c, ctx, [(r.right - cr.left + 10) * dpr, (r.top + r.height / 2 - cr.top) * dpr], host, dpr); }
-    if (e === its[1] && enx.lastElementChild) { const cr = c.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(enx.lastElementChild.lastElementChild); const r = rg.getBoundingClientRect(); ligar(c, ctx, [(r.right - cr.left + 8) * dpr, (r.top + r.height / 2 - cr.top) * dpr], host, dpr); }
-    if (p < 0.1) return null;
-    if (p < 0.3) return { txt: first.hora, sub: "<b>1</b> voto" };
+    if (fora && (e === its[0] || e === its[1])) { const cr = c.getBoundingClientRect(), r = $("peh").getBoundingClientRect(); ligar(c, ctx, [(r.right - cr.left + 10) * dpr, (r.top + r.height / 2 - cr.top) * dpr], host, dpr); }
+    if (e === its[o]) { const cr = c.getBoundingClientRect(), r = $("pph").getBoundingClientRect(); ligar(c, ctx, [(r.right - cr.left + 10) * dpr, (r.top + r.height / 2 - cr.top) * dpr], host, dpr); }
+    if (e === its[o + 1] && enx.lastElementChild) { const cr = c.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(enx.lastElementChild.lastElementChild); const r = rg.getBoundingClientRect(); ligar(c, ctx, [(r.right - cr.left + 8) * dpr, (r.top + r.height / 2 - cr.top) * dpr], host, dpr); }
+    if (p < f0) return null;
+    if (p < f1) return { txt: fx.hora, dia: -1, sub: `sábado · <b>${lx.municipio}</b>, ${lx.pais}` };
+    if (p < f2) return { txt: "08:00", sub: `<b>${fmt(ant.valor)}</b> votos no exterior` };
+    if (p < f3) return { txt: first.hora, sub: "<b>1</b> voto no Brasil" };
     if (p > 0.8) return { txt: "08:01", sub: `<b>${fmt(pm.votos)}</b> votos no primeiro minuto` };
     const n = Math.max(1, Math.round(pm.votos * q));
     return { txt: linhas[k - 1].hora, sub: `<b>${fmt(n)}</b> ${n === 1 ? "voto" : "votos"}` };
-  }, () => [0, 0.12, 0.32, 0.82]);
+  }, () => fora ? [0, 0.1, 0.19, 0.28, 0.4, 0.82] : [0, 0.12, 0.32, 0.82]);
 }
 
 /* ---------- Agenda: a scene that stops on each note ---------- */
@@ -877,7 +910,7 @@ async function afterAnswer() {
       { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
       ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora && i.id !== "cem_milhoes").map(fato),
       { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
-      (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(VOTOS - 1e8)}.`, lugar: l }; })(),
+      (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(TOTAL - 1e8)}.`, lugar: l }; })(),
       { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", texto: "Em poucos minutos, quase nenhum eleitor votando.", lugar: { uf: "BR" } },
       fato(cur("ultimo_voto")),
     ];
@@ -991,6 +1024,8 @@ renderHoras();
     { ...fato(cur("stf"), [1035, 1147]), texto: `A decisão chega com a maioria das urnas já fechada. Até as 19h06, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
+    // The last vote abroad is after the chart ends: a step at its edge, with its own clock.
+    ...(() => { const i = cur("ultimo_voto_exterior"); return i ? [{ ...fato(i), t: B, fora: i }] : []; })(),
   ];
   const ag = agenda(passos_, A, B, 55);
   tabela(el, "Votos a cada dez minutos, das 16h às 19h10", ["De", "Votos"], Array.from({ length: 19 }, (_, i) => [hhmm(A + 10 * i), fmt(somaMin(nat, A + 10 * i, A + 10 * i + 10))]));
@@ -1032,6 +1067,7 @@ renderHoras();
       ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, yb, 4 * dpr, 0, 6.283); ctx.fill();
       ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "às " : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 210 * dpr), yb + 36 * dpr);
     }
+    if (e?.fora) return { txt: e.fora.hora, sub: `<b>${e.fora.lugar.municipio}</b>, ${e.fora.lugar.pais} · lá eram ${hfala(e.fora.hora_local)}` };
     if (e) { const m = clamp(Math.round(e.t), A, B - 1); ligar(c, ctx, [X(m), Y(nat[m - S] || 0)], host, dpr, yt - 46 * dpr); }
     const ate = t >= 1020 ? somaMin(nat, 1020, Math.floor(t) + 1) : 0;
     return { t, sub: t >= 1020 ? `<b>${fmt(ate)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
@@ -1182,7 +1218,7 @@ async function drawCard() {
   ctx.fillStyle = "#fff1d6"; ctx.beginPath(); ctx.arc(560, 400, 7, 0, 6.283); ctx.fill();
   ctx.fillStyle = "#8e8a80"; ctx.font = '400 28px "JetBrains Mono"'; ctx.fillText("O BRASIL VOTANDO · 25 OUT 2026", 80, 100);
   ctx.fillStyle = "#ece8dc"; ctx.font = "italic 400 78px \"Instrument Serif\""; ctx.fillText("Você foi um dos", 80, 800);
-  ctx.fillStyle = "#ffb43c"; ctx.font = "400 150px \"Instrument Serif\""; ctx.fillText(fmt(VOTOS), 80, 940);
+  ctx.fillStyle = "#ffb43c"; ctx.font = "400 150px \"Instrument Serif\""; ctx.fillText(fmt(TOTAL), 80, 940);
   const linhas = [];
   if (state.town) linhas.push(`em ${state.town.nome}, ${state.town.uf}`);
   if (state.sec) linhas.push(`zona ${state.zona}, seção ${state.secao}`);
@@ -1197,7 +1233,7 @@ $("share").addEventListener("click", async () => {
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
   const url = location.href;
   const onde = state.town ? `, em ${state.town.nome}, ${state.town.uf}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
-  const texto = `Eu fiz parte dessa história. Um dos ${fmt(VOTOS)} votos do segundo turno${onde}${hora}. Veja o seu momento. ${url}`;
+  const texto = `Eu fiz parte dessa história. Um dos ${fmt(TOTAL)} votos do segundo turno${onde}${hora}. Veja o seu momento. ${url}`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); return; } catch { return; }
   }
