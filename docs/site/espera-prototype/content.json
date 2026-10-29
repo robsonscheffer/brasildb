@@ -12,14 +12,11 @@
       "alt": "Vista alta da orla de Icaraí, com pessoas reunidas na rua, edifícios, fumaça e fogos."
     },
     {
-      "id": "publicacao",
-      "title": "Na rua. E nas telas.",
-      "media": "pt",
-      "time": "25/10/2026 · horário não confirmado",
-      "source": "https://www.instagram.com/reel/De7ay00NKkd/",
-      "credit": "@ptbrasil · capa publicada de um reel",
-      "rights": "Sem autorização de uso. Áudio e conteúdo audiovisual ainda não conferidos.",
-      "alt": "Capa original do reel atribuído a @ptbrasil; conteúdo do vídeo ainda não conferido."
+      "id": "dia",
+      "title": "Antes da noite, um domingo inteiro.",
+      "time": "13h22 · horário do pedido relatado pelo Poder360",
+      "source": "https://www.poder360.com.br/poder-eleicoes-2026/zanin-prorroga-votacao-do-2o-turno-ate-19h/",
+      "credit": "Poder360 · pedido de prorrogação e esclarecimento sobre urnas abertas"
     },
     {
       "id": "apuracao",
@@ -73,6 +70,11 @@
       "alt": "Plano aberto de pessoas reunidas na Rua Sapucaí, em Belo Horizonte, à noite."
     }
   ],
+  "pause": {
+    "source": "https://www.infomoney.com.br/politica/tse-pausa-totalizacao-dos-votos-apos-zanin-prorrogar-votacao-ate-as-19h/",
+    "time": "17h20",
+    "attribution": "Segundo o InfoMoney, às 17h20 o Centro de Divulgação das Eleições comunicou a interrupção da totalização."
+  },
   "confirmation": {
     "source": "https://exame.com/brasil/veja-a-cronologia-dos-pedidos-de-lula-e-flavio-para-prorrogar-a-votacao-no-2o-turno/",
     "other_source": "https://diariodopara.com.br/eleicoes-2026/tse-declara-lula-eleito-as-21h10-petista-recebe-637-milhoes-de-votos/",

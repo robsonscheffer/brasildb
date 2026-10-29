@@ -12,7 +12,6 @@ SITE = Path(__file__).resolve().parents[1] / "docs/site/espera-prototype"
 MEDIA = {
     "/private-media/niteroi.jpg": "curadoria-primeira/niteroi-felipe-publicada.jpg",
     "/private-media/bh.jpg": "curadoria-primeira/bh-publicada.jpg",
-    "/private-media/pt.jpg": "curadoria-segunda/pt-reel-poster.jpg",
 }
 
 def percent(value):
@@ -65,8 +64,11 @@ def render():
             '</div></article>'
         )
     values["partials"] = "".join(cards)
-    for key, value in content["confirmation"].items():
-        values[f"confirmation_{key}"] = escape(value, quote=True)
+    for section in ("pause", "confirmation"):
+        for key, value in content[section].items():
+            values[f"{section}_{key}"] = escape(value, quote=True)
+    sources.append(f'<li><a href="{values["pause_source"]}">Comunicação da pausa · InfoMoney</a>'
+                   f'<span>{values["pause_attribution"]}</span></li>')
     sources.append(f'<li><a href="{values["confirmation_source"]}">Confirmação matemática · relato da Exame</a>'
                    f'<span>{values["confirmation_limit"]}</span></li>')
     result = content["result"]
@@ -135,7 +137,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--media-root", required=True, type=Path,
-                        help="Private research folder containing the two curadoria subfolders")
+                        help="Private research folder containing the curadoria-primeira subfolder")
     parser.add_argument("--port", type=int, default=52018)
     args = parser.parse_args()
     missing = [name for name in MEDIA.values() if not (args.media_root / name).is_file()]

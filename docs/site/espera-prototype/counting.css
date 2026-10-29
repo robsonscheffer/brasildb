@@ -16,7 +16,7 @@
 .beat-story h3 em { color: #e9a18c; }
 .beat-story > p { font-size: 16px; color: #c6c4b8; max-width: 30ch; }
 .score-label { font-size: 9px; letter-spacing: .14em; margin-bottom: 36px; color: #b9b7a9; }
-.beat-score .candidate-line { align-items: baseline; font-size: 15px; margin-bottom: 16px; }
+.beat-score .candidate-line { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 15px; margin-bottom: 16px; }
 .beat-score .candidate-line b { font-size: clamp(45px, 6.4vw, 100px); font-weight: 400; line-height: 1; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
 .beat-score .candidate-line b small { font-size: .4em; margin-left: 5px; }
 .beat-score .lula b { color: #e9a18c; }
