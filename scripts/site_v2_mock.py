@@ -75,7 +75,7 @@ def curiosidades():
     def item(id, tela, titulo, texto, hora, lugar, valor=None, certo=False):
         return {"id": id, "tela": tela, "titulo": titulo, "texto": texto, "hora": hora,
                 "lugar": lugar, "valor": valor, "certo": certo, "sql": None}
-    coords = {"Niterói": (-22.88, -43.10), "Espinosa": (-14.93, -42.82), "Jacareacanga": (-6.22, -57.75),
+    coords = {"Niterói": (-22.88, -43.10), "Uberlândia": (-18.92, -48.28), "Espinosa": (-14.93, -42.82), "Jacareacanga": (-6.22, -57.75),
               "Cedro do Abaeté": (-19.15, -45.71), "Belo Horizonte": (-19.92, -43.94),
               "São Paulo": (-23.55, -46.63), "Paraíso do Sul": (-29.67, -53.14),
               "Fernando de Noronha": (-3.85, -32.42), "Santa Maria de Jetibá": (-20.03, -40.74),
@@ -102,6 +102,7 @@ def curiosidades():
             item("almoco", 4, "Quase todo o Brasil desacelera na hora do almoço", "São Paulo e Rio não param.", "12:00", L("BR"), None, True),
             item("solimoes", 4, "Alto Solimões, nove em dez", "No Amazonas, nove em cada dez já votaram.", "13:55", L("AM", "Alto Solimões"), None, True),
             item("jetiba", 4, "612 de 612", "Em Santa Maria de Jetibá, a maior seção do país. Todos os eleitores compareceram.", None, L("ES", "Santa Maria de Jetibá", "0009", "0085"), 612, True),
+            item("cem_milhoes", 4, "100 milhões de votos", "O voto de número 100.000.000 entrou aqui.", None, L("MG", "Uberlândia", "0231", "0118"), 100000000, True),
             item("espinosa", 4, "Três horas de espera", "Em Espinosa, a urna abriu às 8h. O primeiro eleitor chegou às 11h15.", "11:15:48", L("MG", "Espinosa", "0109", "0094"), 195, True),
             item("granizo", 5, "Granizo em Belo Horizonte", "163 locais de votação sem luz. As urnas seguiram na bateria.", "13:00", L("MG", "Belo Horizonte"), 163, True),
             item("sem_luz", 5, "A luz caiu. A eleição não parou", "62.409 urnas ficaram sem energia em algum momento do dia. Nenhuma deixou de votar: toda urna tem bateria própria. Em Paraíso do Sul, RS, uma delas segurou 7 horas no escuro.", None, L("BR"), 62409, True),
