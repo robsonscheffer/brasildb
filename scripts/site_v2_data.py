@@ -198,6 +198,14 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     f.add("primeiro_voto", 2, "O primeiro voto da eleição",
           f"Em {f.onde(l)}, às {hfala(hora(local))} de domingo. Em Brasília, era {dia_label(t)}.",
           hora(t), l, None, sql)
+    f.itens[-1]["hora_local"] = hora(local)
+
+    sql = f"""SELECT sum(votos), count(DISTINCT id_municipio_tse) FROM r2.votos_minuto
+              WHERE {ZZ} AND minuto_bsb < TIMESTAMP '{DIA} 08:00:00'"""
+    n_antes, c_antes = f.q(sql)[0]
+    f.add("exterior_antes", 2, "Antes de o Brasil abrir",
+          f"Quando as urnas do Brasil abriram, às 8h, {fmt(n_antes)} brasileiros já tinham votado em {c_antes} cidades no exterior.",
+          "08:00", {"uf": "ZZ"}, n_antes, sql)
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, BR, False)
     l = f.lugar(uf, mun, z, s)
@@ -360,8 +368,11 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, ZZ, True)
     l = f.lugar(uf, mun, z, s)
+    fm = f.q(f"SELECT fuso_minutos FROM r2.fuso_municipio WHERE sigla_uf = '{uf}' AND id_municipio_tse = '{mun}'")[0][0]
+    local = t + timedelta(minutes=fm)
     f.add("ultimo_voto_exterior", 8, "O último voto da eleição",
-          f"Em {f.onde(l)}, às {hfala(hora(t))} de Brasília.", hora(t), l, None, sql)
+          f"Em {f.onde(l)}, às {hfala(hora(t))} de Brasília. Lá eram {hfala(hora(local))}.", hora(t), l, None, sql)
+    f.itens[-1]["hora_local"] = hora(local)
 
     return {"mock": False, "itens": f.itens}
 
