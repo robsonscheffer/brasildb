@@ -875,9 +875,9 @@ async function afterAnswer() {
     const its = [
       { t: 480, h: "08:00 · Brasil", titulo: "O país inteiro começa de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
       { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
-      ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora).map(fato),
+      ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora && i.id !== "cem_milhoes").map(fato),
       { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
-      (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : ""; return { t: quando(1e8), h: `${hhmm(quando(1e8))} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(quando(1e8)))}${em}. Faltavam ${fmt(VOTOS - 1e8)}.`, lugar: l }; })(),
+      (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(VOTOS - 1e8)}.`, lugar: l }; })(),
       { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", texto: "Em poucos minutos, quase nenhum eleitor votando.", lugar: { uf: "BR" } },
       fato(cur("ultimo_voto")),
     ];
