@@ -33,23 +33,42 @@ def render():
         )
     records = next(s["partials"] for s in content["scenes"] if s["id"] == "apuracao")
     cards = []
-    for item in records:
+    for index, item in enumerate(records, 1):
         rows = []
         for key, name in (("lula", "Lula"), ("flavio", "Flávio Bolsonaro")):
             css = " opponent" if key == "flavio" else ""
             rows.append(
-                f'<div class="candidate-line"><span>{name}</span>'
-                f'<b>{percent(item[key])}%</b></div>'
+                f'<div class="candidate-line {key}"><span>{name}</span>'
+                f'<b>{percent(item[key])}<small>%</small></b></div>'
                 f'<div class="bar{css}" aria-hidden="true">'
                 f'<span style="width: {item[key]}%"></span></div>'
             )
         cards.append(
-            f'<article class="partial" aria-label="Parcial publicada às {item["time"]}">'
-            f'<time>{item["time"]}</time><p class="eyebrow">ATUALIZAÇÃO DO INFOMONEY</p>'
+            f'<article class="count-beat {escape(item["tone"])}" id="parcial-{index}" '
+            f'aria-labelledby="beat-title-{index}"><div class="beat-frame">'
+            f'<div class="beat-top"><span>DOMINGO, 25 OUTUBRO</span>'
+            f'<time>{item["time"]}</time><span>0{index} / 04</span></div>'
+            f'<div class="beat-body"><div class="beat-story">'
+            f'<h3 id="beat-title-{index}">{escape(item["heading"])}<br>'
+            f'<em>{escape(item["turn"])}</em></h3>'
+            f'<p>{escape(item["line"])}</p></div>'
+            f'<div class="beat-score"><p class="score-label">PRESIDENTE · VOTOS VÁLIDOS</p>'
             + "".join(rows)
-            + f'<p class="coverage"><b>{percent(item["counted"])}%</b> das urnas apuradas</p></article>'
+            + f'<p class="coverage"><b>{percent(item["counted"])}%</b> das urnas apuradas</p>'
+            f'</div></div><div class="beat-bottom"><p>{escape(item["coda"])}</p>'
+            f'<a href="#' + (f'parcial-{index + 1}' if index < 3 else 'confirmacao')
+            + '">Continuar ↓</a></div>'
+            f'<details class="beat-source"><summary>InfoMoney · {item["time"]} · fonte e contexto</summary>'
+            '<p>Horário da atualização jornalística, em Brasília. Recorte documental, não contagem ao vivo. '
+            'Os intervalos não são interpolados. As frases de espera são voz editorial, não medição de sentimentos.</p>'
+            f'<a href="{values["apuracao_source"]}">Consultar o liveblog ↗</a></details>'
+            '</div></article>'
         )
     values["partials"] = "".join(cards)
+    for key, value in content["confirmation"].items():
+        values[f"confirmation_{key}"] = escape(value, quote=True)
+    sources.append(f'<li><a href="{values["confirmation_source"]}">Confirmação matemática · relato da Exame</a>'
+                   f'<span>{values["confirmation_limit"]}</span></li>')
     result = content["result"]
     values["result_source"] = escape(result["source"], quote=True)
     values["result_scope"] = escape(result["scope"])
@@ -86,7 +105,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/espera-prototype/":
             body, mime = render(), "text/html; charset=utf-8"
-        elif path in ("/espera-prototype/style.css", "/espera-prototype/script.js"):
+        elif path in ("/espera-prototype/style.css", "/espera-prototype/counting.css", "/espera-prototype/script.js"):
             name = path.rsplit("/", 1)[-1]
             body = (SITE / name).read_bytes()
             mime = "text/css" if name.endswith(".css") else "text/javascript"

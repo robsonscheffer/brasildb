@@ -7,6 +7,7 @@
   <title>Enquanto você esperava · BrasilDB · protótipo privado</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="counting.css">
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -35,17 +36,25 @@
       <div class="section-rule"><span>02 / A PUBLICAÇÃO</span><span>VOLTAMOS AO DIA 25</span></div>
       <div class="post-layout">
         <div class="post-copy"><p class="eyebrow">UM DOCUMENTO DO DIA, SEM MINUTO FECHADO</p><h2 id="post-title">Na rua.<br>E nas <em>telas.</em></h2><p>Aquele dia também passava de uma tela para outra.</p><p class="muted">Aqui, uma publicação do PT. Não é um post pessoal de Lula, nem uma medida do que o país sentia.</p><p class="annotation">Esta passagem abre espaço para o documento. Sem horário confirmado, ele não é encaixado entre dois minutos da apuração.</p></div>
-        <figure class="post-document"><div class="post-heading"><span class="post-monogram" aria-hidden="true">PT</span><div><strong>@ptbrasil</strong><span>Publicação original · Instagram</span></div><span class="document-tag">DOCUMENTO</span></div><img src="/private-media/pt.jpg" alt="$publicacao_alt" loading="lazy"><figcaption><span class="eyebrow">25 OUT 2026 · HORÁRIO NÃO CONFIRMADO</span><p>Capa de um reel. O vídeo e seu áudio ainda não foram conferidos; não os reproduzimos aqui.</p><a href="$publicacao_source">Abrir publicação original <span aria-hidden="true">↗</span></a><details><summary>Limites deste registro</summary><p>$publicacao_rights Declarações de campanha não comprovam, por si, os acontecimentos alegados. Não usamos likes como termômetro nacional.</p></details></figcaption></figure>
+        <figure class="post-document"><div class="post-heading"><span class="post-monogram" aria-hidden="true">PT</span><div><strong>@ptbrasil</strong><span>Publicação original · Instagram</span></div><span class="document-tag">DOCUMENTO</span></div><img src="/private-media/pt.jpg" alt="$publicacao_alt" width="360" height="640" loading="lazy"><figcaption><span class="eyebrow">25 OUT 2026 · HORÁRIO NÃO CONFIRMADO</span><p>Capa de um reel. O vídeo e seu áudio ainda não foram conferidos; não os reproduzimos aqui.</p><a href="$publicacao_source">Abrir publicação original <span aria-hidden="true">↗</span></a><details><summary>Limites deste registro</summary><p>$publicacao_rights Declarações de campanha não comprovam, por si, os acontecimentos alegados. Não usamos likes como termômetro nacional.</p></details></figcaption></figure>
       </div>
     </section>
 
-    <section class="counting section-pad" id="apuracao" aria-labelledby="count-title">
-      <div class="section-rule"><span>03 / A APURAÇÃO</span><span>ATUALIZAÇÕES · HORÁRIO DE BRASÍLIA</span></div>
-      <div class="count-intro"><h2 id="count-title">Antes do resultado inteiro,<br>vieram <em>as partes.</em></h2><p>Três recortes do que foi publicado.<br>Entre eles, não inventamos a contagem.</p></div>
-      <div class="partials">$partials</div>
-      <div class="count-note"><p>Percentuais dos candidatos: votos válidos.<br>Urnas apuradas: cobertura informada em cada atualização.</p><p>Lula já aparecia à frente às 19h03. O recorte das 20h28 não é apresentado como sua primeira liderança.</p><a href="$apuracao_source">Fonte: liveblog do InfoMoney ↗</a></div>
-      <div class="result"><div><p class="eyebrow">DO RECORTE JORNALÍSTICO AO RESULTADO OFICIAL</p><h3>Lula eleito.</h3><p>O resultado deixou de ser uma possibilidade.</p></div><div class="result-numbers"><p class="eyebrow">$result_scope</p><div class="final-row"><strong>Lula</strong><b>$lula_percent%</b><span>$lula_votes votos</span></div><div class="bar" aria-hidden="true"><span style="width: $lula_width%"></span></div><div class="final-row opponent"><strong>Flávio Bolsonaro</strong><b>$flavio_percent%</b><span>$flavio_votes votos</span></div><div class="bar opponent" aria-hidden="true"><span style="width: $flavio_width%"></span></div><a href="$result_source">Consultar o resultado no TSE ↗</a></div></div>
-      <p class="result-note">Resultado final nacional, não soma dos logs de participação. Sem minuto exato de confirmação: as fontes consultadas divergem sobre esse horário.</p>
+    <section class="counting count-sequence" id="apuracao" aria-labelledby="count-title">
+      <div class="count-prologue"><p class="eyebrow">03 / A APURAÇÃO · DOMINGO À NOITE</p><h2 id="count-title">Você já sabe<br>como terminou.</h2><p>Mas, naquela hora,<br><em>ainda não.</em></p><a href="#parcial-1">Voltar à apuração ↓</a></div>
+      <div class="count-beats">$partials</div>
+      <section class="confirmation" id="confirmacao" aria-labelledby="confirmation-title">
+        <div class="confirmation-top"><span>NAQUELA NOITE</span><span>04 / 04 · CONFIRMAÇÃO MATEMÁTICA</span></div>
+        <p class="eyebrow">NÃO ERA MAIS UMA VANTAGEM.</p>
+        <h3 id="confirmation-title">Era <em>vitória.</em></h3>
+        <p class="confirmation-release">Lula eleito.</p>
+        <p class="confirmation-meaning">Os votos que faltavam já não poderiam mudar o vencedor.</p>
+        <p class="confirmation-attribution">$confirmation_attribution</p>
+        <details><summary>O registro da confirmação</summary><p>$confirmation_limit</p><a href="$confirmation_source">Ler a Exame ↗</a> · <a href="$confirmation_other_source">Ler o Diário do Pará ↗</a></details>
+        <a class="to-street" href="#festa">Agora, a rua. ↓</a>
+      </section>
+      <details class="final-record"><summary>Depois, o resultado completo · TSE</summary><div class="result"><div><p class="eyebrow">DO RECORTE JORNALÍSTICO AO RESULTADO OFICIAL</p><h3>Lula eleito.</h3><p>O resultado deixou de ser uma possibilidade.</p></div><div class="result-numbers"><p class="eyebrow">$result_scope</p><div class="final-row"><strong>Lula</strong><b>$lula_percent%</b><span>$lula_votes votos</span></div><div class="bar" aria-hidden="true"><span style="width: $lula_width%"></span></div><div class="final-row opponent"><strong>Flávio Bolsonaro</strong><b>$flavio_percent%</b><span>$flavio_votes votos</span></div><div class="bar opponent" aria-hidden="true"><span style="width: $flavio_width%"></span></div><a href="$result_source">Consultar o resultado no TSE ↗</a></div></div>
+      <p class="result-note">Resultado final nacional, não soma dos logs de participação nem o placar do instante da confirmação matemática.</p></details>
     </section>
 
     <section class="celebration" id="festa" aria-labelledby="festa-title">

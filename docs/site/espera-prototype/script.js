@@ -12,6 +12,8 @@ function markChapter() {
     if (link.hash === "#" + current.id) link.setAttribute("aria-current", "location");
     else link.removeAttribute("aria-current");
   }
+  const counting = document.querySelector("#apuracao").getBoundingClientRect();
+  document.body.classList.toggle("in-counting", counting.top <= 0 && counting.bottom > window.innerHeight * 0.5);
   scheduled = false;
 }
 window.addEventListener("scroll", () => {

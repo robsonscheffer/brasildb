@@ -31,19 +31,34 @@
           "time": "19h03",
           "lula": 55.53,
           "flavio": 44.47,
-          "counted": 0.37
+          "counted": 0.37,
+          "heading": "Na frente.",
+          "turn": "Mas era cedo.",
+          "line": "Lula tinha 55,53%. Só 0,37% das urnas tinham sido apuradas.",
+          "coda": "Ainda não dava para respirar.",
+          "tone": "ahead"
         },
         {
           "time": "19h47",
           "lula": 49.97,
           "flavio": 50.03,
-          "counted": 13.98
+          "counted": 13.98,
+          "heading": "Flávio",
+          "turn": "na frente.",
+          "line": "50,03% a 49,97%. A vantagem agora era dele.",
+          "coda": "E ainda faltava tanto.",
+          "tone": "behind"
         },
         {
           "time": "20h28",
           "lula": 50.14,
           "flavio": 49.86,
-          "counted": 50.12
+          "counted": 50.12,
+          "heading": "De novo,",
+          "turn": "Lula.",
+          "line": "Pouco mais da metade das urnas apuradas. Lula voltava a aparecer à frente.",
+          "coda": "Na frente não era eleito.",
+          "tone": "return"
         }
       ]
     },
@@ -58,6 +73,12 @@
       "alt": "Plano aberto de pessoas reunidas na Rua Sapucaí, em Belo Horizonte, à noite."
     }
   ],
+  "confirmation": {
+    "source": "https://exame.com/brasil/veja-a-cronologia-dos-pedidos-de-lula-e-flavio-para-prorrogar-a-votacao-no-2o-turno/",
+    "other_source": "https://diariodopara.com.br/eleicoes-2026/tse-declara-lula-eleito-as-21h10-petista-recebe-637-milhoes-de-votos/",
+    "attribution": "Segundo a Exame, o TSE considerou Lula matematicamente reeleito com 97,69% das urnas apuradas.",
+    "limit": "A Exame situa a confirmação às 21h08; o Diário do Pará, às 21h10. Sem um registro primário que resolva a diferença, não fixamos um minuto. Esta cena apresenta o relato jornalístico, não uma reconstituição do anúncio ou um cálculo independente."
+  },
   "result": {
     "source": "https://resultados.tse.jus.br/oficial/ele2026/6258/dados/br/br-c0001-e006258-u.json",
     "scope": "Resultado final nacional · TSE · votos válidos",

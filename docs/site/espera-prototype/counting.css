@@ -1,0 +1,93 @@
+/* The same scoreboard returns at each documented moment. No interpolated votes. */
+.count-sequence { padding: 0; background: #121311; color: #eee9dc; }
+.count-prologue { min-height: 95svh; padding: 100px var(--gutter); display: flex; flex-direction: column; justify-content: center; }
+.count-prologue .eyebrow { color: #b9b7a9; }
+.count-prologue h2 { font-size: clamp(58px, 7.7vw, 120px); margin: 35px 0; max-width: 15ch; }
+.count-prologue > p:not(.eyebrow) { font-size: clamp(26px, 3vw, 46px); line-height: 1.2; color: #b9b7a9; }
+.count-prologue > p em { color: #eee9dc; }
+.count-prologue > a { font-size: 12px; margin-top: 35px; align-self: flex-start; }
+.count-beat { position: relative; min-height: 125svh; background: #121311; border-top: 1px solid #414139; }
+.beat-frame { position: sticky; top: 0; min-height: 100svh; padding: 32px var(--gutter) 90px; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; background: inherit; }
+.beat-top, .confirmation-top { display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 10px; letter-spacing: .12em; }
+.beat-top time { font: 400 clamp(32px, 4vw, 60px)/1 Georgia, serif; letter-spacing: -.05em; }
+.beat-top > span { color: #b9b7a9; }
+.beat-body { display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: 7vw; margin: 35px 0; }
+.beat-story h3 { font-size: clamp(60px, 7.4vw, 118px); margin-bottom: 30px; }
+.beat-story h3 em { color: #e9a18c; }
+.beat-story > p { font-size: 16px; color: #c6c4b8; max-width: 30ch; }
+.score-label { font-size: 9px; letter-spacing: .14em; margin-bottom: 36px; color: #b9b7a9; }
+.beat-score .candidate-line { align-items: baseline; font-size: 15px; margin-bottom: 16px; }
+.beat-score .candidate-line b { font-size: clamp(45px, 6.4vw, 100px); font-weight: 400; line-height: 1; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
+.beat-score .candidate-line b small { font-size: .4em; margin-left: 5px; }
+.beat-score .lula b { color: #e9a18c; }
+.beat-score .bar { height: 3px; margin-bottom: 28px; background: #ffffff18; }
+.beat-score .bar span { background: #e9a18c; }
+.beat-score .bar.opponent span { background: #b9b7a9; }
+.beat-score .coverage { margin: 38px 0 0; font-size: 12px; color: #b9b7a9; }
+.beat-score .coverage b { font-size: 22px; font-variant-numeric: tabular-nums; margin-right: 5px; }
+.beat-bottom { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; border-top: 1px solid #414139; padding-top: 22px; }
+.beat-bottom > p { font-family: Georgia, serif; font-style: italic; font-size: clamp(24px, 2.8vw, 42px); margin: 0; }
+.beat-bottom > a { flex-shrink: 0; font-size: 11px; }
+.beat-source { font-size: 10px; color: #b9b7a9; margin: 0; }
+.beat-source summary { min-height: 24px; }
+.behind { background: #0a0b0a; }
+.behind .beat-story h3 em { color: #eee9dc; }
+.behind .beat-score .flavio b { color: #fff; }
+.return { background: #261611; }
+.confirmation { background: #e8dfb9; color: #292b1f; min-height: 100svh; padding: 40px var(--gutter) 80px; display: flex; flex-direction: column; align-items: flex-start; }
+.confirmation-top { width: 100%; border-bottom: 1px solid #a8a488; padding-bottom: 24px; margin-bottom: 80px; }
+.confirmation > .eyebrow { margin-bottom: 30px; }
+.confirmation h3 { font-size: clamp(85px, 14vw, 215px); margin-bottom: 28px; }
+.confirmation h3 em { color: #a42921; }
+.confirmation-release { font-size: clamp(28px, 4vw, 55px); letter-spacing: -.04em; margin-bottom: 14px; }
+.confirmation-meaning { font-size: 18px; max-width: 38ch; margin-bottom: 45px; }
+.confirmation-attribution { font-size: 12px; max-width: 65ch; margin-bottom: 0; }
+.confirmation details { max-width: 70ch; font-size: 11px; }
+.to-street { margin-top: 45px; font-size: 18px; }
+.final-record { margin: 0; padding: 26px var(--gutter); background: #e8dfb9; color: #292b1f; border-top: 1px solid #a8a488; }
+.final-record > summary { font-size: 12px; padding: 10px 0; }
+.final-record .result { margin-top: 20px; padding-top: 25px; border-color: #a8a488; }
+.final-record .result h3 { color: #a42921; }
+.final-record .final-row span, .final-record .result-note { color: #555747; }
+.final-record .bar { background: #292b1f22; }
+.final-record .bar span { background: #a42921; }
+.final-record .bar.opponent span { background: #6a7464; }
+body.in-counting .chapter-nav { opacity: 0; pointer-events: none; }
+body.in-counting .chapter-nav:focus-within { opacity: 1; pointer-events: auto; }
+@media (max-width: 760px) {
+  .count-prologue { min-height: 85svh; padding: 65px var(--gutter); }
+  .count-prologue h2 { font-size: clamp(48px, 12vw, 75px); }
+  .count-beat { min-height: 115svh; }
+  .beat-frame { padding: 24px var(--gutter) 35px; gap: 22px; }
+  .beat-top { font-size: 8px; gap: 10px; }
+  .beat-top time { font-size: 36px; }
+  .beat-body { grid-template-columns: 1fr; gap: 28px; margin: 10px 0; }
+  .beat-story h3 { font-size: 62px; margin-bottom: 18px; }
+  .beat-story > p { font-size: 13px; margin: 0; max-width: 36ch; }
+  .score-label { margin-bottom: 22px; font-size: 8px; }
+  .beat-score .candidate-line { font-size: 13px; }
+  .beat-score .candidate-line b { font-size: 58px; }
+  .beat-score .bar { margin-bottom: 22px; }
+  .beat-score .coverage { margin-top: 20px; font-size: 10px; }
+  .beat-score .coverage b { font-size: 18px; }
+  .beat-bottom { gap: 15px; padding-top: 18px; }
+  .beat-bottom > p { font-size: 24px; max-width: 17ch; line-height: 1.2; }
+  .beat-bottom > a { font-size: 10px; }
+  .beat-source { font-size: 9px; }
+  .confirmation { padding: 30px var(--gutter) 55px; }
+  .confirmation-top { font-size: 8px; margin-bottom: 70px; }
+  .confirmation-top span:last-child { text-align: right; }
+  .confirmation h3 { font-size: clamp(72px, 18vw, 120px); }
+  .confirmation h3 em { display: block; }
+  .confirmation-meaning { font-size: 16px; }
+}
+/* Long viewports get a held composition; short screens and reduced motion get a linear reading. */
+@media (max-height: 780px), (prefers-reduced-motion: reduce) {
+  .count-beat { min-height: auto; }
+  .beat-frame { position: relative; min-height: 100svh; }
+}
+@media print {
+  .count-beat, .beat-frame, .count-prologue, .confirmation { min-height: auto; position: static; }
+  .beat-frame { break-inside: avoid; }
+  .beat-body { display: block; }
+}
