@@ -39,8 +39,9 @@ def national_hour_shares(totals) -> list[float]:
     return [p / s for p in per]
 
 
-def urna():
-    """Screen 1: the first minutes of one urna's log. Mock lines, real log format."""
+def urna(towns, totals):
+    """Screen 1: the first vote, then the first minute of the country as log lines.
+    The first-minute count is real (v1 totals); which towns and seconds are simulated."""
     lines = [
         ("07:00:02", "INICIO", "Urna ligada"),
         ("07:01:15", "ZERESIMA", "Zerésima impressa: 0 votos para cada candidato"),
@@ -53,10 +54,18 @@ def urna():
     for n in range(2, 13):
         t += rng.randint(35, 95)
         lines.append((f"{t // 3600:02d}:{t % 3600 // 60:02d}:{t % 60:02d}", "VOTO", "O voto foi computado"))
+    # First minute: towns drawn by size, seconds 19..59, as many lines as fit a phone scroll.
+    rng2 = random.Random(800)
+    pool = [i for i, v in enumerate(towns["votos"]) if v]
+    weights = [towns["votos"][i] for i in pool]
+    picks = rng2.choices(pool, weights=weights, k=160)
+    secs = sorted(rng2.randint(20, 59) for _ in picks)
+    minuto = [{"hora": f"08:00:{sc:02d}", "municipio": towns["nome"][i], "uf": towns["uf"][i]} for sc, i in zip(secs, picks)]
     return {
         "mock": True,
         "secao": {"uf": "RJ", "municipio": "Niterói", "zona": "0071", "secao": "0132", "votos": None},
         "linhas": [{"hora": h, "tipo": k, "texto": x} for h, k, x in lines],
+        "primeiro_minuto": {"votos": totals["national"][480 - totals["start"]], "linhas": minuto},
         "fonte": "Log da urna, TSE (dados abertos)",
     }
 
@@ -125,6 +134,7 @@ def cidades(towns, shares):
             "nome": towns["nome"][i], "votos": votos, "aptos": towns["aptos"][i],
             "secoes": towns["secoes"][i], "pico": hhmm(int(towns["pico_min"][i])),
             "metade": metade, "ultimo_voto": f"17:{rng.randint(5, 59):02d}", "horas": horas,
+            "fechamento": f"17:{rng.randint(1, 25):02d}", "chegada": hhmm(17 * 60 + 30 + rng.randint(0, 150)),
         }
     for uf, cs in by_uf.items():
         dump(OUT / f"cidades/{uf}.json", {"mock": True, "uf": uf, "horas": HORAS, "cidades": cs})
@@ -170,7 +180,7 @@ def chegada(ufs):
 def main():
     towns = json.loads((V1 / "towns.json").read_text())
     totals = json.loads((V1 / "totals.json").read_text())
-    dump(OUT / "urna.json", urna())
+    dump(OUT / "urna.json", urna(towns, totals))
     dump(OUT / "curiosidades.json", curiosidades())
     cidades(towns, national_hour_shares(totals))
     secoes()
