@@ -203,20 +203,25 @@
   /* Your urna's trip: the urna, its paper, the transmission */
   .viagem .palco { align-content: start; }
   .cena3 { position: relative; align-self: start; display: grid; grid-template-columns: minmax(230px, 300px) 1fr 150px; align-items: start; gap: 18px; padding: calc(var(--topo) + 24px) 24px 0 var(--gx); }
-  /* The urna eletrônica: beige body, the screen on the left, the keypad on the right, a paper slot below. */
-  .urna { position: relative; background: linear-gradient(180deg, #e6e1d3, #cfc9b8); border-radius: 12px 12px 8px 8px; padding: 12px 12px 10px; display: grid; grid-template-columns: 1fr 86px; gap: 10px; box-shadow: 0 1px 0 #fff6 inset, 0 24px 48px rgba(0,0,0,.55), 0 2px 0 #9f977f; }
+  /* The urna eletrônica, after the 2026 model: a light grey body, the screen across the top with
+     a dark bezel, the keypad below in the middle, white BRANCO, orange CORRIGE and a tall green
+     CONFIRMA on the right, and on the left a labelled pane over the card slot (no logo copy). */
+  .urna { position: relative; background: linear-gradient(180deg, #dedfdb, #c4c5c0); border-radius: 10px; padding: 10px 10px 12px; display: grid; grid-template-columns: 62px 1fr 64px; grid-template-areas: "tela tela tela" "esq tecl fn"; gap: 10px 8px; box-shadow: 0 1px 0 #fff8 inset, 0 24px 48px rgba(0,0,0,.55), 0 2px 0 #8f908a; }
   .urna::before { content: "URNA ELETRÔNICA"; position: absolute; top: -18px; left: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--muted); }
-  .urna .tela { grid-row: 1 / 3; background: #0f1a14; border-radius: 6px; height: 128px; overflow: hidden; padding: 8px 9px; font-family: var(--mono); font-size: 10px; line-height: 1.55; color: var(--accent); display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 0 3px #2a2a28, inset 0 0 26px rgba(255,180,60,.22); }
+  .urna .tela { grid-area: tela; background: #f7f5ef; color: #1b1b1b; border: 4px solid #141414; border-radius: 4px; height: 128px; overflow: hidden; padding: 6px 8px; font-family: var(--mono); font-size: 10px; line-height: 1.55; display: flex; flex-direction: column; justify-content: flex-end; }
   .urna .tela div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .urna .tela div span { opacity: .6; margin-right: 6px; }
-  .urna .tecl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .urna .tecl i { height: 18px; border-radius: 3px; background: #2b2b2e; color: #e8e4dc; font: 500 9px/18px var(--mono); font-style: normal; text-align: center; box-shadow: 0 1px 0 #000a; }
-  .urna .fn { display: grid; gap: 4px; }
-  .urna .fn i { display: block; height: 14px; border-radius: 3px; font: 500 7px/14px var(--mono); font-style: normal; text-align: center; letter-spacing: .06em; box-shadow: 0 1px 0 #0008; }
-  .urna .fn i.b { background: #f1ede4; color: #222; }
-  .urna .fn i.c { background: #e38a1f; color: #221a0a; }
-  .urna .fn i.v { background: #2f8c4f; color: #e8fbe9; }
-  .urna .fenda { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: #1a1a1c; box-shadow: inset 0 1px 2px #000; }
+  .urna .tela div span { opacity: .5; margin-right: 6px; }
+  .urna .tecl { grid-area: tecl; display: grid; grid-template-columns: repeat(3, 24px); justify-content: center; align-content: start; gap: 5px; }
+  .urna .tecl i { height: 20px; border-radius: 4px; background: #3a4654; color: #fff; font: 600 10px/20px var(--mono); font-style: normal; text-align: center; box-shadow: 0 1px 0 #0008; }
+  .urna .tecl i:empty { visibility: hidden; }
+  .urna .fn { grid-area: fn; display: grid; gap: 5px; align-content: start; }
+  .urna .fn i { display: block; height: 16px; border-radius: 4px; font: 600 7px/16px var(--mono); font-style: normal; text-align: center; letter-spacing: .06em; box-shadow: 0 1px 0 #0008; }
+  .urna .fn i.b { background: #f4f2ec; color: #222; }
+  .urna .fn i.c { background: #e8521a; color: #fff; }
+  .urna .fn i.v { background: #2e9e4f; color: #fff; height: 36px; line-height: 36px; }
+  .urna .fenda { grid-area: esq; display: grid; align-content: start; gap: 6px; }
+  .urna .fenda::before { content: "JUSTIÇA ELEITORAL"; font: 500 6.5px/1.3 var(--mono); letter-spacing: .06em; color: #6d6e68; text-align: center; border: 1px solid #b2b3ac; border-radius: 3px; padding: 9px 3px; }
+  .urna .fenda::after { content: ""; height: 10px; border: 1px solid #b2b3ac; border-radius: 2px; background: #ecebe5; }
   .papel { margin: 0 14px; width: 150px; background: #f4f0e6; color: #1b1b1b; font-family: var(--mono); font-size: 9.5px; line-height: 1.45; padding: 0 9px; overflow: hidden; height: 0; border-radius: 0 0 3px 3px; box-shadow: 0 10px 24px rgba(0,0,0,.45); transition: height .25s; }
   .papel b { display: block; font-weight: 500; letter-spacing: .08em; margin: 7px 0 4px; }
   .sinal { position: relative; height: 2px; margin-top: 86px; background: repeating-linear-gradient(90deg, rgba(236,232,220,.22) 0 4px, transparent 4px 10px); }
@@ -241,8 +246,10 @@
 
   @media (max-width: 640px) {
     .cena3 { grid-template-columns: minmax(0, 1fr) 22px 92px; gap: 10px; padding: calc(var(--topo) + 24px) 16px 0 var(--gx); }
-    .urna { padding: 9px 8px 8px; grid-template-columns: 1fr 70px; gap: 7px; }
+    .urna { padding: 8px 8px 10px; grid-template-columns: 44px 1fr 52px; gap: 8px 6px; }
     .urna .tela { height: 96px; }
+    .urna .tecl { grid-template-columns: repeat(3, 20px); gap: 4px; }
+    .urna .tecl i { height: 17px; line-height: 17px; font-size: 9px; }
     .papel { margin: 0 8px; width: auto; }
     .sinal { margin-top: 70px; }
     .tse { margin-top: 36px; }
@@ -918,16 +925,16 @@ async function afterAnswer() {
       glow(ctx, x, y, 26 * dpr, .45);
       ctx.strokeStyle = `rgb(${ACC})`; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(x, y, 12 * dpr, 0, 6.283); ctx.stroke();
       ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
-      const lab = e.lugar.municipio ? `${e.lugar.municipio}, ${e.lugar.uf}` : "", lw = ctx.measureText(lab).width;
-      ctx.fillText(lab, x + 16 * dpr + lw > W ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
-      anc = [x, y];
+      const lab = e.lugar.municipio ? `${e.lugar.municipio}, ${e.lugar.uf}` : "", lw = ctx.measureText(lab).width, dir = x + 16 * dpr + lw > W ? -1 : 1;
+      ctx.fillText(lab, dir < 0 ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
+      anc = dir < 0 ? [x + 12 * dpr, y] : [x + 20 * dpr + lw, y]; // the line leaves after the label
     }
     const tw = state.town;
     if (tw) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
-      ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(`${tw.nome}, ${tw.uf}`, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
-      if (e?.seu) anc = [M.x[i], M.y[i]];
+      ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`; const nome = `${tw.nome}, ${tw.uf}`; ctx.fillText(nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
+      if (e?.seu) anc = [M.x[i] + r + 10 * dpr + ctx.measureText(nome).width, M.y[i]];
     }
     ligar(c, ctx, anc, host, dpr);
     return clock;
@@ -977,11 +984,21 @@ renderHoras();
     const { t, cur: e } = ag(apos(p));
     passos(host, passos_, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
-    const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
+    const xl = 0.06 * W, x0 = xl + 52 * dpr, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
     const yt = ty + 76 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.2 * H);
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
-    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, ty);
-    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, ty + 18 * dpr);
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", xl, ty);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", xl, ty + 18 * dpr);
+    // The vertical scale: votes in a minute, on the compressed axis.
+    ctx.textAlign = "right"; ctx.lineWidth = 1 * dpr;
+    for (const v of [100, 1000, 10000, max]) {
+      const y = Y(v), ult = v === max;
+      ctx.strokeStyle = ult ? "rgba(236,232,220,.25)" : "rgba(236,232,220,.1)"; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.fillStyle = ult ? "rgba(236,232,220,.85)" : "rgba(236,232,220,.55)";
+      if (v !== 100 || Y(100) - Y(1000) >= 14 * dpr) ctx.fillText(fmt(ult ? Math.round(v) : v), x0 - 6 * dpr, y + 4 * dpr);
+    }
+    ctx.fillStyle = "rgba(236,232,220,.55)"; ctx.fillText("votos/min", x0 - 6 * dpr, yt - 14 * dpr);
+    ctx.textAlign = "left";
     const area = (a, b, fill) => { ctx.beginPath(); ctx.moveTo(X(a), yb); for (let m = a; m <= b; m++) ctx.lineTo(X(m), Y(nat[m - S] || 0)); ctx.lineTo(X(b), yb); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
     const tt = Math.min(t, B - 1);
     area(A, tt, "rgba(255,180,60,.28)");
