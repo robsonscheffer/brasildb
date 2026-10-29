@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>O Brasil votando</title>
-<meta name="description" content="127.854.844 votos. Cada um anotado com hora, minuto e segundo. Um deles foi o seu.">
+<title>O Brasil votando: o segundo turno de 2026, minuto a minuto</title>
+<meta name="description" content="Que horas o Brasil votou? 127.854.844 votos, cidade por cidade, do primeiro às 08:00:19 ao último às 19h06. Descubra quantas pessoas votaram com você.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -210,19 +210,19 @@
 <section class="cena" id="primeiro" style="--len:560vh">
   <div class="palco">
     <div class="fase dobra on" id="dobra">
-      <h1 class="big num">127.854.844 votos.</h1>
-      <p class="mid">Cada um anotado com hora, minuto e segundo.</p>
-      <p class="mid acc">Um deles foi o seu.</p>
+      <h1 class="big num">127.854.844 pessoas votaram no mesmo domingo.</h1>
+      <p class="mid">A urna anotou a hora de cada voto.</p>
+      <p class="mid acc">O seu está aqui.</p>
     </div>
     <div class="fase primeiro" id="primeiro">
       <div class="ph num" id="pph">08:00:19</div>
       <div class="pl" id="ppl"></div>
-      <div class="pt">O primeiro voto do país.</div>
+      <div class="pt" id="ppt">O primeiro voto do Brasil.</div>
     </div>
     <div class="enx" id="enx"></div>
     <div class="cap1" id="cap1">
-      <p>Esse foi o primeiro minuto.</p>
-      <p>O dia seguiu até as 19h06.</p>
+      <p>Esse foi apenas o primeiro minuto de eleição no Brasil.</p>
+      <p>Faltavam onze horas.</p>
     </div>
     <div class="hint k" id="hint">role para baixo</div>
   </div>
@@ -233,10 +233,9 @@
   <div class="palco">
     <canvas id="c3"></canvas>
     <div class="notas gx" id="c3notas">
-      <p data-t="479"><span class="h">antes das 8h</span>Cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>: o recibo de zero votos, antes do primeiro eleitor.</p>
-      <p data-t="480"><span class="h">08:00</span><span class="num">473.844</span> urnas abrem no mesmo minuto.</p>
-      <p data-t="481"><span class="h">08:00 em Brasília</span>No Acre, ainda são 6h da manhã.</p>
-      <p data-t="483"><span class="h">08:03</span>Um milhão de votos.</p>
+      <p data-t="479"><span class="h">antes das 8h</span>Antes do primeiro eleitor, cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>: zero votos, em papel.</p>
+      <p data-t="480"><span class="h">08:00 · Brasil</span><span class="num">473.844</span> urnas acordam às 8h em ponto.</p>
+      <p data-t="483"><span class="h">08:03 · Brasil</span>O país já passou de um milhão de votos.</p>
     </div>
   </div>
 </section>
@@ -245,12 +244,13 @@
 <section class="pergunta gx" id="onde-votou">
   <span class="k">E você?</span>
   <h2 class="big">Onde você votou?</h2>
+  <p class="mid" style="margin-top:14px;color:var(--muted)">Digite sua cidade e veja o seu dia.</p>
   <div class="campo">
     <input id="cidade" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Sua cidade" aria-label="Sua cidade">
     <ul class="hits" id="hits" role="listbox"></ul>
   </div>
   <details class="mais">
-    <summary>Sabe sua zona e seção? Veja a sua urna.</summary>
+    <summary>Tem o título à mão? Zona e seção mostram a sua urna, a que você tocou.</summary>
     <div class="par">
       <input id="zona" inputmode="numeric" placeholder="Zona" aria-label="Zona">
       <input id="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção">
@@ -258,8 +258,8 @@
     <small>Estão no seu título de eleitor ou no app e-Título.</small>
   </details>
   <div class="acoes">
-    <button class="btn" id="ir" disabled>Ver no mapa</button>
-    <a class="pular" href="#dia-no-mapa" id="pular">Pular</a>
+    <button class="btn" id="ir" disabled>Ver minha cidade</button>
+    <a class="pular" href="#dia-no-mapa" id="pular">Ver o Brasil inteiro</a>
   </div>
   <div class="eco" id="eco"></div>
 </section>
@@ -271,8 +271,8 @@
     <div class="carregando" id="c7load">carregando o mapa…</div>
     <div class="legenda" id="legenda">
       <div>
-        Cada ponto é uma cidade. Quanto maior, mais eleitores.<br><br>
-        A luz é o ritmo da cidade. Ela brilha mais no minuto em que mais gente votou ali.
+        Cada luz é uma cidade. Quanto maior, mais eleitores.<br><br>
+        Ela brilha mais no minuto em que mais gente votou ali. Role e veja a sua acender.
         <div class="esc"><span>calma</span><i></i><span>pico</span></div>
       </div>
     </div>
@@ -282,7 +282,7 @@
 
 <section class="flow gx" id="quando-votou" style="min-height:100svh">
   <span class="k">Mais ou menos que horas?</span>
-  <p class="lead" id="horalead">Não sabemos quando você votou. Toque na hora mais próxima.</p>
+  <p class="lead" id="horalead">Que horas você votou? Toque na hora e descubra quantos votaram com você.</p>
   <div class="horas" id="horas"></div>
   <div class="comvoce" id="comvoce"></div>
 </section>
@@ -336,10 +336,10 @@
 <!-- 9. The card -->
 <section class="cartao gx" id="compartilhamento">
   <span class="k">Para guardar</span>
-  <p class="mid" style="margin:14px 0 26px">Você estava lá.</p>
+  <p class="mid" style="margin:14px 0 26px">Você fez parte dessa história. Guarde o seu momento.</p>
   <canvas id="card" width="1080" height="1350" aria-label="Seu cartão"></canvas>
   <div class="acoes">
-    <button class="btn" id="share">Compartilhar</button>
+    <button class="btn" id="share">Compartilhar meu momento</button>
     <a class="pular" href="como.html">Como funciona e como fizemos</a>
   </div>
 </section>
@@ -481,7 +481,8 @@ function minha() {
   const el = $("primeiro"), s = urna.secao, pm = urna.primeiro_minuto;
   const first = urna.linhas.find(l => l.texto === "O voto foi computado");
   $("pph").textContent = first.hora;
-  $("ppl").innerHTML = `${s.municipio}, ${s.uf} · <a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
+  $("ppt").textContent = `O primeiro voto do Brasil saiu de ${s.municipio}, ${s.uf}.`;
+  $("ppl").innerHTML = `${s.municipio}, ${s.uf} ·<a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
   const linhas = [{ hora: first.hora, municipio: s.municipio, uf: s.uf, um: true }, ...pm.linhas];
   const enx = $("enx"), caps = [...$("cap1").children], VIS = 22;
   let shown = -1;
@@ -553,7 +554,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     if (t >= PICO) {
       const x = x0 + (PICO - 480) * bw + bw;
       ctx.fillStyle = "#fff1d6"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
-      ctx.fillText(`${hhmm(PICO)}, o minuto mais cheio: ${fmt(nat[PICO - S])} votos`, x - bw / 2 - 4 * dpr, yt - 10 * dpr);
+      ctx.fillText(`${hhmm(PICO)}, o minuto mais cheio do dia: ${fmt(nat[PICO - S])} votos em sessenta segundos`,x - bw / 2 - 4 * dpr, yt - 10 * dpr);
     }
     ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`;
     for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
@@ -662,19 +663,19 @@ async function afterAnswer() {
     if (planoDe === key) return plano;
     const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: i.texto, lugar: i.lugar });
     const its = [
-      { t: 480, h: "Brasil", titulo: "O país acende de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
+      { t: 480, h: "08:00 · Brasil", titulo: "O país inteiro acende de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
       { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
       ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora).map(fato),
-      { t: quando(VOTOS / 2), h: "Brasil", titulo: "Metade do país já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
+      { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
       { t: quando(1e8), h: "Brasil", titulo: "100 milhões de votos.", texto: "", lugar: { uf: "BR" } },
-      { t: 1020, h: "Brasil", titulo: "17h. Os portões fecham.", texto: "As luzes se apagam em poucos minutos. Quem já estava na fila ainda vota.", lugar: { uf: "BR" } },
+      { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", texto: "As luzes se apagam em poucos minutos.", lugar: { uf: "BR" } },
       fato(cur("ultimo_voto")),
     ];
     const tw = state.town;
     if (tw && towns) {
       const cz = state.cz, i = tw.i;
-      its.push({ t: towns.pico_min[i], h: `${tw.uf} · ${tw.nome}`, seu: true, titulo: `${tw.nome}, o seu minuto mais cheio.`,
-        texto: cz ? `${fmt(cz.votos)} pessoas votaram lá no dia. Metade até ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
+      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${tw.nome}, ${tw.uf}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais cheio.`,
+        texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
     const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
@@ -733,7 +734,7 @@ async function afterAnswer() {
 /* ---------- Hour tap ---------- */
 function renderHoras() {
   const tw = state.town, box = $("horas");
-  $("horalead").textContent = tw ? `Não sabemos quando você votou em ${tw.nome}. Toque na hora mais próxima.` : "Não sabemos quando você votou. Toque na hora mais próxima.";
+  $("horalead").textContent = tw ? `Que horas você votou em ${tw.nome}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
   const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16];
   box.innerHTML = bands.map(h => `<button data-h="${h}" class="${state.hora === h ? "on" : ""}">${h}h</button>`).join("");
   if (state.hora != null) comVoce(state.hora);
@@ -743,7 +744,7 @@ async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
   if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${tw.nome}`; }
   if (n == null) { n = 0; for (let m = h * 60; m < h * 60 + 60; m++) n += TOT.national[m - TOT.start] || 0; lugar = "no Brasil"; }
-  $("comvoce").innerHTML = `Por volta das ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram com você ${lugar}.<small>aproximado: todos os votos entre ${h}h e ${h + 1}h</small>`;
+  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}. Você não estava sozinho.<small>aproximado: todos os votos entre ${h}h e ${h + 1}h</small>`;
 }
 renderHoras();
 
@@ -759,10 +760,10 @@ renderHoras();
   const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
   const passos = [
     fato(cur("primeira_fim")),
-    { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham.", seg: [1019, 1021],
-      texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto. Às 17h05, ${fmt(nat[1025 - S])}.` },
-    { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "A fila termina de votar.", seg: [1020, 1030],
-      texto: `Quem já estava na fila às 17h ainda vota. Em dez minutos, ${fmt(fila)} votos. Depois disso, quase nada.` },
+    { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham, a fila continua.", seg: [1019, 1021],
+      texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
+    { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
+      texto: `${fmt(fila)} votos entre 17h e 17h10. Depois disso, quase nada.` },
     { ...fato(cur("stf"), [1035, 1147]), texto: `A decisão chega com a maioria das urnas já fechada. Até as 19h06, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
@@ -832,10 +833,10 @@ renderHoras();
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
     const tipica = mi.exata ? "" : `<small>urna típica de ${state.town.nome} · digite zona e seção para ver a sua</small>`;
-    vn.innerHTML = chegou ? `<p>O resultado da sua urna chega ao TSE às ${hfala(mi.chega)}. ${durTxt} depois de ela fechar.</p>${tipica}`
+    vn.innerHTML = chegou ? `<p>${hfala(mi.chega)}. O resultado da sua urna chega a Brasília, ${durTxt} depois de fechar.</p>${tipica}`
       : viaja > 0 ? `<p>O mesmo resultado sai da urna e segue para o TSE, em Brasília.</p>${tipica}`
-      : k > imp ? `<p>A urna imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>: quantos votaram ali, em papel. Uma cópia fica na porta da seção.</p>${tipica}`
-      : `<p>${hfala(ls[0].hora)}. A sua urna encerra a votação.</p>${tipica}`;
+      : k > imp ? `<p>Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>: quantos votaram ali, em papel, colado na porta da seção.</p>${tipica}`
+      : `<p>${hfala(ls[0].hora)}. A sua urna encerra. Ela já sabe o resultado.</p>${tipica}`;
     const t = chegou ? b : viaja > 0 ? lerp(last, b, viaja) : seg(ls[Math.max(0, k - 1)].hora);
     return { txt: hms(t), sub: chegou ? "resultado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : state.town.nome };
   });
@@ -854,11 +855,11 @@ renderHoras();
       .sort((a, b) => a.fim - b.fim);
     const at = i => hhmm(A + i);
     const passos = [
-      { t: A, h: `${CH.inicio} · Brasília`, titulo: "O primeiro resultado chega.", texto: `Cada urna envia ao TSE o mesmo resultado do <a class="termo" href="como.html#boletim">boletim de urna</a>. ${fmt(CH.total)} urnas, uma por uma.` },
+      { t: A, h: `${CH.inicio} · Brasília`, titulo: "O primeiro resultado chega ao TSE.", texto: `Faltam ${fmt(CH.total - 1)}. Cada urna envia o mesmo resultado do <a class="termo" href="como.html#boletim">boletim de urna</a>, uma por uma.` },
       { t: A + nac.findIndex(x => x >= CH.total / 2), h: "Brasil", titulo: "Metade das urnas já chegou.", texto: "" },
       { t: A + ufs[0].fim, h: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as urnas do estado chegaram às ${hfala(at(ufs[0].fim))}.` },
       { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último.`, texto: "" },
-      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: "Todas as urnas chegaram.", texto: `${fmt(CH.total)} de ${fmt(CH.total)}.` },
+      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} urnas chegaram.`, texto: "" },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
   }
@@ -867,7 +868,7 @@ renderHoras();
     if (!R) montar();
     const mi = minha(), key = mi ? mi.chega + state.town.uf : "";
     if (R.key !== key) {
-      const extra = mi ? [{ t: hm(mi.chega), seu: true, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna chega." : `As urnas de ${state.town.nome} chegam.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
+      const extra = mi ? [{ t: hm(mi.chega), seu: true, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna chega a Brasília." : `As urnas de ${state.town.nome} chegam a Brasília.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
       R.ag = agenda([...R.passos, ...extra], R.A, R.A + R.n - 1, 50); R.key = key;
     }
     const { t, cur: e } = R.ag(clamp(p / 0.95));
@@ -920,8 +921,10 @@ $("share").addEventListener("click", async () => {
   const blob = await new Promise(r => $("card").toBlob(r, "image/png"));
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
   const url = location.href;
+  const onde = state.town ? `, em ${state.town.nome}, ${state.town.uf}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
+  const texto = `Eu fiz parte dessa história. Um dos ${fmt(VOTOS)} votos do segundo turno${onde}${hora}. Veja o seu momento. ${url}`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: "O Brasil votando", text: `Eu fui um dos ${fmt(VOTOS)}. ${url}` }); return; } catch { return; }
+    try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); return; } catch { return; }
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "eu-votei.png"; a.click();
 });
