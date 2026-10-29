@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O Brasil votando: o feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: #070a12; --fg: #ece8dc; --muted: #9a9ca6; --line: #262a38; --accent: #ffb43c;
+    --bubble: #131826; --bubble2: #1a2032; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); }
+  body { font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.35;
+    display: flex; justify-content: center; align-items: center; overflow: hidden; }
+  .phone { position: relative; width: 100vw; height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+    background: radial-gradient(120% 60% at 50% 0%, var(--sky, #0b1222) 0%, var(--bg) 70%); transition: background 1s linear; }
+  @media (min-width: 480px) {
+    .phone { width: 390px; height: min(844px, 96vh); border-radius: 46px; border: 10px solid #151925;
+      box-shadow: 0 0 0 1px #2a3042, 0 40px 120px rgba(255,180,60,.08), 0 30px 80px rgba(0,0,0,.6); }
+  }
+  /* status bar: the phone clock IS the replay clock */
+  .status { display: flex; justify-content: space-between; align-items: center; padding: 10px 26px 4px; font-weight: 600; font-size: 15px;
+    font-variant-numeric: tabular-nums; }
+  .status .icons { display: flex; gap: 6px; align-items: center; color: var(--fg); opacity: .9; }
+  .batt { width: 24px; height: 12px; border: 1.5px solid currentColor; border-radius: 3px; padding: 1.5px; position: relative; }
+  .batt i { display: block; height: 100%; width: var(--b, 90%); background: currentColor; border-radius: 1px; }
+  /* chat header */
+  .head { display: flex; align-items: center; gap: 10px; padding: 6px 14px 10px; border-bottom: 1px solid var(--line); }
+  .back { color: var(--accent); font-size: 26px; line-height: 1; display: flex; align-items: center; gap: 4px; }
+  .badge { font-size: 12px; font-weight: 800; background: var(--accent); color: #1a1200; border-radius: 10px; padding: 1px 7px;
+    min-width: 22px; text-align: center; transition: transform .2s; }
+  .badge.bump { transform: scale(1.35); }
+  .gav { width: 38px; height: 38px; border-radius: 50%; background: conic-gradient(var(--accent) var(--p, 0%), #232838 0); display: grid; place-items: center; }
+  .gav b { width: 30px; height: 30px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-size: 13px; color: var(--accent); }
+  .htx { flex: 1; min-width: 0; }
+  .htx h1 { margin: 0; font-size: 17px; font-weight: 800; }
+  .htx p { margin: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .htx p.typing { color: var(--accent); }
+  /* pinned tally */
+  .pin { margin: 10px 12px 0; padding: 10px 14px 8px; border-radius: 16px; background: rgba(19,24,38,.85); border: 1px solid var(--line);
+    backdrop-filter: blur(8px); }
+  .pin .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pin .lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .pin .tot { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; transition: color .4s; }
+  .pin .tot.flash { color: var(--accent); }
+  .pin .rate { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .pin .rate b { color: var(--accent); font-weight: 600; }
+  .pin svg { display: block; width: 100%; height: 40px; margin-top: 6px; }
+  .bar { height: 3px; border-radius: 2px; background: #232838; margin-top: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  /* messages */
+  .feed { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 8px 12px 12px; gap: 8px; scroll-behavior: auto;
+    mask-image: linear-gradient(to bottom, transparent 0, #000 40px); -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 40px); }
+  .feed > :first-child { margin-top: auto; }
+  .day { align-self: center; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    background: #121624; border-radius: 8px; padding: 4px 10px; }
+  .msg { display: flex; gap: 8px; align-items: flex-end; max-width: 88%; }
+  .av { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800;
+    background: #222838; color: var(--fg); }
+  .av.inst { background: var(--accent); color: #1a1200; }
+  .bub { background: var(--bubble); border: 1px solid #1d2334; border-radius: 18px 18px 18px 4px; padding: 8px 12px 6px; }
+  .bub .who { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 2px; }
+  .bub .big { font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -.02em; color: var(--fg); }
+  .bub .big small { font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+  .bub .txt { font-size: 15.5px; }
+  .bub .ts { font-size: 11px; color: var(--muted); text-align: right; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .msg.new { animation: pop .45s cubic-bezier(.2,1.3,.4,1) both; }
+  .msg.new .bub { animation: glow 2.4s ease-out both; }
+  @keyframes pop { from { opacity: 0; transform: translateY(24px) scale(.92); } to { opacity: 1; transform: none; } }
+  @keyframes glow { from { border-color: var(--accent); box-shadow: 0 0 24px rgba(255,180,60,.35); } to { border-color: #1d2334; box-shadow: none; } }
+  .msg.end .bub { background: transparent; border: 1.5px dashed var(--accent); color: var(--muted); }
+  .msg.end .txt { font-style: italic; }
+  .typ { display: none; }
+  .typ.on { display: flex; animation: pop .3s ease-out both; }
+  .dots { display: flex; gap: 4px; padding: 6px 2px 4px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: dot 1s infinite; }
+  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
+  .compose { display: flex; gap: 8px; align-items: center; padding: 8px 12px 14px; border-top: 1px solid var(--line); }
+  .compose div { flex: 1; height: 36px; border-radius: 18px; border: 1px solid var(--line); color: #5b5f6c; font-size: 14px;
+    display: flex; align-items: center; padding: 0 14px; }
+  .compose span { width: 36px; height: 36px; border-radius: 50%; background: #1a2032; }
+  .phone.fade { animation: fade 1s ease both; }
+  @keyframes fade { 0% { opacity: 1; } 40% { opacity: 0; } 100% { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="status"><span id="clock">07:50</span><span class="icons"><span style="font-size:13px">5G</span><span class="batt"><i></i></span></span></div>
+  <div class="head">
+    <span class="back">‹ <span class="badge" id="badge">0</span></span>
+    <div class="gav" id="gav"><b>BR</b></div>
+    <div class="htx"><h1>O Brasil votando</h1><p id="sub">domingo, 25 de outubro · 2º turno</p></div>
+  </div>
+  <div class="pin">
+    <div class="row"><span class="lbl">Votos até agora</span><span class="lbl" id="pct">0%</span></div>
+    <div class="row"><span class="tot" id="tot">0</span><span class="rate"><b id="rate">0</b><br>por minuto</span></div>
+    <svg id="spark" viewBox="0 0 681 40" preserveAspectRatio="none">
+      <defs><clipPath id="clip"><rect id="cliprect" x="0" y="0" width="0" height="40"/></clipPath></defs>
+      <path id="sp-bg" fill="none" stroke="#2a3042" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+      <path id="sp-area" fill="rgba(255,180,60,.18)" clip-path="url(#clip)"/>
+      <path id="sp-fg" fill="none" stroke="#ffb43c" stroke-width="2" clip-path="url(#clip)" vector-effect="non-scaling-stroke"/>
+      <line id="cur" x1="0" x2="0" y1="0" y2="40" stroke="#ffb43c" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".6"/>
+    </svg>
+  </div>
+  <div class="feed" id="feed"></div>
+  <div class="compose"><div>Só o Brasil pode enviar mensagens</div><span></span></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  // t = minutes since midnight, 25 Oct 2026 (Brasília time). FINAL = result minute, unknown: placeholder.
+  var START = 470, FINAL = 1411, END = 1416;
+  var MSGS = [
+    { t: 480, who: 'TSE', inst: 1, txt: 'Todas as seções abertas. Em Rio Branco são 6h da manhã.' },
+    { t: 483, who: 'Placar', inst: 1, big: '1 milhão', txt: '1 milhão de votos.', sub: 'de votos.' },
+    { t: 487, who: 'Placar', inst: 1, big: '420 mil<small> /min</small>', txt: 'Pico do dia: 420 mil votos por minuto.', sub: 'Pico do dia.' },
+    { t: 626, who: 'Breves, PA', txt: 'Breves, PA: metade da cidade já votou.' },
+    { t: 671, who: 'Placar', inst: 1, big: '63,9 milhões', txt: 'Metade do Brasil já votou: 63,9 milhões.', sub: 'Metade do Brasil já votou.' },
+    { t: 720, who: 'Nordeste', txt: 'Bahia, Alagoas e Piauí param para almoçar. São Paulo quase não.' },
+    { t: 770, who: 'Belo Horizonte, MG', txt: 'Belo Horizonte: chuva de granizo. A luz cai em 163 locais de votação. As urnas seguem na bateria.' },
+    { t: 835, who: 'Placar', inst: 1, big: '100 milhões', txt: '100 milhões. No Alto Solimões, nove em cada dez já votaram.', sub: 'No Alto Solimões, nove em cada dez já votaram.' },
+    { t: 996, who: 'Cedro do Abaeté, MG', txt: 'Cedro do Abaeté, MG: a primeira cidade a terminar.' },
+    { t: 1020, who: 'TSE', inst: 1, txt: 'Os portões fecham. 473 mil seções encerram em dez minutos.' },
+    { t: 1035, who: 'STF', inst: 1, txt: 'STF: votação estendida até as 19h para as seções ainda abertas. Falta de ônibus em Salvador.' },
+    { t: 1040, who: 'TSE', inst: 1, txt: 'TSE pausa a totalização.' },
+    { t: 1146, who: 'São Paulo, SP', txt: 'O último voto do dia, em São Paulo.' },
+    { t: 1177, who: 'TSE', inst: 1, txt: 'Brasília recebe o resultado da seção 315 da zona 28 de BH.' },
+    { t: 1407, who: 'TSE', inst: 1, big: '100%', txt: 'Totalização: 100%.', sub: 'Totalização.' },
+    { t: FINAL, who: 'TSE', inst: 1, end: 1, ts: 'HHhMM', txt: 'os dois nomes e os números, do boletim oficial' }
+  ];
+  var $ = function (id) { return document.getElementById(id); };
+  var feed = $('feed'), phone = $('phone');
+  var per = [], cum = [0], total = 1, t = START, shown = -1, typingFor = -1, last = 0;
+
+  function hhmm(m) { m = Math.floor(m); return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+  function initials(w) { return w === 'Placar' ? '#' : w.replace(/,.*/, '').split(/\s+/).filter(function (s) { return s.length > 2 || s === s.toUpperCase(); }).map(function (s) { return s[0]; }).join('').slice(0, 2).toUpperCase(); }
+  function votesAt(m) {
+    var x = m - START; if (x <= 0 || !per.length) return 0;
+    if (x >= per.length) return cum[per.length];
+    var i = Math.floor(x); return cum[i] + (x - i) * per[i];
+  }
+  function rateAt(m) { var i = Math.floor(m - START); return i >= 0 && i < per.length ? per[i] : 0; }
+  function speed(m) { // replay minutes per real second
+    if (m >= FINAL) return 1;
+    for (var k = 0; k < MSGS.length; k++) if (Math.abs(m - MSGS[k].t) < 1.5) return 1;
+    return m > 1180 ? 40 : 10;
+  }
+  function bubble(m, fresh) {
+    var el = document.createElement('div');
+    el.className = 'msg' + (fresh ? ' new' : '') + (m.end ? ' end' : '');
+    el.innerHTML = '<div class="av' + (m.inst ? ' inst' : '') + '">' + initials(m.who) + '</div><div class="bub"><div class="who"></div>' +
+      (m.big ? '<div class="big">' + m.big + '</div>' : '') + '<div class="txt"></div><div class="ts"></div></div>';
+    el.querySelector('.who').textContent = m.who;
+    el.querySelector('.txt').textContent = m.sub || m.txt;
+    el.querySelector('.ts').textContent = m.ts || hhmm(m.t);
+    return el;
+  }
+  var typ = document.createElement('div');
+  typ.className = 'msg typ';
+  typ.innerHTML = '<div class="av"></div><div class="bub"><div class="who"></div><div class="dots"><i></i><i></i><i></i></div></div>';
+
+  function rebuild(n) {
+    feed.textContent = '';
+    var d = document.createElement('div'); d.className = 'day'; d.textContent = 'domingo, 25 de outubro'; feed.appendChild(d);
+    for (var k = 0; k < n; k++) feed.appendChild(bubble(MSGS[k], false));
+    feed.appendChild(typ);
+  }
+  function render(m, animate) {
+    var n = 0; while (n < MSGS.length && MSGS[n].t <= m) n++;
+    if (shown < 0 || n < shown) rebuild(n);
+    else for (var k = shown; k < n; k++) {
+      feed.insertBefore(bubble(MSGS[k], animate), typ);
+      if (animate) { $('badge').classList.add('bump'); $('tot').classList.add('flash'); setTimeout(function () { $('badge').classList.remove('bump'); $('tot').classList.remove('flash'); }, 350); }
+    }
+    shown = n;
+    // typing indicator: the next sender types for ~1 replay minute before the message lands
+    var nx = MSGS[n], typing = nx && m >= nx.t - 1 ? n : -1;
+    if (typing !== typingFor) {
+      typingFor = typing;
+      typ.classList.toggle('on', typing >= 0);
+      if (typing >= 0) {
+        typ.querySelector('.who').textContent = nx.who;
+        var av = typ.querySelector('.av'); av.className = 'av' + (nx.inst ? ' inst' : ''); av.textContent = initials(nx.who);
+      }
+    }
+    $('sub').textContent = typing >= 0 ? nx.who + ' está digitando…' : 'domingo, 25 de outubro · 2º turno';
+    $('sub').className = typing >= 0 ? 'typing' : '';
+    $('badge').textContent = n;
+    feed.scrollTop = feed.scrollHeight;
+    // clock and tally
+    $('clock').textContent = m >= FINAL ? 'HH:MM' : hhmm(m);
+    var v = votesAt(m), p = v / total;
+    $('tot').textContent = Math.round(v).toLocaleString('pt-BR');
+    $('rate').textContent = Math.round(rateAt(m)).toLocaleString('pt-BR');
+    $('pct').textContent = (p * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '% do dia';
+    $('gav').style.setProperty('--p', (p * 100).toFixed(1) + '%');
+    var x = Math.max(0, Math.min(per.length, m - START));
+    $('cliprect').setAttribute('width', x); $('cur').setAttribute('x1', x); $('cur').setAttribute('x2', x);
+    var b = document.querySelector('.batt'); b.style.setProperty('--b', Math.max(12, 95 - (m - START) / 12) + '%');
+    // sky: dawn blue, midday warm, evening violet, night black
+    var h = m / 60, sky = h < 9 ? '#1b2747' : h < 15 ? '#2a2412' : h < 18.5 ? '#2b1a2a' : '#0b0f1c';
+    phone.style.setProperty('--sky', sky);
+  }
+
+  function seek(m) { t = Math.max(START, Math.min(END, m)); render(t, false); }
+  window.sketch = { seek: seek, get t() { return t; } };
+
+  function frame(now) {
+    var dt = Math.min(0.1, last ? (now - last) / 1000 : 0); last = now;
+    t += speed(t) * dt;
+    if (t >= END) { phone.classList.remove('fade'); void phone.offsetWidth; phone.classList.add('fade'); shown = -1; t = START; }
+    render(t, true);
+    requestAnimationFrame(frame);
+  }
+
+  function drawSpark() {
+    var mx = Math.max.apply(null, per) || 1, d = '';
+    for (var i = 0; i < per.length; i++) d += (i ? 'L' : 'M') + i + ' ' + (38 - per[i] / mx * 34).toFixed(1);
+    $('sp-bg').setAttribute('d', d); $('sp-fg').setAttribute('d', d);
+    $('sp-area').setAttribute('d', d + 'L' + (per.length - 1) + ' 40L0 40Z');
+  }
+
+  fetch('../data/totals.json').then(function (r) { return r.json(); }).then(function (j) {
+    per = j.national; START = j.start;
+    for (var i = 0; i < per.length; i++) cum.push(cum[i] + per[i]);
+    total = cum[per.length];
+    drawSpark(); seek(START); requestAnimationFrame(frame);
+  }).catch(function () { seek(START); requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>

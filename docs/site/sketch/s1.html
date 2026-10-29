@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A onda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
+<style>
+  :root { --bg: #070a12; --fg: #ece8dc; --muted: #9a9ca6; --accent: #ffb43c; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+  body { font-family: "Inter Tight", system-ui, -apple-system, sans-serif; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .hud { position: absolute; left: max(16px, env(safe-area-inset-left)); top: max(14px, env(safe-area-inset-top)); pointer-events: none; }
+  .clock { font-size: clamp(56px, 15vw, 120px); font-weight: 800; letter-spacing: -0.05em; line-height: .9; font-variant-numeric: tabular-nums; }
+  .total { margin-top: 6px; font-size: clamp(15px, 3.6vw, 20px); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .total b { color: var(--accent); font-weight: 600; }
+  .beat { position: absolute; right: max(16px, env(safe-area-inset-right)); top: max(18px, env(safe-area-inset-top)); max-width: min(46vw, 320px);
+          text-align: right; font-size: 13px; line-height: 1.3; color: var(--muted); transition: opacity .4s; pointer-events: none; }
+  .beat b { display: block; color: var(--fg); font-size: 15px; font-weight: 600; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud"><div class="clock" id="clock">07:50</div><div class="total"><b id="total">0</b> votos</div></div>
+<div class="beat" id="beat"></div>
+<script>
+(async function () {
+  const SPEED = 10, HOLD = 2.5;                    // replay minutes per second; seconds held at the end
+  const BEATS = [487, 671, 720, 996, 1020, 1146];  // event times shown as small captions
+  const $ = id => document.getElementById(id);
+  const canvas = $("c"), ctx = canvas.getContext("2d");
+  const [towns, totals, events, img] = await Promise.all([
+    fetch("../data/towns.json").then(r => r.json()),
+    fetch("../data/totals.json").then(r => r.json()),
+    fetch("../data/events.json").then(r => r.json()),
+    new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "../data/frames.png"; }),
+  ]);
+  const N = towns.id.length, M = totals.minutes, START = totals.start, END = START + M - 1;
+  const off = document.createElement("canvas"); off.width = N; off.height = M;
+  const octx = off.getContext("2d", { willReadFrequently: true }); octx.drawImage(img, 0, 0);
+  const rgba = octx.getImageData(0, 0, N, M).data;
+  const lit = new Float32Array(N * M);
+  for (let k = 0; k < N * M; k++) lit[k] = Math.pow(rgba[k * 4] / 255, 2.2);
+  const nat = totals.national, cumul = new Float64Array(M + 1);
+  for (let m = 0; m < M; m++) cumul[m + 1] = cumul[m] + nat[m];
+  const natMax = Math.max(...nat);
+  const half = towns.half, last = towns.last;
+  const beats = events.filter(e => BEATS.includes(e.t));
+  const hhmm = min => { min = Math.floor(min); return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`; };
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
+
+  // Wave order: every town sorted by the minute it reached half its votes, ties by size.
+  const order = Array.from({ length: N }, (_, i) => i).sort((a, b) => half[a] - half[b] || towns.aptos[b] - towns.aptos[a]);
+  const firstDone = Math.min(...last);
+
+  // Colour ramp: night blue -> amber -> hot cream, 256 steps.
+  const RAMP = new Uint8ClampedArray(256 * 3);
+  const stops = [[0, 11, 14, 26], [0.12, 46, 30, 18], [0.55, 255, 150, 40], [0.8, 255, 196, 90], [1, 255, 244, 214]];
+  for (let k = 0; k < 256; k++) {
+    const v = k / 255; let j = 0; while (j < stops.length - 2 && v > stops[j + 1][0]) j++;
+    const a = stops[j], b = stops[j + 1], f = (v - a[0]) / (b[0] - a[0]);
+    for (let c = 0; c < 3; c++) RAMP[k * 3 + c] = a[c + 1] + (b[c + 1] - a[c + 1]) * f;
+  }
+
+  // Layout: square tiles filled column by column, so the wave runs left to right.
+  let W, H, dpr, s, gap, cols, rows, gx, gy, gw, gh, tiny, tctx, tdata, gridMask, spark;
+  function layout() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.width = Math.round(innerWidth * dpr); H = canvas.height = Math.round(innerHeight * dpr);
+    const pad = 16 * dpr, wide = innerWidth > innerHeight;
+    const top = (wide ? 200 : 140) * dpr, bottom = 110 * dpr;
+    const aw = W - 2 * pad, ah = H - top - bottom;
+    s = Math.floor(Math.sqrt(aw * ah / N)) + 1;
+    do { s--; rows = Math.floor(ah / s); cols = Math.ceil(N / rows); } while (cols * s > aw && s > 1);
+    rows = Math.ceil(N / cols);
+    gw = cols * s; gh = rows * s; gx = Math.round((W - gw) / 2); gy = Math.round(top + (ah - gh) / 2);
+    gap = s >= 5 ? Math.max(1, Math.round(dpr)) : 0;
+    tiny = document.createElement("canvas"); tiny.width = cols; tiny.height = rows;
+    tctx = tiny.getContext("2d"); tdata = tctx.createImageData(cols, rows);
+    gridMask = document.createElement("canvas"); gridMask.width = gw; gridMask.height = gh;
+    const g = gridMask.getContext("2d"); g.fillStyle = "#070a12";
+    if (gap) { for (let x = 0; x <= cols; x++) g.fillRect(x * s - gap / 2, 0, gap, gh); for (let y = 0; y <= rows; y++) g.fillRect(0, y * s - gap / 2, gw, gap); }
+    spark = { x: gx, y: H - 58 * dpr, w: gw, h: 34 * dpr };
+  }
+  const colOfMinute = m => { let lo = 0, hi = N; while (lo < hi) { const md = (lo + hi) >> 1; if (half[order[md]] <= m) lo = md + 1; else hi = md; } return lo / rows; };
+
+  let t = START, playing = true, hold = 0;
+  function draw() {
+    const tt = Math.max(START, Math.min(END, t));
+    const r0 = Math.min(M - 1, Math.floor(tt - START)), r1 = Math.min(M - 1, r0 + 1), fr = tt - START - r0;
+    const d = tdata.data; let done = 0;
+    for (let k = 0; k < N; k++) {
+      const i = order[k], cx = Math.floor(k / rows), cy = k % rows, p = (cy * cols + cx) * 4;
+      const a = lit[r0 * N + i] * (1 - fr) + lit[r1 * N + i] * fr;
+      const since = tt - half[i];
+      let v = since < 0 ? 0.12 + a * 0.48 : Math.max(0.03, a * 0.4);  // before half: amber; past half: the same rate, dimmed
+      if (since >= 0 && since < 15) v = Math.max(v, 1 - 0.5 * since / 15);  // the crest: white-hot as a town passes half
+      if (tt >= last[i]) { done++; d[p] = 120; d[p + 1] = 150; d[p + 2] = 190; d[p + 3] = 255; continue; }
+      const q = Math.round(v * 255) * 3;
+      d[p] = RAMP[q]; d[p + 1] = RAMP[q + 1]; d[p + 2] = RAMP[q + 2]; d[p + 3] = 255;
+    }
+    for (let k = N; k < cols * rows; k++) { const p = ((k % rows) * cols + Math.floor(k / rows)) * 4; d[p + 3] = 0; }
+    tctx.putImageData(tdata, 0, 0);
+
+    ctx.globalCompositeOperation = "source-over"; ctx.filter = "none"; ctx.globalAlpha = 1;
+    ctx.fillStyle = "#070a12"; ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(tiny, gx, gy, gw, gh);
+    if (gap) ctx.drawImage(gridMask, gx, gy);
+    ctx.globalCompositeOperation = "lighter"; ctx.imageSmoothingEnabled = true;
+    ctx.filter = `blur(${Math.round(s * 1.6)}px)`; ctx.globalAlpha = 0.55; ctx.drawImage(tiny, gx, gy, gw, gh);
+    ctx.filter = `blur(${Math.round(s * 5)}px)`; ctx.globalAlpha = 0.35; ctx.drawImage(tiny, gx, gy, gw, gh);
+    ctx.globalCompositeOperation = "source-over"; ctx.filter = "none"; ctx.globalAlpha = 1;
+
+    // Axis above the wall: when each band of towns reached half its votes.
+    const f = Math.round(11 * dpr);
+    ctx.font = `600 ${f}px "Inter Tight", system-ui, sans-serif`; ctx.textBaseline = "bottom";
+    for (const m of [630, 660, 690, 720]) {
+      const x = gx + colOfMinute(m) * s; if (x > gx + gw - 30 * dpr) continue;
+      ctx.fillStyle = "rgba(154,156,166,.5)"; ctx.fillRect(x, gy - 6 * dpr, Math.max(1, dpr), 5 * dpr);
+      ctx.fillStyle = "#9a9ca6"; ctx.textAlign = "center"; ctx.fillText(hhmm(m).replace(":", "h").replace("h00", "h"), x, gy - 8 * dpr);
+    }
+    ctx.textAlign = "left"; ctx.fillStyle = "#9a9ca6"; ctx.fillText("metade dos votos às", gx, gy - 22 * dpr);
+    // The front: where the half-way line is right now.
+    if (tt >= half[order[0]] && tt <= half[order[N - 1]] + 10) {
+      const x = gx + Math.min(cols, colOfMinute(tt)) * s;
+      const grd = ctx.createLinearGradient(0, gy - 4 * dpr, 0, gy + gh + 4 * dpr);
+      grd.addColorStop(0, "rgba(255,244,214,0)"); grd.addColorStop(0.5, "rgba(255,244,214,.9)"); grd.addColorStop(1, "rgba(255,244,214,0)");
+      ctx.fillStyle = grd; ctx.fillRect(x - dpr, gy - 4 * dpr, 2 * dpr, gh + 8 * dpr);
+    }
+    ctx.textBaseline = "top"; ctx.fillStyle = "#9a9ca6";
+    ctx.textAlign = "left"; ctx.fillText("← Piauí, Maranhão", gx, gy + gh + 6 * dpr);
+    ctx.textAlign = "right"; ctx.fillText("São Paulo →", gx + gw, gy + gh + 6 * dpr);
+
+    // Bottom: the national pulse, votes per minute, with the playhead and the finish line.
+    const S = spark, xm = m => S.x + (m - START) / (M - 1) * S.w;
+    ctx.beginPath(); ctx.moveTo(S.x, S.y + S.h);
+    for (let m = 0; m < M; m++) ctx.lineTo(xm(START + m), S.y + S.h - nat[m] / natMax * S.h);
+    ctx.lineTo(S.x + S.w, S.y + S.h); ctx.closePath();
+    ctx.fillStyle = "rgba(255,180,60,.13)"; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.rect(S.x, S.y - 2, xm(tt) - S.x, S.h + 4); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(S.x, S.y + S.h);
+    for (let m = 0; m < M; m++) ctx.lineTo(xm(START + m), S.y + S.h - nat[m] / natMax * S.h);
+    ctx.lineTo(S.x + S.w, S.y + S.h); ctx.closePath(); ctx.fillStyle = "rgba(255,180,60,.75)"; ctx.fill(); ctx.restore();
+    ctx.fillStyle = "#ece8dc"; ctx.fillRect(xm(tt) - dpr / 2, S.y - 4 * dpr, Math.max(1, dpr), S.h + 4 * dpr);
+    const fx = xm(firstDone);
+    ctx.fillStyle = "rgba(120,150,190,.8)"; ctx.fillRect(fx, S.y - 4 * dpr, Math.max(1, dpr), S.h + 4 * dpr);
+    ctx.textBaseline = "top"; ctx.font = `600 ${f}px "Inter Tight", system-ui, sans-serif`;
+    for (const h of [8, 12, 17]) { ctx.fillStyle = "#5c5f6b"; ctx.textAlign = "center"; ctx.fillText(h + "h", xm(h * 60), S.y + S.h + 5 * dpr); }
+    ctx.textAlign = "left"; ctx.fillStyle = "#78a0be";
+    ctx.fillText(done ? `${fmt(done)} ${done === 1 ? "cidade terminou" : "cidades terminaram"}` : "linha de chegada", fx + 5 * dpr, S.y - 4 * dpr);
+
+    $("clock").textContent = hhmm(tt);
+    const c = cumul[r0] + nat[r0] * fr;
+    $("total").textContent = fmt(c);
+    const b = beats.filter(e => tt >= e.t && tt < e.t + 30).pop();
+    const html = b ? `<b>${b.k}</b>${b.title}` : "";
+    if ($("beat").innerHTML !== html) $("beat").innerHTML = html;
+  }
+
+  let prev = 0;
+  function frame(now) {
+    const dt = prev ? Math.min(0.1, (now - prev) / 1000) : 0; prev = now;
+    if (playing) {
+      if (t >= END) { hold += dt; if (hold > HOLD) { t = START; hold = 0; } }
+      else t = Math.min(END, t + dt * SPEED);
+      draw();
+    }
+    requestAnimationFrame(frame);
+  }
+  function scrub(e) { const S = spark, x = e.clientX * dpr; t = START + Math.max(0, Math.min(1, (x - S.x) / S.w)) * (M - 1); hold = 0; draw(); }
+  let dragging = false;
+  canvas.addEventListener("pointerdown", e => {
+    if (e.clientY * dpr > spark.y - 30 * dpr) { dragging = true; playing = false; canvas.setPointerCapture(e.pointerId); scrub(e); }
+    else playing = !playing;
+  });
+  canvas.addEventListener("pointermove", e => { if (dragging) scrub(e); });
+  canvas.addEventListener("pointerup", () => { if (dragging) { dragging = false; playing = true; } });
+  addEventListener("resize", () => { layout(); draw(); });
+  document.fonts && document.fonts.ready.then(draw);
+
+  window.sketch = {
+    seek(min) { playing = false; hold = 0; t = Math.max(START, Math.min(END, +min)); draw(); },
+    play() { playing = true; },
+    get t() { return t; },
+  };
+  layout(); draw(); requestAnimationFrame(frame);
+  const q = new URLSearchParams(location.search).get("t"); if (q) window.sketch.seek(q);
+})();
+</script>
+</body>
+</html>

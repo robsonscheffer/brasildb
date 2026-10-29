@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A linha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
+<style>
+  :root { --bg: #070a12; --fg: #ece8dc; --muted: #8d909b; --accent: #ffb43c; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body { font-family: "Inter Tight", system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+  #stage { position: relative; width: 100%; }
+  #stage canvas.tile { position: absolute; left: 0; display: block; }
+  #head { position: absolute; left: 0; right: 0; top: 0; padding: 16px 16px 0 56px; z-index: 2; }
+  #head h1 { margin: 0; font-size: clamp(30px, 8.5vw, 64px); font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+  #head h1 b { color: var(--accent); font-weight: 800; }
+  #head p { margin: 10px 0 0; max-width: 34em; color: var(--muted); font-size: 15px; line-height: 1.4; }
+  #head .ax { display: flex; justify-content: space-between; margin-top: 14px; font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); max-width: 100%; }
+  .hr { position: absolute; left: 0; width: 48px; font-size: 11px; color: var(--muted);
+    text-align: right; transform: translateY(-50%); font-variant-numeric: tabular-nums; }
+  .hr::after { content: ""; position: absolute; left: 52px; top: 50%; width: 6px; border-top: 1px solid #3a3f52; }
+  .ev { position: absolute; right: 12px; transform: translateY(-50%); text-align: right; font-size: 12px;
+    line-height: 1.2; color: var(--fg); text-shadow: 0 0 6px #070a12, 0 0 12px #070a12, 0 0 3px #070a12; pointer-events: none; }
+  .ev b { display: block; color: var(--accent); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .evl { position: absolute; height: 0; border-top: 1px dashed rgba(255,180,60,.35); }
+  #now { position: fixed; left: 0; right: 0; top: 50%; height: 0; border-top: 1px solid rgba(255,244,220,.55); z-index: 3; pointer-events: none; }
+  #strip { position: fixed; left: 0; top: calc(50% - 5px); height: 10px; z-index: 3; pointer-events: none; mix-blend-mode: screen; }
+  #clock { position: fixed; left: 12px; top: calc(50% + 8px); z-index: 4; pointer-events: none;
+    background: rgba(7,10,18,.78); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,180,60,.25); border-radius: 10px; padding: 6px 10px 7px; }
+  #clock .t { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  #clock .v { font-size: 12px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  #clock .v b { color: var(--accent); font-weight: 600; }
+  #foot { position: absolute; left: 56px; right: 16px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1>O Brasil <b>votando</b></h1>
+    <p>25 de outubro de 2026, segundo turno. Cada fio é uma cidade, de oeste a leste. O fio acende quando
+      a cidade vota. Role a página: ela é o dia, das 07:50 às 23:27.</p>
+    <div class="ax"><span>← oeste</span><span>leste →</span></div>
+  </div>
+</div>
+<div id="now"></div>
+<canvas id="strip"></canvas>
+<div id="clock"><div class="t" id="ct">07:50</div><div class="v" id="cv">0 votos</div></div>
+<script>
+(async function () {
+  const $ = id => document.getElementById(id);
+  const [towns, totals, img] = await Promise.all([
+    fetch("../data/towns.json").then(r => r.json()),
+    fetch("../data/totals.json").then(r => r.json()),
+    new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "../data/frames.png"; }),
+  ]);
+  const N = towns.id.length, M = totals.minutes, START = totals.start;
+  const CLOSE = 1020, COUNT0 = 1024, COUNT1 = 1407, LASTVOTE = 1146;
+  const R = CLOSE - START;                         // rows drawn as light: 07:50 to 17:00
+  const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.round(m) % 60).padStart(2, "0")}`;
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
+
+  // Decode frames.png: one column per town, one row per minute.
+  const off = document.createElement("canvas"); off.width = N; off.height = M;
+  const octx = off.getContext("2d", { willReadFrequently: true }); octx.drawImage(img, 0, 0);
+  const rgba = octx.getImageData(0, 0, N, M).data;
+  const val = new Uint8Array(N * M);
+  for (let k = 0; k < N * M; k++) val[k] = rgba[k * 4];
+  off.width = off.height = 1;
+
+  // National totals, cumulative, and a smoothed rate that sets the width of the band.
+  const nat = totals.national, cum = new Float64Array(M); let acc = 0;
+  for (let m = 0; m < M; m++) { acc += nat[m]; cum[m] = acc; }
+  const TOTAL = acc;
+  const sm = new Float32Array(M);
+  for (let m = 0; m < M; m++) { let s = 0, c = 0; for (let k = -6; k <= 6; k++) { const j = m + k; if (j >= 0 && j < M) { s += nat[j]; c++; } } sm[m] = s / c; }
+  let smMax = 0; for (let m = 0; m < R; m++) smMax = Math.max(smMax, sm[m]);
+  const S = new Float32Array(R);
+  for (let m = 0; m < R; m++) S[m] = 0.3 + 0.7 * sm[m] / smMax;
+  let peakM = 0; for (let m = 0; m < M; m++) if (nat[m] > nat[peakM]) peakM = m;
+
+  // Thread order: west to east. Width of a thread grows with the square root of its voters.
+  const order = Array.from({ length: N }, (_, i) => i).sort((a, b) => towns.lon[a] - towns.lon[b]);
+  const c0 = new Float32Array(N), c1 = new Float32Array(N), gain = new Float32Array(N);
+  let tw = 0; for (let i = 0; i < N; i++) tw += Math.sqrt(towns.aptos[i]);
+  let run = 0;
+  for (const i of order) { c0[i] = run / tw; run += Math.sqrt(towns.aptos[i]); c1[i] = run / tw; }
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < N; i++) gain[i] = 0.62 + 0.38 * rnd();
+
+  // Layout: page y for a minute. 6 px a minute while the gates are open, 3 px after.
+  let VW, VH, TOP, A, B, X0, PW, PH, cx, tiles = [];
+  const yOf = m => m <= CLOSE ? TOP + (Math.max(m, START) - START) * A : TOP + R * A + (Math.min(m, COUNT1) - CLOSE) * B;
+  const mOf = y => { const yc = y - TOP; return yc <= R * A ? START + yc / A : CLOSE + (yc - R * A) / B; };
+  const xAt = (c, s) => X0 + (0.5 + (c - 0.5) * s) * PW;
+  const progress = m => { const u = Math.min(1, Math.max(0, (m - COUNT0) / (COUNT1 - COUNT0))); return u * u * (3 - 2 * u); };
+
+  // The light: a PW x R image, one row per minute, threads squeezed toward the centre by S.
+  let sharp, glow;
+  const SUB = 3;                                  // sub-rows per minute, so the edges do not step
+  function buildLight() {
+    const W = Math.round(PW), H = R * SUB, NS = Math.round(W / 2.2);
+    const hash = new Float32Array(NS * 4 + 8); seed = 5; for (let k = 0; k < hash.length; k++) hash[k] = rnd();
+    sharp = document.createElement("canvas"); sharp.width = W; sharp.height = H;
+    const id = sharp.getContext("2d").createImageData(W, H), px = id.data;
+    const accA = new Float32Array(W), accW = new Float32Array(W);
+    for (let r = 0; r < H; r++) {
+      accA.fill(0); accW.fill(0);
+      const f = r / SUB, r0 = Math.min(R - 1, Math.floor(f)), r1 = Math.min(R - 1, r0 + 1), u = f - r0;
+      const s = S[r0] * (1 - u) + S[r1] * u, row0 = r0 * N, row1 = r1 * N;
+      for (let i = 0; i < N; i++) {
+        const v = (val[row0 + i] * (1 - u) + val[row1 + i] * u) * gain[i];
+        const a = Math.floor((0.5 + (c0[i] - 0.5) * s) * W), b = Math.min(W - 1, Math.floor((0.5 + (c1[i] - 0.5) * s) * W));
+        const w = (c1[i] - c0[i]) * 1000 / (b - a + 1);
+        for (let x = a; x <= b; x++) { accA[x] += v * w; accW[x] += w; }
+      }
+      for (let x = 0; x < W; x++) {
+        if (!accW[x] || !accA[x]) continue;
+        const q = (((x + 0.5) / W - 0.5) / s + 0.5) * NS * 2, qi = Math.max(0, Math.floor(q)), qf = q - qi;
+        const stripe = 0.42 + 0.58 * (hash[qi] * (1 - qf) + hash[qi + 1] * qf);
+        const t = Math.pow(accA[x] / accW[x] / 255, 1.15) * stripe, k = (r * W + x) * 4, hot = t * t * t;
+        px[k] = 255; px[k + 1] = 140 + 105 * hot; px[k + 2] = 30 + 190 * hot; px[k + 3] = Math.min(255, 20 + 245 * t);
+      }
+    }
+    sharp.getContext("2d").putImageData(id, 0, 0);
+    glow = document.createElement("canvas"); glow.width = W; glow.height = H;
+    const g = glow.getContext("2d"); g.filter = "blur(4px)"; g.drawImage(sharp, 0, 0);
+  }
+
+  // Counting strands: 110 threads, spread by vote mass at 17:00, each joining the white line.
+  const strands = [];
+  function buildStrands() {
+    strands.length = 0;
+    const K = 110, sClose = S[R - 1], byMass = order.slice(); let m = 0, k = 0;
+    let tot = 0; for (const i of byMass) tot += towns.votos[i];
+    for (const i of byMass) {
+      m += towns.votos[i];
+      while (k < K && m >= (k + 0.5) / K * tot) { strands.push({ x: xAt((c0[i] + c1[i]) / 2, sClose), j: 0 }); k++; }
+    }
+    const joins = strands.map((_, n) => (n + 0.5) / K); seed = 11;
+    for (let n = joins.length - 1; n > 0; n--) { const j = Math.floor(rnd() * (n + 1)); [joins[n], joins[j]] = [joins[j], joins[n]]; }
+    strands.forEach((s, n) => { const p = joins[n]; let m = COUNT0; while (m < COUNT1 && progress(m) < p) m++; s.j = m; });
+  }
+
+  function drawTile(ctx, T, h) {
+    ctx.save(); ctx.translate(0, -T);
+    ctx.fillStyle = "#070a12"; ctx.fillRect(0, T, VW, h);
+    const yA = yOf(START), yB = yOf(CLOSE);
+    if (yB > T && yA < T + h) {
+      ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.9; ctx.drawImage(glow, 0, 0, glow.width, glow.height, X0, yA, PW, yB - yA);
+      ctx.globalAlpha = 1; ctx.drawImage(sharp, 0, 0, sharp.width, sharp.height, X0, yA, PW, yB - yA);
+      ctx.globalCompositeOperation = "source-over";
+    }
+    // Extended sections: one thin amber line per town still voting after 17:00, to its last vote.
+    const sClose = S[R - 1];
+    ctx.lineCap = "round";
+    for (let i = 0; i < N; i++) {
+      const L = towns.last[i]; if (L <= CLOSE + 4) continue;
+      const y1 = yOf(L); if (y1 < T || yB > T + h) continue;
+      const late = L > 1080;
+      ctx.strokeStyle = late ? "rgba(255,196,96,.95)" : `rgba(255,170,50,${(0.06 + 0.3 * (L - CLOSE) / 60).toFixed(3)})`;
+      ctx.lineWidth = late ? 1.4 : 0.6;
+      const x = xAt((c0[i] + c1[i]) / 2, sClose);
+      ctx.beginPath(); ctx.moveTo(x, yB); ctx.lineTo(x, y1); ctx.stroke();
+      if (late) { ctx.fillStyle = "#fff0c8"; ctx.beginPath(); ctx.arc(x, y1, 1.8, 0, 7); ctx.fill(); }
+    }
+    // The count (simulated): strands bend into one white line that thickens to 100%.
+    const y0 = yOf(COUNT0), yE = yOf(COUNT1);
+    if (yE + 40 > T && y0 < T + h) {
+      ctx.globalCompositeOperation = "lighter";
+      for (const s of strands) {
+        const yj = yOf(s.j), g = ctx.createLinearGradient(0, y0, 0, yj);
+        g.addColorStop(0, "rgba(255,180,60,.0)"); g.addColorStop(0.25, "rgba(255,200,120,.30)"); g.addColorStop(1, "rgba(255,248,235,.55)");
+        ctx.strokeStyle = g; ctx.lineWidth = 0.9;
+        ctx.beginPath(); ctx.moveTo(s.x, y0);
+        ctx.bezierCurveTo(s.x, y0 + (yj - y0) * 0.55, cx, yj - (yj - y0) * 0.35, cx, yj); ctx.stroke();
+      }
+      const maxW = Math.min(30, PW * 0.06);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.shadowColor = "rgba(255,214,150,.9)"; ctx.shadowBlur = 22; ctx.fillStyle = "rgba(255,250,240,.96)"; ctx.beginPath();
+      for (let m = COUNT0; m <= COUNT1; m += 2) ctx.lineTo(cx - maxW / 2 * progress(m) - 0.4, yOf(m));
+      for (let m = COUNT1; m >= COUNT0; m -= 2) ctx.lineTo(cx + maxW / 2 * progress(m) + 0.4, yOf(m));
+      ctx.fill(); ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
+  const stage = $("stage"), strip = $("strip"), sctx = strip.getContext("2d");
+  const EVENTS = [
+    [START + peakM, "pico", `${fmt(nat[peakM])} votos por minuto`],
+    [720, "almoço", `${fmt(nat[720 - START])} votos por minuto, o ritmo segue caindo`],
+    [787, "BH sem luz", "granizo: 163 locais sem energia em MG"],
+    [CLOSE, "portões fecham", "quase todos os fios terminam"],
+    [LASTVOTE, "último voto", "a última seção estendida fecha"],
+    [COUNT1, "totalização", "100% apurado"],
+  ];
+  function layout() {
+    VW = document.documentElement.clientWidth; VH = window.innerHeight;
+    TOP = Math.round(VH / 2); A = 6; B = 3;
+    X0 = VW < 600 ? 62 : 72; PW = Math.min(1400, VW - X0 - (VW < 600 ? 10 : 160)); cx = X0 + PW / 2;
+    PH = yOf(COUNT1) + Math.round(VH / 2) + 40;
+    stage.style.height = PH + "px";
+    stage.querySelectorAll(".tile,.hr,.ev,.evl,#foot").forEach(e => e.remove());
+    buildLight(); buildStrands();
+    const dpr = Math.min(VW > 900 ? 1.5 : 2, window.devicePixelRatio || 1), TH = 1200;
+    tiles = [];
+    for (let T = 0; T < PH; T += TH) {
+      const h = Math.min(TH, PH - T), c = document.createElement("canvas");
+      c.className = "tile"; c.width = Math.round(VW * dpr); c.height = Math.round(h * dpr);
+      c.style.cssText = `top:${T}px;width:${VW}px;height:${h}px`;
+      const ctx = c.getContext("2d"); ctx.scale(dpr, dpr); drawTile(ctx, T, h);
+      stage.appendChild(c); tiles.push(c);
+    }
+    const add = (cls, html, css) => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; d.style.cssText = css; stage.appendChild(d); };
+    for (let h = 8; h <= 23; h++) add("hr", `${String(h).padStart(2, "0")}h`, `top:${yOf(h * 60)}px`);
+    for (const [m, k, t] of EVENTS) {
+      add("evl", "", `top:${yOf(m)}px;left:${X0}px;width:${VW - X0}px`);
+      add("ev", `<b>${hhmm(m)} ${k}</b>${t}`, `top:${yOf(m) - 16}px;max-width:${VW < 600 ? 190 : 240}px`);
+    }
+    const hd = $("head"); hd.style.top = Math.max(0, TOP - A * 10 - hd.offsetHeight - 8) + "px";
+    const f = document.createElement("div"); f.id = "foot"; f.style.top = (yOf(COUNT1) + 40) + "px";
+    f.textContent = "Votos: logs das urnas (TSE). Depois das 17:04 a apuração é simulada: uma curva suave, sem dados de totalização.";
+    stage.appendChild(f);
+    strip.width = Math.round(VW * dpr); strip.height = Math.round(10 * dpr); strip.style.width = VW + "px";
+  }
+
+  // Clock and the bright strip at the centre line: the minute under the eye.
+  let lastMin = -1;
+  function update(forceMin) {
+    const m = forceMin != null ? forceMin : Math.max(START, Math.min(COUNT1, mOf(window.scrollY + VH / 2)));
+    const mi = Math.round(m); if (mi === lastMin && forceMin == null) return; lastMin = mi;
+    $("ct").textContent = hhmm(mi);
+    const r = Math.min(M - 1, Math.max(0, mi - START));
+    if (mi < COUNT0) $("cv").innerHTML = `<b>${fmt(cum[r])}</b> votos`;
+    else $("cv").innerHTML = `<b>${fmt(TOTAL)}</b> votos · apurado ${Math.round(progress(mi) * 100)}%<br>apuração simulada`;
+    const d = strip.width / VW; sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.clearRect(0, 0, strip.width, strip.height);
+    if (mi >= START && mi < CLOSE) {
+      sctx.globalAlpha = 0.85; sctx.filter = "blur(2px)";
+      sctx.drawImage(sharp, 0, (mi - START) * SUB, sharp.width, 1, X0 * d, 0, PW * d, strip.height);
+      sctx.filter = "none"; sctx.globalAlpha = 1;
+      sctx.drawImage(sharp, 0, (mi - START) * SUB, sharp.width, 1, X0 * d, strip.height * 0.4, PW * d, strip.height * 0.2);
+    }
+  }
+  window.sketch = {
+    seek(min) {
+      window.scrollTo(0, Math.max(0, yOf(min) - VH / 2));
+      update(Math.max(START, Math.min(COUNT1, min)));
+    },
+  };
+
+  layout(); update();
+  const hm = location.hash.match(/t=(\d\d):(\d\d)/);
+  if (hm) window.sketch.seek(+hm[1] * 60 + +hm[2]);
+  window.addEventListener("scroll", () => update(), { passive: true });
+  let lastW = VW;
+  window.addEventListener("resize", () => { if (document.documentElement.clientWidth !== lastW) { lastW = document.documentElement.clientWidth; layout(); lastMin = -1; update(); } });
+})();
+</script>
+</body>
+</html>
