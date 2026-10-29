@@ -17,7 +17,7 @@ EVENTOS_COLUNAS = (
     "ano INTEGER, turno INTEGER, sigla_uf VARCHAR, id_municipio_tse VARCHAR, zona VARCHAR, "
     "secao VARCHAR, arquivo_hash VARCHAR, linha INTEGER, data_hora TIMESTAMP, nivel VARCHAR, "
     "id_urna VARCHAR, componente VARCHAR, mensagem VARCHAR, "
-    "tipo_evento VARCHAR, valor VARCHAR"
+    "tipo_evento VARCHAR, valor VARCHAR, arquivo_membro VARCHAR"
 )
 DETALHE_COLUNAS = (
     "ano INTEGER, turno INTEGER, id_eleicao VARCHAR, tipo_eleicao VARCHAR, data_eleicao DATE, "
@@ -43,7 +43,7 @@ class Linhas:
         linha = len(self.rows) + 1
         self.rows.append((
             2026, 2, uf, mun, zona, secao, "hash1", linha, ts, "INFO", "02299969",
-            "VOTA", "msg", tipo, valor,
+            "VOTA", "msg", tipo, valor, "logd.dat",
         ))
 
     def votos(self, uf, mun, zona, secao, horas: list[str], dia: dt.date = DIA) -> None:
@@ -111,7 +111,7 @@ def con():
     c.execute("CREATE SCHEMA br_tse_eleicoes")
     c.execute(f"CREATE TABLE br_tse_urna_logs.eventos ({EVENTOS_COLUNAS})")
     c.execute(f"CREATE TABLE br_tse_eleicoes.detalhes_votacao_secao ({DETALHE_COLUNAS})")
-    c.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 15)})", _eventos())
+    c.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", _eventos())
     c.executemany(
         f"INSERT INTO br_tse_eleicoes.detalhes_votacao_secao VALUES ({','.join('?' * 21)})",
         _detalhe(),
