@@ -50,6 +50,31 @@
   .topo::before { display: none; }
   .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: var(--gx); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid #4a3a1e; background: rgba(7,10,18,.85); border-radius: 999px; padding: 4px 10px; }
 
+  /* The rail: nine ticks, the current fold lit and its name beside it, a fill that grows with the scroll. */
+  .trilha { position: fixed; z-index: 11; right: max(20px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); display: grid; gap: 12px; justify-items: end; }
+  .trilha a { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); outline-offset: 6px; }
+  .trilha a span { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: 0; transform: translateX(6px); transition: opacity .25s, transform .25s; order: -1; }
+  .trilha a:hover span, .trilha a:focus-visible span, .trilha a.on span { opacity: 1; transform: none; }
+  .trilha a.on { color: var(--accent); }
+  .trilha a i { display: block; width: 16px; height: 2px; border-radius: 1px; background: var(--line); transition: width .25s, background .25s; }
+  .trilha a.feita i { background: var(--muted); }
+  .trilha a.on i { width: 32px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), rgba(255,180,60,.25) 0); }
+  .trilha .nome { display: none; }
+  @media (max-width: 640px) {
+    .trilha { right: 16px; left: 16px; top: max(10px, env(safe-area-inset-top)); transform: none; grid-template-columns: repeat(9, 1fr); gap: 4px; justify-items: stretch; }
+    .trilha .nome { grid-column: 1 / -1; grid-row: 2; }
+    .trilha a i { width: 100%; height: 3px; }
+    .trilha a.on i { width: 100%; }
+    .trilha a span { display: none; }
+    .trilha .nome { display: block; grid-column: 1 / -1; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-align: right; margin-top: 2px; }
+    .topo { display: none; }
+    .relogio { top: max(36px, calc(env(safe-area-inset-top) + 26px)); }
+    .relogio.grande { top: max(54px, calc(env(safe-area-inset-top) + 44px)); }
+  }
+  /* The rewind cue: when a fold starts earlier than the last one ended, the clock says so (U5). */
+  .rew { position: fixed; z-index: 9; left: var(--gx); top: calc(var(--topo) + 6px); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); opacity: 0; transform: translateY(-4px); transition: opacity .3s, transform .3s; pointer-events: none; }
+  .rew.on { opacity: 1; transform: none; }
+
   /* The one clock. It runs the whole day; it grows when a scene is about time. */
   .relogio { position: fixed; z-index: 9; top: max(14px, env(safe-area-inset-top)); left: var(--gx); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .relogio.on { opacity: 1; }
@@ -205,6 +230,21 @@
 <div class="topo k">25 out 2026</div>
 <div class="relogio" id="relogio"><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
+<div class="rew" id="rew" aria-live="polite"></div>
+
+<!-- The rail: where the reader is in the nine folds. Desktop: right edge. Phone: a strip under the top edge. -->
+<nav class="trilha" id="trilha" aria-label="Partes da história">
+  <a href="#primeiro"><i></i><span>primeiro</span></a>
+  <a href="#abertura"><i></i><span>abertura</span></a>
+  <a href="#onde-votou"><i></i><span>onde votou</span></a>
+  <a href="#dia-no-mapa"><i></i><span>o dia no mapa</span></a>
+  <a href="#quando-votou"><i></i><span>quando votou</span></a>
+  <a href="#fechamento"><i></i><span>fechamento</span></a>
+  <a href="#encerramento"><i></i><span>encerramento</span></a>
+  <a href="#transmissao"><i></i><span>transmissão</span></a>
+  <a href="#compartilhamento"><i></i><span>compartilhamento</span></a>
+  <div class="nome" id="trilhanome" aria-hidden="true"></div>
+</nav>
 
 <!-- 1. The hook: the number, the first vote, the first minute -->
 <section class="cena" id="primeiro" style="--len:560vh">
@@ -414,6 +454,35 @@ function tick() {
   rel.classList.toggle("grande", !!clock && grande && !clock.pequeno);
   if (clock) { $("rt").textContent = clock.txt || hhmm(clock.t); $("rs").innerHTML = clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`; }
   if (was !== rel.classList.contains("grande")) requestAnimationFrame(tick);
+  rebobina(clock);
+  trilha(vh);
+}
+// The rewind cue: a fold that starts more than half an hour before the last one ended names the jump.
+let ultimoT = null, rewTimer = 0;
+function rebobina(clock) {
+  const t = clock && clock.t != null ? clock.t : clock && clock.txt ? hm(clock.txt) : null;
+  if (t == null) { ultimoT = null; return; }
+  if (ultimoT != null && ultimoT - t > 30) {
+    $("rew").textContent = `de volta às ${hfala(hhmm(t))}`; $("rew").classList.add("on");
+    clearTimeout(rewTimer); rewTimer = setTimeout(() => $("rew").classList.remove("on"), 1400);
+  }
+  ultimoT = t;
+}
+// The rail: the fold under the middle of the screen is "on", the ones above it are done.
+const dobras = [...document.querySelectorAll("body > section")], ticks = [...$("trilha").querySelectorAll("a")];
+function trilha(vh) {
+  let on = -1;
+  dobras.forEach((d, i) => {
+    if (d.hidden) { ticks[i].hidden = true; return; }
+    ticks[i].hidden = false;
+    const r = d.getBoundingClientRect();
+    if (r.top <= vh / 2 && r.bottom > vh / 2) {
+      on = i;
+      ticks[i].style.setProperty("--p", r.height > vh ? clamp(-r.top / (r.height - vh)) : clamp((vh / 2 - r.top) / r.height));
+    }
+  });
+  ticks.forEach((a, i) => { a.classList.toggle("on", i === on); a.classList.toggle("feita", on >= 0 && i < on); if (i === on) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
+  $("trilhanome").textContent = on >= 0 ? ticks[on].querySelector("span").textContent : "";
 }
 // The charts lay out below the clock's real bottom, never a fixed fraction of the height (R2).
 // TOPO is in CSS px; the clock's size animates, so the scene re-renders when that ends.
