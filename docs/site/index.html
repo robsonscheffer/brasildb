@@ -167,6 +167,21 @@
       <span class="dim">apagado: nenhum voto naquele minuto</span>
       <span class="lit">aceso: a cidade no seu ritmo máximo do dia</span>
     </div>
+    <p>A "fila" de uma cidade: uma urna registra cerca de um voto por minuto. Quando a cidade fica
+      perto do seu ritmo máximo por muito tempo, é porque há gente esperando em quase toda seção.
+      Contamos os minutos em que ela ficou a 80% ou mais do próprio pico.</p>
+    <h2>De onde vêm as notícias</h2>
+    <p>Os números de votos, seções e horários saem dos logs. O resto vem da imprensa do dia:
+      a decisão do STF e a pausa na totalização
+      (<a href="https://www.poder360.com.br/">Poder360</a>,
+      <a href="https://www.conjur.com.br/">Conjur</a>,
+      <a href="https://www.infomoney.com.br/">InfoMoney</a>);
+      a chuva de granizo e os locais sem luz em Minas
+      (<a href="https://www.cnnbrasil.com.br/">CNN Brasil</a>,
+      <a href="https://www.otempo.com.br/">O Tempo</a>);
+      abstenção, urnas trocadas e o fim da totalização
+      (<a href="https://www.tse.jus.br/comunicacao/noticias">TSE</a>,
+      <a href="https://www.gazetadopovo.com.br/">Gazeta do Povo</a>).</p>
     <footer>Dados: TSE, logs das urnas (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>).
       Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.
       Feito por <a href="https://github.com/robsonscheffer">Robson Scheffer</a>.</footer>
@@ -411,7 +426,14 @@
     return `<b>${towns.nome[i]}, ${towns.uf[i]}</b>` +
       `<span>${fmt(towns.aptos[i])} eleitores · ${fmt(towns.secoes[i])} seções</span><br>` +
       `<i>${fmt(sofar)}</i> <span>votos até ${hhmm(Math.floor(t))} de ${fmt(towns.votos[i])}</span><br>` +
-      `<span>ritmo máximo às</span> <i>${hhmm(towns.pico_min[i])}</i>`;
+      fila(i);
+  }
+  // The queue line. Minutes the town held 80% of its peak rate, i.e. a line at every section.
+  function fila(i) {
+    const n = towns.fila[i];
+    if (n < 20) return `<span>sem fila: ritmo máximo às</span> <i>${hhmm(towns.pico_min[i])}</i>`;
+    const dur = n >= 60 ? `${Math.floor(n / 60)}h${String(n % 60).padStart(2, "0")}` : `${n} min`;
+    return `<span>fila: no limite por</span> <i>${dur}</i><span>, até</span> <i>${hhmm(towns.fila_ate[i])}</i>`;
   }
   function placeTip() {
     const tip = $("tip");

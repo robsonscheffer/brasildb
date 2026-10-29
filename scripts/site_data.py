@@ -72,14 +72,20 @@ def main() -> None:
         national[m] += votos
         by_uf.setdefault(uf, [0] * minutes)[m] += votos
 
+    # The queue: an urna takes about a vote a minute, so a town at its peak rate is a town
+    # with a line at every section. "fila" is how many minutes the town stayed at 80% or
+    # more of its peak; "fila_ate" is the last such minute.
     pixels = bytearray(n * minutes)
-    peaks, peak_min, total = [], [], []
+    peaks, peak_min, total, fila, fila_ate = [], [], [], [], []
     for i, c in enumerate(counts):
         mean3 = [(c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)]
         peak = max(mean3) or 1
         peaks.append(round(peak, 1))
         peak_min.append(mean3.index(peak) + START)
         total.append(sum(c))
+        high = [m for m in range(minutes) if mean3[m] >= 0.8 * peak]
+        fila.append(len(high))
+        fila_ate.append(high[-1] + START if high else START)
         for m in range(minutes):
             pixels[m * n + i] = min(255, round(255 * c[m] / peak))
 
@@ -95,6 +101,8 @@ def main() -> None:
         "pico": peaks,
         "pico_min": peak_min,
         "votos": total,
+        "fila": fila,
+        "fila_ate": fila_ate,
     }, ensure_ascii=False, separators=(",", ":")))
     (out / "totals.json").write_text(json.dumps({
         "start": START, "minutes": minutes,
