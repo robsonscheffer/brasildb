@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>O Brasil votando</title>
-<meta name="description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas. Dados: TSE, logs das urnas.">
+<meta name="description" content="O dia em que 127 milhões votaram, minuto a minuto. Cada urna anota a hora de cada voto; juntamos todas. O segundo turno de 2026, cidade por cidade.">
 <meta property="og:title" content="O Brasil votando">
-<meta property="og:description" content="127 milhões de votos, minuto a minuto. O segundo turno de 2026 visto pelo relógio das urnas.">
+<meta property="og:description" content="O dia em que 127 milhões votaram, minuto a minuto. Veja sua cidade acender.">
 <meta property="og:image" content="https://robsonscheffer.github.io/brasildb/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,8 +18,9 @@
     --muted: #9a9ca6;
     --line: #262a38;
     --accent: #ffb43c;
-    --card: rgba(7,10,18,.84);
-    --feed-h: 172px;
+    --card: rgba(7,10,18,.86);
+    --bar-h: 72px;       /* the timeline bar */
+    --beat-h: 150px;     /* room for the floating card above it */
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -29,17 +30,17 @@
   button { font: inherit; }
   .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
-  /* The stage is one screen: map, clock, feed. The method text lives below it. */
+  /* The stage is one screen: map, clock, timeline. The method text lives below it. */
   .stage { position: relative; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
   canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
-  .hud { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); top: max(18px, env(safe-area-inset-top, 0px)); display: grid; gap: 4px; }
+  .hud { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); top: max(18px, env(safe-area-inset-top, 0px)); display: grid; gap: 6px; max-width: 360px; }
   .clock { font-size: clamp(44px, 9vw, 92px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
-  .clock small { font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-left: 10px; vertical-align: middle; }
+  .clock small { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
   .total { font-size: clamp(14px, 3.2vw, 18px); color: var(--muted); font-variant-numeric: tabular-nums; }
   .total b { color: var(--fg); font-weight: 600; }
-  canvas#curve { width: 340px; max-width: calc(100vw - 36px); height: 54px; display: block; margin-top: 8px; cursor: ew-resize; touch-action: none; }
-  .copy { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0; cursor: pointer; text-align: left; justify-self: start; }
-  .copy:hover { color: var(--accent); }
+  .cta { margin-top: 8px; font-size: 14px; color: var(--muted); max-width: 30ch; }
+  .share { margin-top: 2px; justify-self: start; background: var(--accent); color: var(--bg); border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .share:hover { filter: brightness(1.08); }
   .play {
     position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(18px, env(safe-area-inset-top, 0px));
     width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
@@ -60,32 +61,24 @@
   .tip span { color: var(--muted); }
   .tip i { font-style: normal; color: var(--accent); }
 
-  /* The feed: one row of cards, the card at "now" in the centre. Drag it to seek. */
-  .feed {
-    position: absolute; left: 0; right: 0; bottom: 0; height: var(--feed-h);
-    padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
-    display: flex; align-items: flex-end;
-    background: linear-gradient(to top, rgba(7,10,18,.95), rgba(7,10,18,.6) 70%, rgba(7,10,18,0));
+  /* The timeline: one bar across the screen (the day curve), the playhead over it, the
+     current beat's card floating above the playhead. Drag the bar to scrub. */
+  .timeline { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--bar-h) + var(--beat-h)); pointer-events: none; }
+  .timeline::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(7,10,18,.96) var(--bar-h), rgba(7,10,18,.55) 60%, rgba(7,10,18,0)); }
+  canvas#bar { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: var(--bar-h); display: block; pointer-events: auto; cursor: ew-resize; touch-action: none; }
+  .beat {
+    position: absolute; bottom: calc(var(--bar-h) + 10px); width: 360px; max-width: calc(100vw - 24px);
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px 10px;
+    display: grid; gap: 4px; pointer-events: auto; transition: opacity .25s;
   }
-  .rail {
-    display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-    padding-inline: calc(50% - 170px); width: 100%; -webkit-overflow-scrolling: touch;
-  }
-  .rail::-webkit-scrollbar { display: none; }
-  .ev {
-    flex: 0 0 340px; scroll-snap-align: center; background: var(--card); border: 1px solid var(--line);
-    border-radius: 14px; padding: 12px 16px; cursor: pointer; opacity: .55; transition: opacity .3s, border-color .3s;
-    display: grid; gap: 4px; align-content: start; min-height: 112px;
-  }
-  .ev.on { opacity: 1; border-color: var(--accent); }
-  .ev .k { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
-  .ev h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
-  .ev h2.big { font-size: 26px; }
-  .ev p { margin: 0; font-size: 14px; line-height: 1.35; color: #cfccc3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .ev.on p { -webkit-line-clamp: 5; }
-  .ev .bar { height: 2px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-  .ev .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
-  .more { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(var(--feed-h) + 6px); font-size: 13px; color: var(--muted); text-decoration: none; }
+  .beat::after { content: ""; position: absolute; left: var(--tail, 50%); bottom: -7px; width: 12px; height: 12px; background: var(--card); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+  .beat .k { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .beat h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+  .beat h2.big { font-size: 24px; }
+  .beat p { margin: 0; font-size: 14px; line-height: 1.35; color: #cfccc3; }
+  .beat .next { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .beat .next b { color: var(--fg); font-weight: 600; }
+  .more { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(var(--bar-h) + 8px); font-size: 13px; color: var(--muted); text-decoration: none; pointer-events: auto; }
   .more:hover { color: var(--accent); }
 
   .after { position: relative; background: var(--bg); border-top: 1px solid var(--line); padding-block: 40px 60px; }
@@ -99,17 +92,17 @@
   .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
   footer { color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 12px; }
 
-  /* Phone: map on top, clock in the middle, the feed at the bottom with one card in view. */
+  /* Phone: clock small on top, map in the middle, card and bar at the bottom. */
   @media (max-width: 600px) {
-    :root { --feed-h: 190px; }
-    .hud { top: auto; bottom: calc(var(--feed-h) + 4px); }
+    :root { --bar-h: 60px; --beat-h: 176px; }
+    .hud { gap: 2px; max-width: calc(100vw - 90px); }
     .clock { font-size: 40px; }
     .clock small { display: none; }
-    canvas#curve { width: 220px; height: 40px; margin-top: 4px; }
-    .play { top: auto; bottom: calc(var(--feed-h) + 10px); width: 44px; height: 44px; }
-    .rail { padding-inline: calc(50% - 150px); }
-    .ev { flex-basis: 300px; min-height: 124px; }
-    .ev h2.big { font-size: 22px; }
+    .cta { display: none; }
+    .share { margin-top: 6px; padding: 6px 12px; font-size: 13px; }
+    .play { width: 44px; height: 44px; }
+    .beat { left: 12px !important; right: 12px; width: auto; }
+    .beat h2.big { font-size: 20px; }
     .more { display: none; }
   }
 </style>
@@ -122,14 +115,17 @@
   <div class="hud">
     <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
     <div class="total"><b id="total">0</b> votos até agora</div>
-    <canvas id="curve" aria-label="Votos por minuto ao longo do dia; arraste para mudar a hora"></canvas>
-    <button class="copy" id="copy">copiar o link deste minuto</button>
+    <div class="cta">Em que minuto você votou? Arraste a linha do tempo até ele e compartilhe.</div>
+    <button class="share" id="share">compartilhar este minuto</button>
   </div>
   <button class="play" id="play" aria-label="Pausar">
     <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
   </button>
-  <a class="more" href="#como">como foi feito ↓</a>
-  <div class="feed"><div class="rail" id="rail"></div></div>
+  <div class="timeline">
+    <article class="beat" id="beat"></article>
+    <a class="more" href="#como">como foi feito ↓</a>
+    <canvas id="bar" aria-label="Linha do tempo do dia; arraste para mudar a hora"></canvas>
+  </div>
 </div>
 
 <section class="after gutter" id="como">
@@ -190,18 +186,20 @@
   const HOME = { lon: (LON0 + LON1) / 2, lat: (LAT0 + LAT1) / 2, z: 1 };
   const cam = { ...HOME }, camA = { ...HOME }, camB = { ...HOME };
   let camT0 = 0, camDur = 2.2;
+  const cssPx = name => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = Math.round(canvas.clientWidth * dpr); H = Math.round(canvas.clientHeight * dpr);
     canvas.width = W; canvas.height = H;
-    const feed = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--feed-h")) * dpr;
-    const mw = (LON1 - LON0) * KX, mh = LAT0 - LAT1;
     const wide = W > H;
-    const avail = H - feed;
-    const s = Math.min((W * (wide ? 0.60 : 0.94)) / mw, (avail * (wide ? 0.94 : 0.62)) / mh);
+    const bottom = (cssPx("--bar-h") + (wide ? 40 : cssPx("--beat-h"))) * dpr;
+    const top = wide ? 0 : 110 * dpr;
+    const mw = (LON1 - LON0) * KX, mh = LAT0 - LAT1;
+    const avail = H - bottom - top;
+    const s = Math.min((W * (wide ? 0.60 : 0.96)) / mw, (avail * (wide ? 0.90 : 0.96)) / mh);
     sx = s * KX; sy = s;
     ox = wide ? W - mw * s - 0.04 * W : (W - mw * s) / 2;
-    oy = wide ? (avail - mh * s) / 2 : avail * 0.02;
+    oy = top + (avail - mh * s) / 2;
     ax = ox + mw * s / 2; ay = oy + mh * s / 2;
     const rmax = 0.022 * Math.min(W, avail * 1.2), amax = Math.sqrt(towns.aptos[0]);
     for (let i = 0; i < N; i++) {
@@ -217,7 +215,7 @@
     Object.assign(camA, cam); Object.assign(camB, to); camT0 = now;
   }
   function moveCamera(now) {
-    const u = Math.min(1, (now - camT0) / 1000 / camDur), e = u * u * (3 - 2 * u);   // ease in and out
+    const u = Math.min(1, (now - camT0) / 1000 / camDur), e = u * u * (3 - 2 * u);
     cam.lon = camA.lon + (camB.lon - camA.lon) * e;
     cam.lat = camA.lat + (camB.lat - camA.lat) * e;
     cam.z = Math.exp(Math.log(camA.z) + (Math.log(camB.z) - Math.log(camA.z)) * e);
@@ -235,7 +233,7 @@
   const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS + 1 }, () => []);
   let lastMinute = -1, shown = 0, picked = -1;
-  function draw(t) {                // t: minute of the day, fractional
+  function draw(t) {
     const m0 = Math.max(0, Math.min(M - 1, Math.floor(t - START))), m1 = Math.min(M - 1, m0 + 1), f = Math.min(1, Math.max(0, t - START - m0));
     sky(t);
     ctx.save();
@@ -284,42 +282,59 @@
     const target = cumul[Math.max(0, Math.min(M - 1, minute - START))];
     shown += (target - shown) * 0.18; if (Math.abs(target - shown) < 2) shown = target;
     $("total").textContent = fmt(shown);
-    drawCurve(t);
+    drawBar(t);
     if (picked >= 0) placeTip();
   }
 
-  // The day's curve under the clock: national votes per minute, with the playhead. Drag to seek.
-  const curve = $("curve"), cctx = curve.getContext("2d");
-  let curveBase = null;
-  function buildCurve() {
-    const cw = Math.round(curve.clientWidth * dpr), ch = Math.round(curve.clientHeight * dpr);
-    curve.width = cw; curve.height = ch;
-    curveBase = document.createElement("canvas"); curveBase.width = cw; curveBase.height = ch;
-    const c = curveBase.getContext("2d");
-    const yOf = m => ch - Math.min(1, nat[m] / maxPerMin) * (ch - 2 * dpr);
-    c.beginPath(); c.moveTo(0, ch);
-    for (let m = 0; m < M; m++) c.lineTo(m / (M - 1) * cw, yOf(m));
-    c.lineTo(cw, ch); c.closePath();
-    c.fillStyle = "rgba(255,180,60,0.22)"; c.fill();
+  // The timeline bar: the day curve across the width, hour labels, beat markers, playhead.
+  const bar = $("bar"), bctx = bar.getContext("2d");
+  let barBase = null, bw = 0, bh = 0, bl = 0, br = 0;
+  const xOfT = t => bl + (t - START) / (M - 1) * (br - bl);
+  const tOfX = x => START + Math.max(0, Math.min(1, (x - bl) / (br - bl))) * (M - 1);
+  function buildBar() {
+    bw = Math.round(bar.clientWidth * dpr); bh = Math.round(bar.clientHeight * dpr);
+    bar.width = bw; bar.height = bh;
+    bl = 14 * dpr; br = bw - 14 * dpr;
+    barBase = document.createElement("canvas"); barBase.width = bw; barBase.height = bh;
+    const c = barBase.getContext("2d");
+    const top = 10 * dpr, base = bh - 18 * dpr;
+    const yOf = m => base - Math.min(1, nat[m] / maxPerMin) * (base - top);
+    c.beginPath(); c.moveTo(bl, base);
+    for (let m = 0; m < M; m++) c.lineTo(xOfT(START + m), yOf(m));
+    c.lineTo(br, base); c.closePath();
+    c.fillStyle = "rgba(255,180,60,0.18)"; c.fill();
     c.beginPath();
-    for (let m = 0; m < M; m++) c[m ? "lineTo" : "moveTo"](m / (M - 1) * cw, yOf(m));
-    c.strokeStyle = "rgba(255,180,60,0.9)"; c.lineWidth = 1.2 * dpr; c.stroke();
+    for (let m = 0; m < M; m++) c[m ? "lineTo" : "moveTo"](xOfT(START + m), yOf(m));
+    c.strokeStyle = "rgba(255,180,60,0.85)"; c.lineWidth = 1.2 * dpr; c.stroke();
+    c.fillStyle = "rgba(154,156,166,0.9)"; c.font = `${11 * dpr}px "Inter Tight", system-ui, sans-serif`; c.textAlign = "center";
+    for (let h = 8; h <= 19; h++) {
+      const x = xOfT(h * 60);
+      c.fillRect(x, base, dpr, 4 * dpr);
+      if (h % 2 === 0 || bw > 900 * dpr) c.fillText(`${h}h`, x, bh - 4 * dpr);
+    }
     for (const ev of events) {
-      const x = (ev.t - START) / (M - 1) * cw;
-      c.fillStyle = "rgba(236,232,220,0.5)"; c.fillRect(x, ch - 6 * dpr, dpr, 6 * dpr);
+      const x = xOfT(ev.t), m = Math.max(0, Math.min(M - 1, ev.t - START));
+      c.fillStyle = "rgba(236,232,220,0.95)";
+      c.beginPath(); c.arc(x, yOf(m), 2.6 * dpr, 0, 6.2832); c.fill();
     }
   }
-  function drawCurve(t) {
-    const cw = curve.width, ch = curve.height;
-    cctx.clearRect(0, 0, cw, ch); cctx.drawImage(curveBase, 0, 0);
-    const x = (t - START) / (M - 1) * cw;
-    cctx.fillStyle = "rgba(236,232,220,0.9)"; cctx.fillRect(x - dpr / 2, 0, dpr, ch);
+  function drawBar(t) {
+    bctx.clearRect(0, 0, bw, bh); bctx.drawImage(barBase, 0, 0);
+    const x = xOfT(t);
+    bctx.fillStyle = "rgba(255,180,60,0.10)"; bctx.fillRect(bl, 0, x - bl, bh - 18 * dpr);
+    bctx.fillStyle = "rgba(236,232,220,0.95)"; bctx.fillRect(x - dpr, 0, 2 * dpr, bh - 14 * dpr);
+    const beat = $("beat"), cw = beat.offsetWidth, vw = canvas.clientWidth;
+    let left = x / dpr - cw / 2;
+    left = Math.max(12, Math.min(vw - cw - 12, left));
+    if (window.innerWidth > 600) { beat.style.left = `${left}px`; beat.style.setProperty("--tail", `${Math.max(16, Math.min(cw - 16, x / dpr - left))}px`); }
+    else beat.style.setProperty("--tail", `${Math.max(16, Math.min(vw - 40, x / dpr - 12))}px`);
   }
   let scrubbing = false;
-  const curveSeek = e => { const r = curve.getBoundingClientRect(); seek(START + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (M - 1)); };
-  curve.addEventListener("pointerdown", e => { scrubbing = true; curve.setPointerCapture(e.pointerId); curveSeek(e); });
-  curve.addEventListener("pointermove", e => { if (scrubbing) curveSeek(e); });
-  curve.addEventListener("pointerup", () => { scrubbing = false; });
+  const barSeek = e => seek(tOfX((e.clientX - bar.getBoundingClientRect().left) * dpr));
+  bar.addEventListener("pointerdown", e => { scrubbing = true; bar.setPointerCapture(e.pointerId); barSeek(e); });
+  bar.addEventListener("pointermove", e => { if (scrubbing) barSeek(e); });
+  bar.addEventListener("pointerup", () => { scrubbing = false; });
+  bar.addEventListener("pointercancel", () => { scrubbing = false; });
 
   // Tap or hover a town: its numbers up to this minute.
   function townAt(cx, cy) {
@@ -351,52 +366,39 @@
   canvas.addEventListener("pointerdown", e => { const i = townAt(e.clientX, e.clientY); pick(i === picked ? -1 : i); });
   canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); } });
 
-  // The feed: one card per event, in time order. The card at "now" is centred; dragging the
-  // rail to another card seeks the clock to it.
-  const rail = $("rail");
-  const cards = events.map((ev, k) => {
-    const el = document.createElement("article"); el.className = "ev"; el.dataset.k = k;
-    el.innerHTML = `<div class="k">${ev.k}</div><h2 class="${k === 0 ? "big" : ""}">${ev.title}</h2><p>${ev.text}</p><div class="bar"><i></i></div>`;
-    el.addEventListener("click", () => seek(ev.t));
-    rail.appendChild(el); return el;
-  });
-  const bars = cards.map(c => c.querySelector(".bar i"));
-  let active = -1, railBusy = 0, userScroll = false;
+  // The beat card above the playhead: the current event, and a hint of the next one.
+  let active = -1;
   function eventAt(t) { let k = 0; for (let i = 0; i < events.length; i++) if (t >= events[i].t) k = i; return k; }
   function showEvent(k, now) {
     if (k === active) return;
     active = k;
-    cards.forEach((c, j) => c.classList.toggle("on", j === k));
-    railBusy = now + 900;
-    rail.scrollTo({ left: cards[k].offsetLeft - (rail.clientWidth - cards[k].offsetWidth) / 2, behavior: "smooth" });
-    setView(events[k].view, now);
+    const ev = events[k], nx = events[k + 1];
+    const beat = $("beat");
+    beat.style.opacity = 0;
+    setTimeout(() => {
+      beat.innerHTML = `<div class="k">${ev.k}</div><h2 class="${k === 0 ? "big" : ""}">${ev.title}</h2><p>${ev.text}</p>` +
+        (nx ? `<div class="next">a seguir, <b>${nx.k}</b>: ${nx.title}</div>` : `<div class="next">o dia recomeça em instantes</div>`);
+      beat.style.opacity = 1;
+    }, k === 0 && active === 0 ? 0 : 180);
+    setView(ev.view, now);
   }
-  let scrollTimer = 0;
-  rail.addEventListener("scroll", () => {
-    if (performance.now() < railBusy) return;           // our own smooth scroll
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      const mid = rail.scrollLeft + rail.clientWidth / 2;
-      let best = 0, bd = Infinity;
-      cards.forEach((c, k) => { const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = k; } });
-      if (best !== active) seek(events[best].t);
-    }, 120);
-  }, { passive: true });
 
-  // Playback. One clock drives the map, the feed and the camera.
+  // Playback. One clock drives the map, the bar, the card and the camera.
   let t = START, playing = true, last = performance.now(), holdUntil = 0;
-  function seek(min) { t = Math.max(START, Math.min(END, min)); holdUntil = 0; showEvent(eventAt(t), performance.now()); draw(t); }
+  function seek(min) {
+    t = Math.max(START, Math.min(END, min)); holdUntil = 0;
+    shown = cumul[Math.max(0, Math.min(M - 1, Math.floor(t) - START))];
+    showEvent(eventAt(t), performance.now()); draw(t);
+  }
   function speedAt(t) { const ev = events[eventAt(t)]; return t < ev.t + ev.dur ? SLOW : FAST; }
   function tick(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (playing && !scrubbing && now >= holdUntil) {
       t += dt * speedAt(t);
       if (t > END) { t = END; holdUntil = now + HOLD * 1000; }
-      else if (holdUntil && now >= holdUntil) { t = START; holdUntil = 0; }
     }
-    if (holdUntil && now >= holdUntil) { t = START; holdUntil = 0; }
+    if (holdUntil && now >= holdUntil && playing) { t = START; holdUntil = 0; }
     const k = eventAt(t); if (k !== active) showEvent(k, now);
-    const ev = events[k]; bars[k].style.width = `${Math.min(100, (t - ev.t) / ev.dur * 100)}%`;
     moveCamera(now);
     draw(t);
     requestAnimationFrame(tick);
@@ -404,11 +406,15 @@
   const ICON_PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>', ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
   function setPlaying(p) { playing = p; $("ico").innerHTML = p ? ICON_PAUSE : ICON_PLAY; $("play").setAttribute("aria-label", p ? "Pausar" : "Tocar"); }
   $("play").addEventListener("click", () => setPlaying(!playing));
-  $("copy").addEventListener("click", async () => {
-    const url = `${location.origin}${location.pathname}?t=${hhmm(Math.floor(t))}`;
-    try { await navigator.clipboard.writeText(url); $("copy").textContent = "link copiado"; }
-    catch { $("copy").textContent = url; }
-    setTimeout(() => { $("copy").textContent = "copiar o link deste minuto"; }, 2500);
+  $("share").addEventListener("click", async () => {
+    const minute = hhmm(Math.floor(t));
+    const url = `${location.origin}${location.pathname}?t=${minute}`;
+    const text = `Às ${minute} o Brasil estava assim. Veja sua cidade acender: o segundo turno minuto a minuto.`;
+    const b = $("share");
+    if (navigator.share) { try { await navigator.share({ title: "O Brasil votando", text, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); b.textContent = "link copiado"; }
+    catch { b.textContent = url; }
+    setTimeout(() => { b.textContent = "compartilhar este minuto"; }, 2500);
   });
 
   // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
@@ -420,8 +426,8 @@
   const q = new URLSearchParams(location.search).get("t");
   if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); setPlaying(false); }
 
-  layout(); buildCurve(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t); $("loading").remove();
-  new ResizeObserver(() => { layout(); buildCurve(); draw(t); }).observe(canvas);
+  layout(); buildBar(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t); $("loading").remove();
+  new ResizeObserver(() => { layout(); buildBar(); draw(t); }).observe(canvas);
   requestAnimationFrame(tick);
 })();
 </script>
