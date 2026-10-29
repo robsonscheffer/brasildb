@@ -117,12 +117,30 @@
   .hint::after { content: ""; display: block; width: 1px; height: 28px; margin: 10px auto 0; background: linear-gradient(var(--accent), transparent); animation: cai 1.6s ease-in-out infinite; }
   @keyframes cai { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
 
-  /* Sticky charts */
-  .notas { position: absolute; z-index: 2; left: 0; right: 0; bottom: 7vh; display: grid; gap: 10px; }
-  .notas p { margin: 0; font-family: var(--serif); font-size: clamp(22px, 4.2vw, 30px); line-height: 1.15; max-width: 30ch; opacity: 0; transform: translateY(8px); transition: opacity .45s, transform .45s; }
-  .notas p.on { opacity: 1; transform: none; }
-  .notas p[hidden] { display: none; }
-  .notas p .h { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); display: block; margin-bottom: 4px; }
+  /* Sticky charts (U2): the chart in the left column, its steps in the right one. The active step
+     sits at the middle of the column; the ones before it are dim, the ones after it dimmer.
+     On a phone the chart takes the top of the screen and the steps become a sheet below it. */
+  .palco.duplo { grid-template-columns: 60% 40%; grid-template-rows: 100%; }
+  .palco.duplo canvas { position: relative; inset: auto; grid-area: 1 / 1; }
+  .passos { grid-area: 1 / 2; position: relative; overflow: hidden; border-left: 1px solid var(--line); }
+  .passos ol { list-style: none; margin: 0; padding: 0; position: absolute; left: 28px; right: 150px; top: 50%; transform: translateY(calc(-1 * var(--yc, 0px))); transition: transform .4s cubic-bezier(.2, .7, .2, 1); }
+  .passos li { padding: 16px 0; opacity: .14; transition: opacity .4s; }
+  .passos li.feita { opacity: .3; }
+  .passos li.on { opacity: 1; }
+  .passos li .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
+  .passos li h3 { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(24px, 2.4vw, 36px); line-height: 1.08; font-weight: 400; text-wrap: balance; }
+  .passos li p { margin: 8px 0 0; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.4; color: #cfccc3; max-width: 44ch; }
+  .passos li.seu h3 { color: var(--accent); }
+  @media (max-width: 640px) {
+    .palco.duplo { grid-template-columns: 100%; grid-template-rows: 62% 38%; }
+    .passos { grid-area: 2 / 1; border-left: 0; border-top: 1px solid var(--line); background: var(--bg2); border-radius: 20px 20px 0 0; }
+    .passos::before { content: ""; position: absolute; top: 8px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--line); }
+    .passos ol { left: var(--gx); right: 20px; top: 26px; transform: translateY(calc(-1 * var(--yt, 0px))); }
+    .passos li { padding: 12px 0; }
+    .passos li.feita { opacity: 0; }
+    .passos li h3 { font-size: clamp(22px, 5.6vw, 28px); }
+    .passos li p { font-size: 15px; }
+  }
 
   /* 6. The question */
   .pergunta { min-height: 100svh; display: grid; align-content: center; max-width: 680px; margin: 0 auto; }
@@ -156,12 +174,6 @@
   .legenda div { max-width: 30ch; font-family: var(--serif); font-size: clamp(24px, 4.4vw, 34px); line-height: 1.15; }
   .legenda .esc { display: flex; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
   .legenda .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
-  .mcap { position: absolute; z-index: 2; left: var(--gx); right: 20px; bottom: 7vh; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
-  .mcap.on { opacity: 1; transform: none; }
-  .mcap .h { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
-  .mcap h3 { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(26px, 5vw, 40px); line-height: 1.05; font-weight: 400; text-wrap: balance; }
-  .mcap p { margin: 8px 0 0; font-size: clamp(16px, 3.2vw, 19px); line-height: 1.4; color: #cfccc3; max-width: 44ch; }
-  .mcap.seu h3 { color: var(--accent); }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
   /* Hour tap */
@@ -270,13 +282,9 @@
 
 <!-- 2. 08:00 all at once -->
 <section class="cena" id="abertura" style="--len:320vh" data-grande>
-  <div class="palco">
+  <div class="palco duplo">
     <canvas id="c3"></canvas>
-    <div class="notas gx" id="c3notas">
-      <p data-t="479"><span class="h">antes das 8h</span>Antes do primeiro eleitor, cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>: zero votos, em papel.</p>
-      <p data-t="480"><span class="h">08:00 · Brasil</span><span class="num">473.844</span> urnas acordam às 8h em ponto.</p>
-      <p data-t="483"><span class="h">08:03 · Brasil</span>O país já passou de um milhão de votos.</p>
-    </div>
+    <div class="passos" id="c3passos"></div>
   </div>
 </section>
 
@@ -306,7 +314,7 @@
 
 <!-- 5. The map -->
 <section class="cena mapa" id="dia-no-mapa" style="--len:1300vh" data-grande>
-  <div class="palco">
+  <div class="palco duplo">
     <canvas id="c7"></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
     <div class="legenda" id="legenda">
@@ -316,7 +324,7 @@
         <div class="esc"><span>calma</span><i></i><span>pico</span></div>
       </div>
     </div>
-    <div class="mcap" id="mcap"></div>
+    <div class="passos" id="c7passos"></div>
   </div>
 </section>
 
@@ -329,9 +337,9 @@
 
 <!-- 6. The close, with your urna pinned -->
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
-  <div class="palco">
+  <div class="palco duplo">
     <canvas id="c8"></canvas>
-    <div class="notas gx" id="c8notas"></div>
+    <div class="passos" id="c8passos"></div>
   </div>
 </section>
 
@@ -367,9 +375,9 @@
 
 <!-- 8. The night -->
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
-  <div class="palco">
+  <div class="palco duplo">
     <canvas id="c9"></canvas>
-    <div class="notas gx" id="c9notas"></div>
+    <div class="passos" id="c9passos"></div>
   </div>
 </section>
 
@@ -587,14 +595,36 @@ function agenda(items, A, B, hold = 60) {
     return { t: s.u1 > s.u0 ? lerp(s.t0, s.t1, clamp((x - s.u0) / (s.u1 - s.u0))) : s.t1, cur: s.cur };
   };
 }
-// One note at a time in a box: a small place-and-time line, a title, a sentence.
-function nota(box, e) {
-  if (box._e === e) return; box._e = e;
-  box.classList.remove("on");
-  if (!e) return;
-  box.innerHTML = `${e.h ? `<div class="h">${e.h}</div>` : ""}<h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}`;
-  box.classList.toggle("seu", !!e.seu);
-  requestAnimationFrame(() => box.classList.add("on"));
+// The steps of a chart (U2): every note of the scene in one list, the current one lit and
+// brought to the middle of its column (to the top of the sheet on a phone).
+function passos(host, items, cur) {
+  if (host._items !== items) {
+    host._items = items; host._cur = undefined;
+    host.innerHTML = `<ol>${items.map(e => `<li${e.seu ? ' class="seu"' : ""}>${e.h ? `<div class="h">${e.h}</div>` : ""}<h3>${e.titulo}</h3>${e.texto ? `<p>${e.texto}</p>` : ""}</li>`).join("")}</ol>`;
+    host._ol = host.firstElementChild; host._lis = [...host._ol.children];
+    // The list slides to the new step; the leader line is redrawn once it has arrived.
+    host._ol.addEventListener("transitionend", e => { if (e.propertyName === "transform") tick(); });
+  }
+  if (host._cur === cur) return;
+  host._cur = cur;
+  const k = items.indexOf(cur);
+  host._lis.forEach((li, i) => { li.classList.toggle("on", i === k); li.classList.toggle("feita", k >= 0 && i < k); });
+  if (k >= 0) { const li = host._lis[k]; host._ol.style.setProperty("--yc", `${li.offsetTop + li.offsetHeight / 2}px`); host._ol.style.setProperty("--yt", `${li.offsetTop}px`); }
+}
+// A leader line (U3) from the thing on the chart to its step: out to the canvas edge beside the
+// step's heading on desktop, straight down to the sheet on a phone. `via` is a clear y to travel along.
+function ligar(c, ctx, anc, host, dpr, via) {
+  const li = host.querySelector("li.on"); if (!anc || !li) return;
+  const W = c.width, H = c.height, cr = c.getBoundingClientRect(), hr = (li.querySelector(".h") || li).getBoundingClientRect();
+  const [x, y] = anc;
+  ctx.save(); ctx.strokeStyle = `rgba(${ACC},.8)`; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.moveTo(x, y);
+  if (hr.left >= cr.right - 1) {
+    const ty = clamp((hr.top + hr.height / 2 - cr.top) * dpr, 6 * dpr, H - 6 * dpr), xe = W - 14 * dpr, vy = via ?? y;
+    if (vy !== y) ctx.lineTo(x, vy);
+    ctx.lineTo(xe, vy); ctx.lineTo(xe, ty); ctx.lineTo(W, ty);
+  } else ctx.lineTo(x, H);
+  ctx.stroke();
+  ctx.fillStyle = `rgb(${ACC})`; ctx.beginPath(); ctx.arc(x, y, 3 * dpr, 0, 6.283); ctx.fill(); ctx.restore();
 }
 const somaMin = (arr, a, b) => { let n = 0; for (let m = a; m < b; m++) n += arr[m - TOT.start] || 0; return n; };
 const PICO = TOT.national.indexOf(Math.max(...TOT.national)) + TOT.start;
@@ -603,30 +633,34 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
 
 /* ---------- 2. 08:00 all at once ---------- */
 {
-  const el = $("abertura"), c = $("c3"), notas = [...$("c3notas").children];
-  const nat = TOT.national, S = TOT.start;
+  const el = $("abertura"), c = $("c3"), host = $("c3passos");
+  const nat = TOT.national, S = TOT.start, cur = id => curios.itens.find(i => i.id === id);
+  const its = [
+    { t: 478.5, h: "antes das 8h", titulo: `Antes do primeiro eleitor, cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>.`, texto: "Zero votos, em papel." },
+    { t: 480, h: "08:00 · Brasil", titulo: `${fmt(cur("abertura_tie").valor)} urnas acordam às 8h em ponto.` },
+    { t: 483, h: "08:03 · Brasil", titulo: "O país já passou de um milhão de votos." },
+    { t: PICO, h: `${hhmm(PICO)} · Brasil`, titulo: "O minuto mais cheio do dia.", texto: `${fmt(nat[PICO - S])} votos em sessenta segundos.` },
+    { t: 540, h: "09:00 · Brasil", titulo: "Uma hora de votação.", texto: `${fmt(votosAte(539))} votos até as 9h.` },
+  ];
+  const ag = agenda(its, 478.5, 540, 10);
   scene(el, p => {
-    const t = lerp(478.5, 540, clamp(p / 0.92));
-    const past = notas.filter(n => t >= +n.dataset.t);
-    notas.forEach(n => { const on = past.slice(-2).includes(n); n.classList.toggle("on", on); n.hidden = !on; });
+    const { t, cur: e } = ag(clamp(p / 0.95));
+    passos(host, its, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
     const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
-    const yt = ty + 52 * dpr, yb = Math.max(yt + 70 * dpr, Math.min(0.62 * H, H - 0.34 * H));
+    const yt = ty + 62 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.16 * H);
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 8h às 9h", x0, ty);
     ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("cada barra é um minuto", x0, ty + 18 * dpr);
     const max = Math.max(...nat.slice(480 - S, 541 - S)), bw = (x1 - x0) / 61;
+    const alt = m => (yb - yt) * nat[m - S] / max;
     for (let m = 480; m <= Math.min(540, t); m++) {
-      const v = nat[m - S] / max, h = (yb - yt) * v;
+      const v = nat[m - S] / max, h = alt(m);
       ctx.fillStyle = m === PICO ? "#fff1d6" : `rgba(${ACC},${0.25 + 0.75 * v})`;
       ctx.fillRect(x0 + (m - 480) * bw, yb - h, Math.max(1, bw - 2 * dpr), h);
     }
-    if (t >= PICO) {
-      const x = x0 + (PICO - 480) * bw + bw;
-      ctx.fillStyle = "#fff1d6"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
-      ctx.fillText(`${hhmm(PICO)}, o minuto mais cheio do dia: ${fmt(nat[PICO - S])} votos em sessenta segundos`,x - bw / 2 - 4 * dpr, yt - 10 * dpr);
-    }
     ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`;
     for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
+    if (e && e.t >= 480) { const m = Math.min(540, Math.round(e.t)); ligar(c, ctx, [x0 + (m - 480) * bw + (bw - 2 * dpr) / 2, yb - alt(m)], host, dpr, yt - 24 * dpr); }
     return { t: Math.max(480, t), txt: t < 480 ? "07:59" : null };
   });
 }
@@ -701,7 +735,7 @@ async function afterAnswer() {
 
 /* ---------- 5. The map ---------- */
 {
-  const el = $("dia-no-mapa"), c = $("c7"), box = $("mcap");
+  const el = $("dia-no-mapa"), c = $("c7"), host = $("c7passos");
   let M = null; // decoded map data, built once
   async function build() {
     const [t, img, borders] = await Promise.all([loadTowns(), loadFrames(), loadBorders()]);
@@ -713,11 +747,13 @@ async function afterAnswer() {
     M = { t, lit, N, MM, borders, x: new Float32Array(N), y: new Float32Array(N), r: new Float32Array(N), P: null };
     layout(); $("c7load").hidden = true; tick();
   }
+  // The map fills its column below the clock. It is re-laid when the column or the clock changes size.
   function layout() {
     if (!M) return;
-    const { W, H, dpr } = fit(c), wide = W > H;
-    const top = wide ? 0.08 * H : 0.22 * H, bot = wide ? 0.08 * H : 0.26 * H;
-    M.P = wide ? projectIn(0.36 * W, top, 0.6 * W, H - top - bot) : projectIn(0.03 * W, top, 0.94 * W, H - top - bot);
+    const { W, H, dpr } = fit(c), key = `${W}x${H}@${TOPO}`;
+    if (M.key === key) return; M.key = key;
+    const top = topo(dpr) + 6 * dpr, bot = 0.05 * H;
+    M.P = projectIn(0.03 * W, top, 0.94 * W, H - top - bot);
     const amax = Math.sqrt(Math.max(...M.t.aptos)), rmax = 0.02 * Math.min(W, H);
     for (let i = 0; i < M.N; i++) { M.x[i] = M.P.X(M.t.lon[i]); M.y[i] = M.P.Y(M.t.lat[i]); M.r[i] = Math.max(0.9 * dpr, rmax * Math.sqrt(M.t.aptos[i]) / amax); }
   }
@@ -748,7 +784,8 @@ async function afterAnswer() {
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
     const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
-    planoDe = key; plano = { ag: agenda(its, 480, 1146, 55), dia };
+    its.sort((a, b) => a.t - b.t);
+    planoDe = key; plano = { ag: agenda(its, 480, 1146, 55), dia, lista: [...its, ...dia] };
     return plano;
   }
 
@@ -756,12 +793,13 @@ async function afterAnswer() {
   scene(el, p => {
     $("legenda").style.opacity = p < 0.06 ? 1 : 0;
     $("legenda").style.pointerEvents = p < 0.06 ? "auto" : "none";
-    const { ag, dia } = planejar(), fim = p > 0.86;
+    const { ag, dia, lista } = planejar(), fim = p > 0.86;
     const a = ag(clamp((p - 0.06) / 0.8)), t = fim ? 1146 : a.t;
     const e = p < 0.06 ? null : fim ? dia[Math.min(dia.length - 1, Math.floor((p - 0.86) / 0.14 * dia.length))] : a.cur;
-    nota(box, e);
+    passos(host, lista, e);
     const clock = p < 0.06 ? null : fim ? { txt: "o dia todo", sub: `<b>${fmt(VOTOS)}</b> votos` } : { t };
     if (!M) return clock;
+    layout();
     const S = TOT.start, m0 = clamp(Math.floor(t - S), 0, M.MM - 1), m1 = Math.min(M.MM - 1, m0 + 1), f = t - S - m0;
     const { ctx, W, H, dpr } = fit(c);
     ctx.fillStyle = "#070a12"; ctx.fillRect(0, 0, W, H);
@@ -782,6 +820,7 @@ async function afterAnswer() {
       ctx.fill();
     }
     // The place the note talks about, ringed in the accent.
+    let anc = null;
     if (e && !tudo && !e.seu) {
       const x = M.P.X(e.lugar.lon), y = M.P.Y(e.lugar.lat);
       glow(ctx, x, y, 26 * dpr, .45);
@@ -789,13 +828,16 @@ async function afterAnswer() {
       ctx.fillStyle = `rgb(${ACC})`; ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
       const lab = e.lugar.municipio || "", lw = ctx.measureText(lab).width;
       ctx.fillText(lab, x + 16 * dpr + lw > W ? x - 16 * dpr - lw : x + 16 * dpr, y + 4 * dpr);
+      anc = [x, y];
     }
     const tw = state.town;
     if (tw) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
       ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(tw.nome, M.x[i] + r + 6 * dpr, M.y[i] + 5 * dpr);
+      if (e?.seu) anc = [M.x[i], M.y[i]];
     }
+    ligar(c, ctx, anc, host, dpr);
     return clock;
   });
 }
@@ -819,15 +861,14 @@ renderHoras();
 
 /* ---------- 6. The close ---------- */
 {
-  const el = $("fechamento"), c = $("c8"), host = $("c8notas");
-  host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
+  const el = $("fechamento"), c = $("c8"), host = $("c8passos");
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
   const cur = id => curios.itens.find(i => i.id === id);
   const fila = somaMin(nat, 1020, 1030), depois = somaMin(nat, 1035, 1147);
   const porUF = Object.entries(TOT.uf).map(([u, v]) => [u, somaMin(v, 1035, 1147)]).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
-  const passos = [
+  const passos_ = [
     fato(cur("primeira_fim")),
     { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham, a fila continua.", seg: [1019, 1021],
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
@@ -837,13 +878,13 @@ renderHoras();
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
   ];
-  const ag = agenda(passos, A, B, 55);
+  const ag = agenda(passos_, A, B, 55);
   scene(el, p => {
     const { t, cur: e } = ag(clamp(p / 0.95));
-    nota(host, e);
+    passos(host, passos_, e);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
     const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
-    const yt = ty + 62 * dpr, yb = Math.max(yt + 70 * dpr, Math.min(0.56 * H, H - 0.36 * H));
+    const yt = ty + 76 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.2 * H);
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, ty);
     ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, ty + 18 * dpr);
@@ -865,6 +906,7 @@ renderHoras();
       ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, yb, 4 * dpr, 0, 6.283); ctx.fill();
       ctx.font = `600 ${13 * dpr}px "Inter Tight"`; ctx.fillText(`${mi.quem} fechou ${mi.exata ? "às " : "por volta das "}${hfala(mi.fecha)}`, Math.min(x + 6 * dpr, x1 - 210 * dpr), yb + 36 * dpr);
     }
+    if (e) { const m = clamp(Math.round(e.t), A, B - 1); ligar(c, ctx, [X(m), Y(nat[m - S] || 0)], host, dpr, yt - 46 * dpr); }
     const ate = t >= 1020 ? somaMin(nat, 1020, Math.floor(t) + 1) : 0;
     return { t, sub: t >= 1020 ? `<b>${fmt(ate)}</b> votos depois das 17h` : `<b>${fmt(votosAte(t))}</b> votos` };
   });
@@ -913,8 +955,7 @@ renderHoras();
 
 /* ---------- 8. The night: every state's bulletins arriving ---------- */
 {
-  const el = $("transmissao"), c = $("c9"), host = $("c9notas");
-  host.className = "mcap"; host.style.cssText = "position:absolute;z-index:2;bottom:7vh";
+  const el = $("transmissao"), c = $("c9"), host = $("c9passos");
   near(el, loadChegada);
   let R = null; // per-state cumulative curves and the notes, built once the file is in
   function montar() {
@@ -926,8 +967,8 @@ renderHoras();
     const passos = [
       { t: A, h: `${CH.inicio} · Brasília`, titulo: "O primeiro resultado chega ao TSE.", texto: `Faltam ${fmt(CH.total - 1)}. Cada urna envia o mesmo resultado do <a class="termo" href="como.html#boletim">boletim de urna</a>, uma por uma.` },
       { t: A + nac.findIndex(x => x >= CH.total / 2), h: "Brasil", titulo: "Metade das urnas já chegou.", texto: "" },
-      { t: A + ufs[0].fim, h: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as urnas do estado chegaram às ${hfala(at(ufs[0].fim))}.` },
-      { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último.`, texto: "" },
+      { t: A + ufs[0].fim, h: ufs[0].uf, uf: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as urnas do estado chegaram às ${hfala(at(ufs[0].fim))}.` },
+      { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, uf: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último.`, texto: "" },
       { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} urnas chegaram.`, texto: "" },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
@@ -937,28 +978,35 @@ renderHoras();
     if (!R) montar();
     const mi = minha(), key = mi ? mi.chega + state.town.uf : "";
     if (R.key !== key) {
-      const extra = mi ? [{ t: hm(mi.chega), seu: true, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna chega a Brasília." : `As urnas de ${state.town.nome} chegam a Brasília.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
-      R.ag = agenda([...R.passos, ...extra], R.A, R.A + R.n - 1, 50); R.key = key;
+      const extra = mi ? [{ t: hm(mi.chega), seu: true, uf: state.town.uf, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna chega a Brasília." : `As urnas de ${state.town.nome} chegam a Brasília.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
+      R.lista = [...R.passos, ...extra].sort((a, b) => a.t - b.t);
+      R.ag = agenda(R.lista, R.A, R.A + R.n - 1, 50); R.key = key;
     }
     const { t, cur: e } = R.ag(clamp(p / 0.95));
-    nota(host, e);
+    passos(host, R.lista, e);
+    let anc = null;
     const k = clamp(Math.floor(t - R.A), 0, R.n - 1);
     const { ctx, W, H, dpr } = fit(c); ctx.clearRect(0, 0, W, H);
     const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, ty = topo(dpr) + 16 * dpr;
-    const y0 = ty + 22 * dpr, y1 = Math.max(y0 + 27 * 7 * dpr, H - 0.30 * H), rh = (y1 - y0) / R.ufs.length;
+    const y0 = ty + 22 * dpr, y1 = Math.max(y0 + 27 * 7 * dpr, H - 0.1 * H), rh = (y1 - y0) / R.ufs.length;
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Urnas que chegaram ao TSE, por estado", 0.06 * W, ty);
-    const meu = state.town?.uf;
+    const meu = state.town?.uf, cabe = rh >= 11 * dpr; // on a short screen only the named rows get a label
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
-      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "JetBrains Mono"`; ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
+      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "JetBrains Mono"`;
+      if (cabe || eu || e?.uf === u.uf) ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
       ctx.fillStyle = "rgba(236,232,220,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
       ctx.fillStyle = eu ? "#fff1d6" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
-      if (f >= 1) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${10 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      const dele = e?.uf === u.uf; // the step's row: its leader line takes the place of the time label
+      if (f >= 1 && !dele) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${10 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      if (dele && !e.seu) anc = [x0 + (x1 - x0) * f, y];
       if (eu && mi && hm(mi.chega) <= t) {
         const i = clamp(Math.round(hm(mi.chega) - R.A), 0, R.n - 1), x = x0 + (x1 - x0) * u.cum[i] / u.tot;
         glow(ctx, x, y, 14 * dpr, .9); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 3.5 * dpr, 0, 6.283); ctx.fill();
+        if (dele) anc = [x, y];
       }
     });
+    ligar(c, ctx, anc, host, dpr);
     return { t, sub: `<b>${fmt(R.nac[k])}</b> de ${fmt(CH.total)} urnas no TSE` };
   });
 }
