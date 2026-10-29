@@ -244,12 +244,37 @@
     .sinal i { left: -4px !important; top: var(--q, 0); }
     .tse { margin-top: 0; width: 130px; }
   }
+  /* Read by screen readers only: the data tables behind each chart and the current step. */
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .pula { position: fixed; z-index: 30; top: 12px; left: 50%; transform: translate(-50%, -200%); background: var(--accent); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; text-decoration: none; transition: transform .2s; }
+  .pula:focus { transform: translate(-50%, 0); }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }
+  /* The calm mode (U7): with reduced motion on, nothing sticks or fades. Every fold is laid out
+     as an article at its last frame, every step visible, and the page reads top to bottom. */
+  .calmo .cena { height: auto; }
+  .calmo .palco { position: relative; height: auto; min-height: 0; overflow: visible; opacity: 1 !important; }
+  .calmo .palco.duplo { grid-template-columns: 100%; grid-template-rows: auto auto auto; }
+  .calmo .palco.duplo canvas { grid-area: auto; height: 70vh; }
+  .calmo .abre { order: -1; position: relative; inset: auto; grid-column: 1 / -1; background: none; padding: 12vh var(--gx) 4vh; opacity: 1 !important; pointer-events: auto !important; }
+  .calmo .abre .seta, .calmo .prox, .calmo .rew, .calmo .hint { display: none; }
+  .calmo .passos { grid-area: auto; border: 0; padding: 24px var(--gx) 48px; }
+  .calmo .passos ol { position: static; transform: none; }
+  .calmo .passos li, .calmo .passos li.feita { opacity: 1; }
+  .calmo .fase { position: relative; inset: auto; opacity: 1 !important; transform: none !important; pointer-events: auto; padding: 10vh var(--gx); }
+  .calmo .enx { position: relative; inset: auto; max-height: 50vh; -webkit-mask-image: none; mask-image: none; }
+  .calmo .cap1 { position: relative; bottom: auto; padding: 32px var(--gx) 10vh; }
+  .calmo .cap1 p { opacity: 1; transform: none; }
+  .calmo .cena3 { position: relative; top: auto; left: auto; right: auto; padding: 6vh var(--gx) 0; }
+  .calmo .vnota { position: relative; bottom: auto; left: auto; padding: 32px var(--gx) 8vh; }
+  .calmo .relogio.grande { position: sticky; }
 </style>
 </head>
 <body>
+<a class="pula" href="#onde-votou">Pular para "Onde você votou"</a>
+<a class="pula" href="#compartilhamento">Pular para o cartão</a>
+<div class="sr" id="falado" aria-live="polite" aria-atomic="true"></div>
 <div class="topo k">25 out 2026</div>
 <div class="relogio" id="relogio"><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
@@ -294,7 +319,7 @@
 <!-- 2. 08:00 all at once -->
 <section class="cena" id="abertura" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c3"></canvas>
+    <canvas id="c3" role="img" aria-label="Gráfico de barras: votos por minuto das 8h às 9h. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c3passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
     <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. <b>Role</b> para avançar o relógio, ou use as setas do teclado.</p><div class="seta"></div></div></div>
   </div>
@@ -327,7 +352,7 @@
 <!-- 5. The map -->
 <section class="cena mapa" id="dia-no-mapa" style="--len:1300vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c7"></canvas>
+    <canvas id="c7" role="img" aria-label="Mapa do Brasil: cada cidade é um ponto que brilha no minuto em que mais gente votou ali. Os fatos do dia estão na lista a seguir."></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
     <div class="passos" id="c7passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
     <div class="abre" id="abre-mapa"><div><span class="k">04 · o dia no mapa</span><h2>Cada luz é uma cidade.</h2><p>Quanto maior, mais eleitores. Ela brilha mais no minuto em que mais gente votou ali. <b>Role</b> e veja a sua acender.</p><div class="esc"><span>calma</span><i></i><span>pico</span></div><div class="seta"></div></div></div>
@@ -344,7 +369,7 @@
 <!-- 6. The close, with your urna pinned -->
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c8"></canvas>
+    <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h às 19h10. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
     <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. A fila ainda vota.</h2><p>Das 16h ao último voto, às 19h06. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
   </div>
@@ -384,7 +409,7 @@
 <!-- 8. The night -->
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c9"></canvas>
+    <canvas id="c9" role="img" aria-label="Gráfico de barras: urnas que chegaram ao TSE, por estado. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
     <div class="abre" id="abre-transmissao"><div><span class="k">08 · transmissão</span><h2>A noite: cada urna manda seu resultado.</h2><p>Os 27 estados se completam um a um. <b>Role</b> para ver a noite passar.</p><div class="seta"></div></div></div>
   </div>
@@ -394,7 +419,7 @@
 <section class="cartao gx" id="compartilhamento">
   <span class="k">09 · para guardar</span>
   <p class="mid" style="margin:14px 0 26px">Você fez parte dessa história. Guarde o seu momento.</p>
-  <canvas id="card" width="1080" height="1350" aria-label="Seu cartão"></canvas>
+  <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: você foi um dos 127.854.844 votos, com a sua cidade e hora."></canvas>
   <div class="acoes">
     <button class="btn" id="share">Compartilhar meu momento</button>
     <a class="pular" href="como.html">Como funciona e como fizemos</a>
@@ -451,6 +476,12 @@ function near(el, fn, margin = "150% 0px") {
 // Scenes: a tall section reports its progress 0..1 while its stage is stuck. The scene that
 // holds the screen returns the time it shows, and the one clock at the top follows it.
 const scenes = [];
+const CALMO = matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (CALMO) document.documentElement.classList.add("calmo");
+// A hidden table behind a chart, for screen readers.
+function tabela(el, titulo, cabecalho, linhas) {
+  el.insertAdjacentHTML("beforeend", `<table class="sr"><caption>${titulo}</caption><thead><tr>${cabecalho.map(h => `<th scope="col">${h}</th>`).join("")}</tr></thead><tbody>${linhas.map(r => `<tr>${r.map((v, i) => i ? `<td>${v}</td>` : `<th scope="row">${v}</th>`).join("")}</tr>`).join("")}</tbody></table>`);
+}
 // `salto` lists the scene's stops as progress values, for the step button and the arrow keys (U8).
 function scene(el, render, salto) { scenes.push({ el, render, salto }); }
 // A title card covers the first 6% of its fold; the scene's own progress starts after it.
@@ -459,7 +490,7 @@ function abrir(id, p) { const a = $(id); a.style.opacity = p < ABRE ? 1 : 0; a.s
 function pular(d) {
   const vh = innerHeight, y = scrollY;
   for (const s of scenes) {
-    if (s.el.hidden || !s.salto) continue;
+    if (s.el.hidden || !s.salto || CALMO) continue;
     const r = s.el.getBoundingClientRect();
     if (!(r.top <= 1 && r.bottom >= vh - 1)) continue;
     const p = clamp(-r.top / Math.max(1, r.height - vh)), stops = s.salto();
@@ -486,11 +517,11 @@ function tick() {
     if (s.el.hidden) continue;
     const r = s.el.getBoundingClientRect();
     if (r.bottom < -vh || r.top > 2 * vh) continue;
-    const p = clamp(-r.top / Math.max(1, r.height - vh)), out = s.render(p);
+    const p = CALMO ? 1 : clamp(-r.top / Math.max(1, r.height - vh)), out = s.render(p);
     // The stage fades out over the last 8% of its scene, so its last frame never rides into
     // the next fold (U4). It needs no fade-in: it slides up opaque from below.
     s.palco ||= s.el.querySelector(".palco");
-    if (s.palco) s.palco.style.opacity = clamp((1 - p) / 0.08);
+    if (s.palco && !CALMO) s.palco.style.opacity = clamp((1 - p) / 0.08);
     if (r.top <= 1 && r.bottom >= vh - 1) { clock = out; grande = s.el.hasAttribute("data-grande"); }
   }
   const rel = $("relogio");
@@ -652,12 +683,12 @@ function passos(host, items, cur) {
   host._cur = cur;
   const k = items.indexOf(cur);
   host._lis.forEach((li, i) => { li.classList.toggle("on", i === k); li.classList.toggle("feita", k >= 0 && i < k); });
-  if (k >= 0) { const li = host._lis[k]; host._ol.style.setProperty("--yc", `${li.offsetTop + li.offsetHeight / 2}px`); host._ol.style.setProperty("--yt", `${li.offsetTop}px`); }
+  if (k >= 0) { const li = host._lis[k]; host._ol.style.setProperty("--yc", `${li.offsetTop + li.offsetHeight / 2}px`); host._ol.style.setProperty("--yt", `${li.offsetTop}px`); $("falado").textContent = li.textContent; }
 }
 // A leader line (U3) from the thing on the chart to its step: out to the canvas edge beside the
 // step's heading on desktop, straight down to the sheet on a phone. `via` is a clear y to travel along.
 function ligar(c, ctx, anc, host, dpr, via) {
-  const li = host.querySelector("li.on"); if (!anc || !li) return;
+  const li = host.querySelector("li.on"); if (!anc || !li || CALMO) return;
   const W = c.width, H = c.height, cr = c.getBoundingClientRect(), hr = (li.querySelector(".h") || li).getBoundingClientRect();
   const [x, y] = anc;
   ctx.save(); ctx.strokeStyle = `rgba(${ACC},.8)`; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.moveTo(x, y);
@@ -686,6 +717,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     { t: 540, h: "09:00 · Brasil", titulo: "Uma hora de votação.", texto: `${fmt(votosAte(539))} votos até as 9h.` },
   ];
   const ag = agenda(its, 478.5, 540, 10);
+  tabela(el, "Votos por minuto, das 8h às 9h", ["Minuto", "Votos"], Array.from({ length: 61 }, (_, i) => [hhmm(480 + i), fmt(nat[480 + i - S])]));
   scene(el, p => {
     abrir("abre-abertura", p);
     const { t, cur: e } = ag(apos(p));
@@ -694,7 +726,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     const x0 = 0.06 * W, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
     const yt = ty + 62 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.16 * H);
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 8h às 9h", x0, ty);
-    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("cada barra é um minuto", x0, ty + 18 * dpr);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("cada barra é um minuto", x0, ty + 18 * dpr);
     const max = Math.max(...nat.slice(480 - S, 541 - S)), bw = (x1 - x0) / 61;
     const alt = m => (yb - yt) * nat[m - S] / max;
     for (let m = 480; m <= Math.min(540, t); m++) {
@@ -702,7 +734,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
       ctx.fillStyle = m === PICO ? "#fff1d6" : `rgba(${ACC},${0.25 + 0.75 * v})`;
       ctx.fillRect(x0 + (m - 480) * bw, yb - h, Math.max(1, bw - 2 * dpr), h);
     }
-    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`;
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`;
     for (const m of [480, 500, 520, 540]) ctx.fillText(hhmm(m), Math.min(x0 + (m - 480) * bw, x1 - 36 * dpr), yb + 18 * dpr);
     if (e && e.t >= 480) { const m = Math.min(540, Math.round(e.t)); ligar(c, ctx, [x0 + (m - 480) * bw + (bw - 2 * dpr) / 2, yb - alt(m)], host, dpr, yt - 24 * dpr); }
     return { t: Math.max(480, t), txt: t < 480 ? "07:59" : null };
@@ -923,6 +955,7 @@ renderHoras();
     fato(cur("ultimo_voto")),
   ];
   const ag = agenda(passos_, A, B, 55);
+  tabela(el, "Votos a cada dez minutos, das 16h às 19h10", ["De", "Votos"], Array.from({ length: 19 }, (_, i) => [hhmm(A + 10 * i), fmt(somaMin(nat, A + 10 * i, A + 10 * i + 10))]));
   scene(el, p => {
     abrir("abre-fechamento", p);
     const { t, cur: e } = ag(apos(p));
@@ -932,12 +965,12 @@ renderHoras();
     const yt = ty + 76 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.2 * H);
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", x0, ty);
-    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, ty + 18 * dpr);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", x0, ty + 18 * dpr);
     const area = (a, b, fill) => { ctx.beginPath(); ctx.moveTo(X(a), yb); for (let m = a; m <= b; m++) ctx.lineTo(X(m), Y(nat[m - S] || 0)); ctx.lineTo(X(b), yb); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
     const tt = Math.min(t, B - 1);
     area(A, tt, "rgba(255,180,60,.28)");
     if (e?.seg && e.seg[0] <= tt) area(e.seg[0], Math.min(e.seg[1], tt), "rgba(255,241,214,.85)");
-    ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.lineWidth = 1 * dpr;
+    ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.lineWidth = 1 * dpr;
     [[1020, "17:00", 0], [1035, "17:15", 1], [1146, "19:06", 0]].forEach(([m, lab, row]) => {
       const ly = yt - 8 * dpr - row * 15 * dpr;
       ctx.strokeStyle = "rgba(236,232,220,.3)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
@@ -1019,6 +1052,7 @@ renderHoras();
       { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} urnas chegaram.`, texto: "" },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
+    tabela(el, "Urnas que chegaram ao TSE, por estado", ["Estado", "Todas as urnas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
   }
   scene(el, p => {
     if (!CH) { loadChegada().then(tick); return null; }
@@ -1038,15 +1072,15 @@ renderHoras();
     const x0 = 0.06 * W + 30 * dpr, x1 = 0.94 * W - 44 * dpr, ty = topo(dpr) + 16 * dpr;
     const y0 = ty + 22 * dpr, y1 = Math.max(y0 + 27 * 7 * dpr, H - 0.1 * H), rh = (y1 - y0) / R.ufs.length;
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Urnas que chegaram ao TSE, por estado", 0.06 * W, ty);
-    const meu = state.town?.uf, cabe = rh >= 11 * dpr; // on a short screen only the named rows get a label
+    const meu = state.town?.uf, cabe = rh >= 13 * dpr; // on a short screen only the named rows get a label
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
-      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${10 * dpr}px "JetBrains Mono"`;
+      ctx.fillStyle = eu ? "#ffffff" : "rgba(236,232,220,.6)"; ctx.font = `${(eu ? 600 : 400)} ${12 * dpr}px "JetBrains Mono"`;
       if (cabe || eu || e?.uf === u.uf) ctx.fillText(u.uf, 0.06 * W, y + 3.5 * dpr);
       ctx.fillStyle = "rgba(236,232,220,.08)"; ctx.fillRect(x0, y - 2.5 * dpr, x1 - x0, 5 * dpr);
       ctx.fillStyle = eu ? "#fff1d6" : f >= 1 ? `rgb(${ACC})` : `rgba(${ACC},.6)`; ctx.fillRect(x0, y - 2.5 * dpr, (x1 - x0) * f, 5 * dpr);
       const dele = e?.uf === u.uf; // the step's row: its leader line takes the place of the time label
-      if (f >= 1 && !dele) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${10 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
+      if (f >= 1 && !dele) { ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText(hhmm(R.A + u.fim), x1 + 6 * dpr, y + 3.5 * dpr); }
       if (dele && !e.seu) anc = [x0 + (x1 - x0) * f, y];
       if (eu && mi && hm(mi.chega) <= t) {
         const i = clamp(Math.round(hm(mi.chega) - R.A), 0, R.n - 1), x = x0 + (x1 - x0) * u.cum[i] / u.tot;
