@@ -32,7 +32,8 @@
 
   /* The stage is one screen: map, clock, timeline. The method text lives below it. */
   .stage { position: relative; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
-  canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+  canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas#c.drag { cursor: grabbing; }
   .hud { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); top: max(18px, env(safe-area-inset-top, 0px)); display: grid; gap: 6px; max-width: 360px; }
   .clock { font-size: clamp(44px, 9vw, 92px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
   .clock small { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
@@ -41,6 +42,23 @@
   .cta { margin-top: 8px; font-size: 14px; color: var(--muted); max-width: 30ch; }
   .share { margin-top: 2px; justify-self: start; background: var(--accent); color: var(--bg); border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
   .share:hover { filter: brightness(1.08); }
+  .find { position: relative; margin-top: 6px; width: min(260px, 100%); }
+  .find input {
+    width: 100%; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 14px; font-size: 14px; outline: none;
+  }
+  .find input:focus { border-color: var(--accent); }
+  .find input::placeholder { color: var(--muted); }
+  .hits { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px 0; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px; z-index: 4; }
+  .hits:empty { display: none; }
+  .hits li { padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  .hits li:hover, .hits li.on { background: rgba(255,180,60,.14); }
+  .hits li span { color: var(--muted); }
+  .reset {
+    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(max(18px, env(safe-area-inset-top, 0px)) + 58px);
+    background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .reset:hover { border-color: var(--accent); }
   .play {
     position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(18px, env(safe-area-inset-top, 0px));
     width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
@@ -103,7 +121,8 @@
     .play { width: 44px; height: 44px; }
     .beat { left: 12px !important; right: 12px; width: auto; }
     .beat h2.big { font-size: 20px; }
-    .more { display: none; }
+    .find { width: 100%; }
+    .more { bottom: calc(var(--bar-h) + var(--beat-h) + 2px); font-size: 12px; }
   }
 </style>
 </head>
@@ -116,11 +135,16 @@
     <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
     <div class="total"><b id="total">0</b> votos até agora</div>
     <div class="cta">Em que minuto você votou? Arraste a linha do tempo até ele e compartilhe.</div>
+    <div class="find">
+      <input id="find" type="search" placeholder="sua cidade" autocomplete="off" aria-label="Buscar cidade">
+      <ul class="hits" id="hits"></ul>
+    </div>
     <button class="share" id="share">compartilhar este minuto</button>
   </div>
   <button class="play" id="play" aria-label="Pausar">
     <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
   </button>
+  <button class="reset" id="reset" hidden>ver o país</button>
   <div class="timeline">
     <article class="beat" id="beat"></article>
     <a class="more" href="#como">como foi feito ↓</a>
@@ -165,6 +189,11 @@
     new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "data/frames.png"; }),
   ]);
   const N = towns.id.length, M = totals.minutes, START = totals.start, END = START + M - 1;
+  const CAPS = { AC: "rio branco", AL: "maceio", AP: "macapa", AM: "manaus", BA: "salvador", CE: "fortaleza", DF: "brasilia", ES: "vitoria", GO: "goiania", MA: "sao luis", MT: "cuiaba", MS: "campo grande", MG: "belo horizonte", PA: "belem", PB: "joao pessoa", PR: "curitiba", PE: "recife", RJ: "rio de janeiro", RN: "natal", RS: "porto alegre", RO: "porto velho", RR: "boa vista", SC: "florianopolis", SP: "sao paulo", SE: "aracaju", TO: "palmas", PI: "teresina" };
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const names = towns.nome.map(norm);
+  const isCapital = new Uint8Array(N), capitals = [];
+  for (let i = 0; i < N; i++) if (CAPS[towns.uf[i]] === names[i]) { isCapital[i] = 1; capitals.push(i); }
   const hhmm = min => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
   const fmt = n => Math.round(n).toLocaleString("pt-BR");
 
@@ -214,6 +243,26 @@
     if (to.lon === camB.lon && to.lat === camB.lat && to.z === camB.z) return;
     Object.assign(camA, cam); Object.assign(camB, to); camT0 = now;
   }
+  // The user's own camera: once they drag, zoom or pick a city, the story stops moving
+  // the view until they press "ver o país".
+  let storyCam = true;
+  function clampCam() {
+    cam.z = Math.max(1, Math.min(80, cam.z));
+    cam.lon = Math.max(LON0, Math.min(LON1, cam.lon)); cam.lat = Math.max(LAT1, Math.min(LAT0, cam.lat));
+  }
+  function takeCamera() {
+    if (storyCam) { storyCam = false; $("reset").hidden = false; }
+    clampCam(); Object.assign(camA, cam); Object.assign(camB, cam);
+  }
+  function zoomAt(cx, cy, factor) {
+    const pxx = cx * dpr, pyy = cy * dpr;
+    const bx = (pxx - ax) / cam.z + X(cam.lon), by = (pyy - ay) / cam.z + Y(cam.lat);
+    const z = Math.max(1, Math.min(80, cam.z * factor));
+    const fx = bx - (pxx - ax) / z, fy = by - (pyy - ay) / z;
+    cam.z = z; cam.lon = LON0 + (fx - ox) / sx; cam.lat = LAT0 - (fy - oy) / sy;
+    takeCamera();
+  }
+  function panBy(dx, dy) { cam.lon -= dx * dpr / (cam.z * sx); cam.lat += dy * dpr / (cam.z * sy); takeCamera(); }
   function moveCamera(now) {
     const u = Math.min(1, (now - camT0) / 1000 / camDur), e = u * u * (3 - 2 * u);
     cam.lon = camA.lon + (camB.lon - camA.lon) * e;
@@ -274,6 +323,15 @@
       const r = pr[picked] * 1.3 * rz + 3 * dpr;
       ctx.lineWidth = 1.5 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.beginPath(); ctx.arc(px[picked], py[picked], r, 0, 6.2832); ctx.stroke();
+    }
+    // Capital names: a pin per capital, at screen size whatever the zoom, brighter when zoomed in.
+    const fs = 11 * dpr / cam.z, a = (W / dpr < 700 && cam.z < 1.6) ? 0 : Math.min(1, 0.45 + 0.25 * Math.log2(cam.z));
+    ctx.font = `600 ${fs}px "Inter Tight", system-ui, sans-serif`; ctx.textBaseline = "middle";
+    for (const i of capitals) {
+      if (a <= 0) break;
+      const r = pr[i] * rz + 3 * dpr / cam.z, x = px[i] + r, y = py[i];
+      ctx.lineWidth = 3 * dpr / cam.z; ctx.strokeStyle = `rgba(7,10,18,${0.8 * a})`; ctx.strokeText(towns.nome[i], x, y);
+      ctx.fillStyle = `rgba(236,232,220,${a})`; ctx.fillText(towns.nome[i], x, y);
     }
     ctx.restore();
 
@@ -341,7 +399,7 @@
     const bx = (cx * dpr - ax) / cam.z + X(cam.lon), by = (cy * dpr - ay) / cam.z + Y(cam.lat);
     let best = -1, bd = Infinity;
     for (let i = 0; i < N; i++) {
-      const d = Math.hypot(px[i] - bx, py[i] - by), lim = pr[i] / Math.sqrt(cam.z) + 9 * dpr / cam.z;
+      const d = Math.hypot(px[i] - bx, py[i] - by), lim = pr[i] / Math.sqrt(cam.z) + (isCapital[i] ? 16 : 9) * dpr / cam.z;
       if (d < lim && d < bd) { bd = d; best = i; }
     }
     return best;
@@ -362,9 +420,72 @@
     tip.style.top = `${Math.max(90, y - pr[picked] / dpr)}px`;
     tip.innerHTML = tipText(picked, t);
   }
+  let pinned = false;
   function pick(i) { picked = i; $("tip").classList.toggle("on", i >= 0); if (i >= 0) placeTip(); }
-  canvas.addEventListener("pointerdown", e => { const i = townAt(e.clientX, e.clientY); pick(i === picked ? -1 : i); });
-  canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); } });
+
+  // Pointer work on the map: a tap picks a town, a drag pans, two fingers or the wheel zoom.
+  const ptrs = new Map();
+  let dragging = false, pinch0 = 0, pinchMid = null, down = null;
+  const mid = () => { const a = [...ptrs.values()]; return a.length < 2 ? null : { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2, d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) }; };
+  canvas.addEventListener("pointerdown", e => {
+    canvas.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    down = { x: e.clientX, y: e.clientY }; dragging = false;
+    const m = mid(); if (m) { pinch0 = m.d; pinchMid = m; }
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId)) {
+      if (e.pointerType === "mouse" && !pinned) { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); }
+      return;
+    }
+    const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size >= 2) {
+      const m = mid();
+      if (pinchMid) { panBy(m.x - pinchMid.x, m.y - pinchMid.y); zoomAt(m.x, m.y, m.d / pinch0); }
+      pinch0 = m.d; pinchMid = m; dragging = true;
+      return;
+    }
+    if (!dragging && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) return;
+    dragging = true; canvas.classList.add("drag"); panBy(dx, dy);
+  });
+  const up = e => {
+    ptrs.delete(e.pointerId); pinchMid = null;
+    if (ptrs.size) return;
+    canvas.classList.remove("drag");
+    if (!dragging && down) { const i = townAt(e.clientX, e.clientY); pinned = false; pick(i === picked ? -1 : i); if (i < 0) { city = -1; $("find").value = ""; } }
+    down = null; dragging = false;
+  };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+  canvas.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0025)); }, { passive: false });
+
+  // "Sua cidade": find a town by name, fly there and pin its numbers.
+  let city = -1, hitIds = [];
+  function goCity(i, fly) {
+    city = i; pinned = true; pick(i);
+    $("find").value = `${towns.nome[i]}, ${towns.uf[i]}`; $("hits").innerHTML = ""; hitIds = []; $("find").blur();
+    if (storyCam) { storyCam = false; $("reset").hidden = false; }
+    const to = { lon: towns.lon[i], lat: towns.lat[i], z: 10 };
+    if (fly) { Object.assign(camA, cam); Object.assign(camB, to); camT0 = performance.now(); }
+    else { Object.assign(cam, to); Object.assign(camA, to); Object.assign(camB, to); }
+  }
+  function renderHits(q) {
+    const box = $("hits"); hitIds = [];
+    if (q.length < 2) { box.innerHTML = ""; return; }
+    const starts = [], inside = [];
+    for (let i = 0; i < N && starts.length < 8; i++) {
+      const n = names[i]; if (n.startsWith(q)) starts.push(i); else if (inside.length < 8 && n.includes(q)) inside.push(i);
+    }
+    hitIds = starts.concat(inside).slice(0, 8);
+    box.innerHTML = hitIds.map((i, k) => `<li data-i="${i}" class="${k === 0 ? "on" : ""}">${towns.nome[i]} <span>${towns.uf[i]}</span></li>`).join("");
+  }
+  $("find").addEventListener("input", e => renderHits(norm(e.target.value.trim())));
+  $("find").addEventListener("keydown", e => { if (e.key === "Enter" && hitIds.length) goCity(hitIds[0], true); if (e.key === "Escape") { $("hits").innerHTML = ""; hitIds = []; } });
+  $("hits").addEventListener("pointerdown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); goCity(+li.dataset.i, true); } });
+  $("reset").addEventListener("click", () => {
+    storyCam = true; pinned = false; city = -1; pick(-1); $("reset").hidden = true; $("find").value = "";
+    setView(events[active].view, performance.now());
+  });
 
   // The beat card above the playhead: the current event, and a hint of the next one.
   let active = -1;
@@ -380,7 +501,7 @@
         (nx ? `<div class="next">a seguir, <b>${nx.k}</b>: ${nx.title}</div>` : `<div class="next">o dia recomeça em instantes</div>`);
       beat.style.opacity = 1;
     }, k === 0 && active === 0 ? 0 : 180);
-    setView(ev.view, now);
+    if (storyCam) setView(ev.view, now);
   }
 
   // Playback. One clock drives the map, the bar, the card and the camera.
@@ -408,8 +529,10 @@
   $("play").addEventListener("click", () => setPlaying(!playing));
   $("share").addEventListener("click", async () => {
     const minute = hhmm(Math.floor(t));
-    const url = `${location.origin}${location.pathname}?t=${minute}`;
-    const text = `Às ${minute} o Brasil estava assim. Veja sua cidade acender: o segundo turno minuto a minuto.`;
+    const url = `${location.origin}${location.pathname}?t=${minute}` + (city >= 0 ? `&cidade=${towns.id[city]}` : "");
+    const text = city >= 0
+      ? `Às ${minute}, ${towns.nome[city]} estava assim. O segundo turno minuto a minuto, cidade por cidade.`
+      : `Às ${minute} o Brasil estava assim. Veja sua cidade acender: o segundo turno minuto a minuto.`;
     const b = $("share");
     if (navigator.share) { try { await navigator.share({ title: "O Brasil votando", text, url }); return; } catch {} }
     try { await navigator.clipboard.writeText(url); b.textContent = "link copiado"; }
@@ -420,13 +543,15 @@
   // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
   window.replay = {
     seek(min) { setPlaying(false); seek(min); Object.assign(cam, camB); draw(t); },
-    pick, get t() { return t; }, get playing() { return playing; }, get active() { return active; }, get cam() { return { ...cam }; },
+    pick, goCity, zoomAt, panBy, get t() { return t; }, get playing() { return playing; }, get active() { return active; },
+    get cam() { return { ...cam }; }, get storyCam() { return storyCam; }, get city() { return city; },
   };
 
-  const q = new URLSearchParams(location.search).get("t");
+  const params = new URLSearchParams(location.search), q = params.get("t"), qc = params.get("cidade");
   if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); setPlaying(false); }
 
-  layout(); buildBar(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t); $("loading").remove();
+  layout(); buildBar(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t);
+  if (qc) { const i = towns.id.indexOf(qc); if (i >= 0) { goCity(i, false); draw(t); } } $("loading").remove();
   new ResizeObserver(() => { layout(); buildBar(); draw(t); }).observe(canvas);
   requestAnimationFrame(tick);
 })();
