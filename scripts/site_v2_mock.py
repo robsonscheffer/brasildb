@@ -44,47 +44,66 @@ def urna():
     lines = [
         ("07:00:02", "INICIO", "Urna ligada"),
         ("07:01:15", "ZERESIMA", "Zerésima impressa: 0 votos para cada candidato"),
-        ("07:58:40", "ABERTURA", "Urna pronta para receber votos"),
-        ("08:00:00", "ABERTURA", "Seção aberta"),
-        ("08:00:41", "VOTO", "Eleitor habilitado por biometria"),
-        ("08:00:58", "VOTO", "O voto foi computado"),
+        ("08:00:01", "ABERTURA", "Urna pronta para receber votos"),
+        ("08:00:09", "VOTO", "Eleitor habilitado por biometria"),
+        ("08:00:19", "VOTO", "O voto foi computado"),
     ]
-    rng = random.Random(41238)
-    t = 8 * 3600 + 58
+    rng = random.Random(58653)
+    t = 8 * 3600 + 19
     for n in range(2, 13):
         t += rng.randint(35, 95)
         lines.append((f"{t // 3600:02d}:{t % 3600 // 60:02d}:{t % 60:02d}", "VOTO", "O voto foi computado"))
     return {
         "mock": True,
-        "secao": {"uf": "MG", "municipio": "Belo Horizonte", "zona": "0331", "secao": "0060", "votos": 274},
+        "secao": {"uf": "RJ", "municipio": "Niterói", "zona": "0071", "secao": "0132", "votos": None},
         "linhas": [{"hora": h, "tipo": k, "texto": x} for h, k, x in lines],
         "fonte": "Log da urna, TSE (dados abertos)",
     }
 
 
 def curiosidades():
-    """Screens 2 to 5 and 8. Facts marked "certo": true come from v1's checked beats."""
+    """Screens 2 to 5 and 8. "certo": true marks a value already checked (v1 beats or the secao_dia query notes)."""
     def item(id, tela, titulo, texto, hora, lugar, valor=None, certo=False):
         return {"id": id, "tela": tela, "titulo": titulo, "texto": texto, "hora": hora,
                 "lugar": lugar, "valor": valor, "certo": certo, "sql": None}
+    coords = {"Niterói": (-22.88, -43.10), "Espinosa": (-14.93, -42.82), "Jacareacanga": (-6.22, -57.75),
+              "Cedro do Abaeté": (-19.15, -45.71), "Belo Horizonte": (-19.92, -43.94),
+              "São Paulo": (-23.55, -46.63), "Paraíso do Sul": (-29.67, -53.14),
+              "Fernando de Noronha": (-3.85, -32.42), "Santa Maria de Jetibá": (-20.03, -40.74),
+              "Itajubá": (-22.43, -45.45), "Tomazina": (-23.78, -49.95), "Cuiabá": (-15.60, -56.10),
+              "Marajó": (-1.68, -50.48), "Alto Solimões": (-3.50, -68.20), "BA": (-12.97, -38.50)}
+
+    def place(it):
+        key = it["lugar"].get("municipio") or it["lugar"]["uf"]
+        if key in coords:
+            it["lugar"]["lat"], it["lugar"]["lon"] = coords[key]
+        return it
+
+    def L(uf, mun=None, zona=None, secao=None):
+        return {k: v for k, v in {"uf": uf, "municipio": mun, "zona": zona, "secao": secao}.items() if v}
+
     return {
         "mock": True,
-        "itens": [
-            item("primeira_urna", 2, "A primeira urna a abrir", "Ligou antes de todas, numa escola do interior.", "07:00:02", {"uf": "AM", "municipio": "Tabatinga"}),
-            item("primeiro_voto", 2, "O primeiro voto do país", "Oito horas em ponto, mais alguns segundos.", "08:00:03", {"uf": "PE", "municipio": "Recife"}),
-            item("abertura", 3, "O país abre de uma vez", "No mesmo minuto, de Brasília ao Acre, onde ainda são 6h da manhã.", "08:00", {"uf": "BR"}, 497896, True),
-            item("pico", 3, "O pico", "420 mil votos por minuto.", "08:07", {"uf": "BR"}, 420000, True),
-            item("marajo", 4, "Marajó, metade às 10h26", "No Marajó, metade da cidade já votou.", "10:26", {"uf": "PA", "municipio": "Marajó"}, None, True),
-            item("almoco", 4, "O Nordeste para para almoçar", "São Paulo e Rio, quase não.", "12:00", {"uf": "NE"}, None, True),
-            item("solimoes", 4, "Alto Solimões, nove em dez", "No Amazonas, nove em cada dez já votaram.", "13:55", {"uf": "AM", "municipio": "Alto Solimões"}, None, True),
-            item("granizo", 5, "Granizo em Belo Horizonte", "163 locais de votação sem luz. As urnas seguiram na bateria.", "13:00", {"uf": "MG", "municipio": "Belo Horizonte"}, 163, True),
-            item("bateria", 5, "A urna que mais tempo votou na bateria", "Ficou sem luz e seguiu recebendo votos.", "13:04", {"uf": "MG", "municipio": "Belo Horizonte", "zona": "0331", "secao": "0060"}, 277),
-            item("contingencia", 5, "Urnas trocadas no meio do dia", "Quando uma urna falha, outra assume com os mesmos votos.", None, {"uf": "BR"}, 1204),
-            item("fila", 5, "A fila mais longa", "A última pessoa da fila votou horas depois do fechamento.", "19:06", {"uf": "SP", "municipio": "São Paulo"}),
-            item("fechamento", 8, "Os portões fecham", "Quem já estava na fila ainda vota.", "17:00", {"uf": "BR"}, None, True),
-            item("stf", 8, "O STF estende a votação até as 19h", "Na Bahia, a votação segue.", "17:15", {"uf": "BA"}, None, True),
-            item("ultimo_voto", 8, "O último voto", "Em São Paulo, às 19h06.", "19:06", {"uf": "SP", "municipio": "São Paulo"}, None, True),
-        ],
+        "itens": [place(it) for it in [
+            item("primeiro_voto", 2, "O primeiro voto do país", "Dezoito segundos depois de a urna abrir, alguém em Niterói votou.", "08:00:19", L("RJ", "Niterói", "0071", "0132"), 18, True),
+            item("abertura_tie", 2, "Todas abriram juntas", "473.844 urnas abriram no mesmo minuto, às 8h. Nenhuma antes.", "08:00", L("BR"), 473844, True),
+            item("abertura", 3, "O país abre de uma vez", "No mesmo minuto, de Brasília ao Acre, onde ainda são 6h da manhã.", "08:00", L("BR"), 497896, True),
+            item("pico", 3, "O pico", "420 mil votos por minuto.", "08:07", L("BR"), 420000, True),
+            item("jacareacanga", 4, "Jacareacanga, metade às 10h07", "Foi a primeira cidade do país a chegar à metade dos votos.", "10:07", L("PA", "Jacareacanga"), None, True),
+            item("almoco", 4, "O Nordeste para para almoçar", "São Paulo e Rio, quase não.", "12:00", L("NE"), None, True),
+            item("solimoes", 4, "Alto Solimões, nove em dez", "No Amazonas, nove em cada dez já votaram.", "13:55", L("AM", "Alto Solimões"), None, True),
+            item("jetiba", 4, "612 de 612", "Em Santa Maria de Jetibá, a maior seção do país. Todos os eleitores vieram.", None, L("ES", "Santa Maria de Jetibá", "0009", "0085"), 612, True),
+            item("espinosa", 4, "Três horas de espera", "Em Espinosa, a urna abriu às 8h. O primeiro eleitor chegou às 11h15.", "11:15:48", L("MG", "Espinosa", "0109", "0094"), 195, True),
+            item("granizo", 5, "Granizo em Belo Horizonte", "163 locais de votação sem luz. As urnas seguiram na bateria.", "13:00", L("MG", "Belo Horizonte"), 163, True),
+            item("quedas", 5, "54 vezes sem luz", "Em Paraíso do Sul, a luz caiu 54 vezes. A urna votou 7 horas na bateria.", None, L("RS", "Paraíso do Sul", "0157", "0478"), 54, True),
+            item("sem_luz", 5, "Uma em cada oito", "62.409 urnas ficaram sem luz em algum momento. Nenhuma parou de votar.", None, L("BR"), 62409, True),
+            item("trocadas", 5, "Urnas trocadas", "Em 1.842 seções, uma urna substituiu outra no meio do dia.", None, L("BR"), 1842, True),
+            item("fechamento", 8, "Os portões fecham", "Quem já estava na fila ainda vota.", "17:00", L("BR"), None, True),
+            item("primeira_fim", 8, "A primeira cidade a terminar", "Cedro do Abaeté, às 16h36.", "16:36", L("MG", "Cedro do Abaeté"), None, True),
+            item("stf", 8, "O STF estende a votação até as 19h", "Na Bahia, a votação segue.", "17:15", L("BA"), None, True),
+            item("noronha", 8, "Fernando de Noronha, 18h49", "O último voto fora das grandes cidades.", "18:49:09", L("PE", "Fernando de Noronha", "0004", "0372"), 223, True),
+            item("ultimo_voto", 8, "O último voto", "Em São Paulo, às 19h06.", "19:06:21", L("SP", "São Paulo", "0001", "0405"), None, True),
+        ]],
     }
 
 
