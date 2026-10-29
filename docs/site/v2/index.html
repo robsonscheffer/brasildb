@@ -420,9 +420,9 @@
 <!-- 8. The night -->
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c9" role="img" aria-label="Gráfico de barras: urnas transmitidas ao TSE, por estado. Os dados estão na tabela a seguir."></canvas>
+    <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, urnas transmitidas ao TSE. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">08 · transmissão</span><h2>A noite: cada urna transmite seu resultado.</h2><p>Os 27 estados se completam um a um. <b>Role</b> para ver a noite passar.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">08 · transmissão</span><h2 id="abre-noite">A apuração: cada urna, uma por uma.</h2><p>Cada urna transmite o seu boletim, e o TSE soma. Os 27 estados se completam ao longo da noite. <b>Role</b> para ver a contagem chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -1109,7 +1109,7 @@ renderHoras();
       { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} urnas transmitidas.`, texto: "A apuração está completa." },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
-    tabela(el, "Urnas transmitidas ao TSE, por estado", ["Estado", "Todas transmitidas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
+    tabela(el, "Apuração por estado: urnas transmitidas", ["Estado", "Todas transmitidas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
   }
   scene(el, p => {
     if (!CH) { loadChegada().then(tick); return null; }
@@ -1121,6 +1121,7 @@ renderHoras();
       R.ag = agenda(R.lista, R.A, R.A + R.n - 1, 50); R.key = key;
     }
     abrir("abre-transmissao", p);
+    $("abre-noite").textContent = `A apuração: ${fmt(CH.total)} urnas, uma por uma.`;
     const { t, cur: e } = R.ag(apos(p));
     passos(host, R.lista, e);
     let anc = null;
@@ -1130,7 +1131,7 @@ renderHoras();
     const fs = clamp(rh * 0.55, 12 * dpr, 16 * dpr); // labels grow with the rows, so the state and its time can be read
     const x0 = 0.06 * W + fs * 2.6, x1 = 0.94 * W - fs * 4, ty = topo(dpr) + 16 * dpr;
     const y0 = y0t, y1 = y0 + rh * R.ufs.length;
-    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Urnas transmitidas ao TSE, por estado", 0.06 * W, ty);
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Apuração por estado: urnas transmitidas", 0.06 * W, ty);
     const meu = state.town?.uf, cabe = rh >= 13 * dpr; // on a short screen only the named rows get a label
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
