@@ -454,6 +454,7 @@ const fmt = n => Math.round(n).toLocaleString("pt-BR");
 const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.floor(m % 60)).padStart(2, "0")}`;
 const hm = s => { const [h, m, x] = s.split(":").map(Number); return h * 60 + m + (x || 0) / 60; };
 const hfala = s => s.slice(0, 5).replace(":", "h");
+const segundos = s => { const [h, m, x] = s.split(":").map(Number); return h * 3600 + m * 60 + (x || 0); };
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const VOTOS = 127854844;
 const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0, KX = Math.cos(15 * Math.PI / 180);
@@ -654,7 +655,7 @@ function minha() {
 /* ---------- 1. The hook ---------- */
 {
   const el = $("primeiro"), s = urna.secao, pm = urna.primeiro_minuto, c = $("c1"), host = $("c1passos");
-  const first = urna.linhas.find(l => l.texto === "O voto foi computado");
+  const first = urna.linhas.find(l => l.tipo === "voto_computado"), pronta = urna.linhas.find(l => l.tipo === "urna_pronta");
   const cur = id => curios.itens.find(i => i.id === id), fx = cur("primeiro_voto"), ant = cur("exterior_antes");
   const fora = fx?.lugar.uf === "ZZ", lx = fx?.lugar;
   const its = [
@@ -662,8 +663,8 @@ function minha() {
       { h: `sábado, ${fx.hora} · ${onde(lx)}`, titulo: "O primeiro voto da eleição.", texto: fx.texto },
       { h: "08:00 · exterior", titulo: ant.titulo + ".", texto: ant.texto },
     ] : []),
-    { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${+first.hora.slice(6)} segundos depois de a urna abrir, alguém em ${s.municipio}, ${s.uf} votou.` },
-    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Cada linha é uma urna.` },
+    { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${segundos(first.hora) - segundos(pronta?.hora || "08:00:00")} segundos depois de a urna abrir, alguém em ${s.municipio}, ${s.uf} votou.` },
+    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Aqui, 1 em cada ${fmt(Math.round((pm.votos - 1) / pm.linhas.length))}, na ordem em que entraram.` },
     { h: "08:01 · Brasil", titulo: "Esse foi só o primeiro minuto.", texto: "Faltavam onze horas de eleição." },
   ];
   $("pph").textContent = first.hora;
