@@ -544,6 +544,10 @@ const votosAte = t => CUM[clamp(Math.floor(t) - TOT.start, 0, CUM.length - 1)];
 // Brazil's votes in the logs (the map and the hours count these), its last vote and the STF minute.
 const VOTOS = CUM[CUM.length - 1];
 const fatoDe = id => curios.itens.find(i => i.id === id);
+// A fact's texto with its first como.html term linked (C4): [words in the texto, anchor].
+const TERMOS = { exterior_antes: [["urnas", "urna"]], metade_primeira: [["metade", "metade"]], solimoes: [["Alto Solimões", "solimoes"], ["relógio local", "hora"]],
+  bateria_cidade: [["bateria", "bateria"]], trocadas: [["urna de contingência", "contingencia"]] };
+const comTermos = i => (TERMOS[i.id] || []).reduce((t, [w, a]) => t.replace(w, `<a class="termo" href="como.html#${a}">${w}</a>`), i.texto);
 const ULT = fatoDe("ultimo_voto").hora, ULTM = Math.floor(hm(ULT)), STFM = Math.floor(hm(fatoDe("stf").hora));
 document.querySelectorAll("[data-ultimo]").forEach(e => { e.textContent = hfala(ULT); });
 let BORDERS = null; loadBorders().then(b => { BORDERS = b; tick(); });
@@ -743,21 +747,21 @@ function minha() {
   const its = [
     ...(fora ? [
       { h: `sábado, ${fx.hora} · ${onde(lx)}`, titulo: "O primeiro voto da eleição.", texto: fx.texto },
-      { h: "08:00 · exterior", titulo: ant.titulo + ".", texto: ant.texto },
+      { h: "08:00 · exterior", titulo: ant.titulo + ".", texto: comTermos(ant) },
     ] : []),
-    { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${segundos(first.hora) - segundos(pronta?.hora || "08:00:00")} segundos depois de a urna abrir, alguém em ${s.municipio}, ${s.uf} votou.` },
-    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Aqui, 1 em cada ${fmt(Math.round((pm.votos - 1) / pm.linhas.length))}, na ordem em que entraram.` },
+    { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${segundos(first.hora) - segundos(pronta?.hora || "08:00:00")} segundos depois de a <a class="termo" href="como.html#urna">urna</a> abrir, alguém em ${s.municipio}, ${s.uf}, votou.` },
+    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Na lista, 1 em cada ${fmt(Math.round((pm.votos - 1) / pm.linhas.length))} linhas do <a class="termo" href="como.html#log">log</a>, na ordem em que entraram.` },
     { h: "08:01 · Brasil", titulo: "Esse foi só o primeiro minuto.", texto: "Faltavam onze horas de eleição." },
   ];
   $("pph").textContent = first.hora;
   if (fora) {
-    $("pel").textContent = `${lx.municipio}, ${lx.pais} · sábado, hora de Brasília`;
+    $("pel").innerHTML = `${lx.municipio}, ${lx.pais} · sábado, <a class="termo" href="como.html#hora">hora de Brasília</a>`;
     $("pet").textContent = `O primeiro voto da eleição saiu de ${lx.municipio}.`;
   }
   // Without a vote abroad before Brazil, the hook keeps its old stops.
   const F = fora ? [0.08, 0.17, 0.26, 0.38] : [0.1, 0.1, 0.1, 0.3];
   $("ppt").textContent = `O primeiro voto do Brasil saiu de ${s.municipio}, ${s.uf}.`;
-  $("ppl").innerHTML = `${s.municipio}, ${s.uf} ·<a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
+  $("ppl").innerHTML = `${s.municipio}, ${s.uf} · <a class="termo" href="como.html#zona">zona</a> ${s.zona} · <a class="termo" href="como.html#secao">seção</a> ${s.secao}`;
   const linhas = [{ hora: first.hora, municipio: s.municipio, uf: s.uf, um: true }, ...pm.linhas];
   const enx = $("enx"), VIS = 22;
   let shown = -1;
@@ -767,7 +771,7 @@ function minha() {
     $("pext").classList.toggle("on", ext);
     if (ext) {
       $("peh").textContent = cedo ? fx.hora : fmt(ant.valor);
-      $("pel").textContent = cedo ? `${lx.municipio}, ${lx.pais} · sábado, hora de Brasília` : "votos no exterior antes das 8h";
+      $("pel").innerHTML = cedo ? `${lx.municipio}, ${lx.pais} · sábado, <a class="termo" href="como.html#hora">hora de Brasília</a>` : "votos no exterior antes das 8h";
       $("pet").textContent = cedo ? `O primeiro voto da eleição saiu de ${lx.municipio}.` : "Antes de o Brasil abrir.";
     }
     $("pvoto").classList.toggle("on", p >= f2 && p < f3);
@@ -1016,7 +1020,7 @@ async function afterAnswer() {
   function planejar() {
     const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0);
     if (planoDe === key) return plano;
-    const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: i.texto, lugar: i.lugar });
+    const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: comTermos(i), lugar: i.lugar });
     const its = [
       { t: 480, h: "08:00 · Brasil", titulo: "O país inteiro começa de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
       { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
@@ -1046,7 +1050,7 @@ async function afterAnswer() {
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
-    const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
+    const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: comTermos(i), lugar: i.lugar }));
     its.sort((a, b) => a.t - b.t);
     planoDe = key; plano = { ag: agenda(its, 480, ULTM + 1, 55), dia, lista: [...its, ...dia] };
     return plano;
@@ -1247,7 +1251,7 @@ renderHoras();
     const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
     const tipica = mi.exata ? "" : " Esta é a urna típica da cidade: digite zona e seção para ver a sua.";
     const its = [
-      { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna encerra a votação.`, texto: `Ela já sabe o resultado: contou cada voto na hora em que entrou.${tipica}` },
+      { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `Ela já sabe o resultado: contou cada voto na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
       { h: "transmissão", titulo: "O resultado é transmitido ao TSE.", texto: "O mesmo boletim, agora a caminho de Brasília." },
       { h: `${bsb(mi.chega)} · Brasília`, titulo: `${hfala(bsb(mi.chega))}. O resultado entra na soma do TSE.`, texto: `${durTxt} depois do encerramento.` },
