@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>O Brasil votando: o segundo turno de 2026, minuto a minuto</title>
-<meta name="description" content="Que horas o Brasil votou? 128.236.074 votos, cidade por cidade, do primeiro às 08:00:19 ao último às 19h06. Descubra quantas pessoas votaram com você.">
+<meta name="description" content="Que horas o Brasil votou? 128.236.074 votos, cidade por cidade. No Brasil, o primeiro às 08:00:19 e o último às 19:06:21. Descubra quantas pessoas votaram com você.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -384,9 +384,9 @@
 <!-- 6. The close, with your urna pinned -->
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h às 19h10. Os dados estão na tabela a seguir."></canvas>
+    <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. A fila ainda vota.</h2><p>Das 16h ao último voto, às 19h06. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. A fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -456,7 +456,6 @@ const hm = s => { const [h, m, x] = s.split(":").map(Number); return h * 60 + m 
 const hfala = s => s.slice(0, 5).replace(":", "h");
 const segundos = s => { const [h, m, x] = s.split(":").map(Number); return h * 3600 + m * 60 + (x || 0); };
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const VOTOS = 127854844;
 const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0, KX = Math.cos(15 * Math.PI / 180);
 const BSB = [-47.88, -15.79];
 const ACC = [255, 180, 60];
@@ -487,6 +486,11 @@ $("total").textContent = `Um domingo. ${fmt(TOTAL)} votos.`;
 $("card").setAttribute("aria-label", `Seu cartão: você foi um dos ${fmt(TOTAL)} votos, com a sua cidade e hora.`);
 const CUM = []; { let a = 0; for (const v of TOT.national) { a += v; CUM.push(a); } }
 const votosAte = t => CUM[clamp(Math.floor(t) - TOT.start, 0, CUM.length - 1)];
+// Brazil's votes in the logs (the map and the hours count these), its last vote and the STF minute.
+const VOTOS = CUM[CUM.length - 1];
+const fatoDe = id => curios.itens.find(i => i.id === id);
+const ULT = fatoDe("ultimo_voto").hora, ULTM = Math.floor(hm(ULT)), STFM = Math.floor(hm(fatoDe("stf").hora));
+document.querySelectorAll("[data-ultimo]").forEach(e => { e.textContent = hfala(ULT); });
 let BORDERS = null; loadBorders().then(b => { BORDERS = b; tick(); });
 
 function near(el, fn, margin = "150% 0px") {
@@ -942,7 +946,7 @@ async function afterAnswer() {
     }
     const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: i.texto, lugar: i.lugar }));
     its.sort((a, b) => a.t - b.t);
-    planoDe = key; plano = { ag: agenda(its, 480, 1147, 55), dia, lista: [...its, ...dia] };
+    planoDe = key; plano = { ag: agenda(its, 480, ULTM + 1, 55), dia, lista: [...its, ...dia] };
     return plano;
   }
 
@@ -952,7 +956,7 @@ async function afterAnswer() {
   scene(el, p => {
     abrir("abre-mapa", p);
     const { ag, dia, lista } = planejar(), fim = p > 0.86;
-    const a = ag(clamp((p - 0.06) / 0.8)), t = fim ? 1146 : a.t;
+    const a = ag(clamp((p - 0.06) / 0.8)), t = fim ? ULTM : a.t;
     const e = p < 0.06 ? null : fim ? dia[Math.min(dia.length - 1, Math.floor((p - 0.86) / 0.10 * dia.length))] : a.cur;
     passos(host, lista, e);
     const clock = p < 0.06 ? null : fim ? { txt: "o dia todo", sub: `<b>${fmt(VOTOS)}</b> votos` } : { t };
@@ -1006,7 +1010,7 @@ async function afterAnswer() {
 function renderHoras() {
   const tw = state.town, box = $("horas");
   $("horalead").textContent = tw ? `Que horas você votou em ${tw.nome}, ${tw.uf}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
-  const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote, 19h06
+  const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote (ULT)
   box.innerHTML = bands.map(h => `<button data-h="${h}" class="${state.hora === h ? "on" : ""}">${h}h</button>`).join("");
   if (state.hora != null) comVoce(state.hora);
 }
@@ -1015,13 +1019,13 @@ async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
   if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${tw.nome}, ${tw.uf}`; }
   // The hour in the whole country: how many voted and where it ranks in the day.
-  const fim = x => x === 18 ? 1147 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
+  const fim = x => x === 18 ? ULTM + 1 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
   const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
   const dia = h >= 17 ? "Depois dos portões fechados, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
     : rank >= 9 ? "Uma das horas mais calmas do dia." : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
   const pais = lugar === "no Brasil" ? "" : ` No Brasil, ${fmt(br)} votos.`;
-  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? "o último voto, 19h06" : `${h + 1}h`}</small>`;
+  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? `o último voto, ${hfala(ULT)}` : `${h + 1}h`}</small>`;
 }
 renderHoras();
 
@@ -1031,8 +1035,8 @@ renderHoras();
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
   const cur = id => curios.itens.find(i => i.id === id);
-  const fila = somaMin(nat, 1020, 1030), depois = somaMin(nat, 1035, 1147);
-  const porUF = Object.entries(TOT.uf).map(([u, v]) => [u, somaMin(v, 1035, 1147)]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const fila = somaMin(nat, 1020, 1030), depois = somaMin(nat, STFM, ULTM + 1);
+  const porUF = Object.entries(TOT.uf).map(([u, v]) => [u, somaMin(v, STFM, ULTM + 1)]).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
   const passos_ = [
     fato(cur("primeira_fim")),
@@ -1040,14 +1044,14 @@ renderHoras();
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
     { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
       texto: `${fmt(fila)} votos entre 17h e 17h10. Depois disso, quase nada.` },
-    { ...fato(cur("stf"), [1035, 1147]), texto: `A decisão chega com a maioria das urnas já fechada. Até as 19h06, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
+    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
     // The last vote abroad is after the chart ends: a step at its edge, with its own clock.
     ...(() => { const i = cur("ultimo_voto_exterior"); return i ? [{ ...fato(i), t: B, fora: i }] : []; })(),
   ];
   const ag = agenda(passos_, A, B, 55);
-  tabela(el, "Votos a cada dez minutos, das 16h às 19h10", ["De", "Votos"], Array.from({ length: 19 }, (_, i) => [hhmm(A + 10 * i), fmt(somaMin(nat, A + 10 * i, A + 10 * i + 10))]));
+  tabela(el, "Votos a cada dez minutos, das 16h ao último voto", ["De", "Votos"], Array.from({ length: 19 }, (_, i) => [hhmm(A + 10 * i), fmt(somaMin(nat, A + 10 * i, A + 10 * i + 10))]));
   scene(el, p => {
     abrir("abre-fechamento", p);
     const { t, cur: e } = ag(apos(p));
@@ -1056,7 +1060,7 @@ renderHoras();
     const xl = 0.06 * W, x0 = xl + 52 * dpr, x1 = 0.94 * W, ty = topo(dpr) + 16 * dpr;
     const yt = ty + 76 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.2 * H);
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
-    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h às 19h10", xl, ty);
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h ao último voto", xl, ty);
     ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", xl, ty + 18 * dpr);
     // The vertical scale: votes in a minute, on the compressed axis.
     ctx.textAlign = "right"; ctx.lineWidth = 1 * dpr;
@@ -1073,7 +1077,7 @@ renderHoras();
     area(A, tt, "rgba(255,180,60,.28)");
     if (e?.seg && e.seg[0] <= tt) area(e.seg[0], Math.min(e.seg[1], tt), "rgba(255,241,214,.85)");
     ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.lineWidth = 1 * dpr;
-    [[1020, "17:00", 0], [1035, "17:15", 1], [1146, "19:06", 0]].forEach(([m, lab, row]) => {
+    [[1020, "17:00", 0], [STFM, fatoDe("stf").hora.slice(0, 5), 1], [ULTM, ULT.slice(0, 5), 0]].forEach(([m, lab, row]) => {
       const ly = yt - 8 * dpr - row * 15 * dpr;
       ctx.strokeStyle = "rgba(236,232,220,.3)"; ctx.beginPath(); ctx.moveTo(X(m), ly + 3 * dpr); ctx.lineTo(X(m), yb); ctx.stroke();
       ctx.fillStyle = "rgba(236,232,220,.7)"; ctx.fillText(lab, m > 1100 ? X(m) - 40 * dpr : X(m) + 4 * dpr, ly);

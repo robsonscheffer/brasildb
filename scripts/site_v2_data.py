@@ -6,7 +6,7 @@
   uv run python scripts/site_v2_data.py cidades        # docs/site/v2/data/cidades/<UF>.json
   uv run python scripts/site_v2_data.py secoes         # docs/site/v2/data/secoes/<UF>/<municipio>-<zona>.json
   uv run python scripts/site_v2_data.py urna           # docs/site/v2/data/urna.json
-  uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels)
+  uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels) and totals.json (the curves)
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
 """
@@ -725,6 +725,7 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
     start, minutes, n = tot["start"], tot["minutes"], len(towns["id"])
     index = {(u, i): k for k, (u, i) in enumerate(zip(towns["uf"], towns["id"]))}
     counts = [[0] * minutes for _ in range(n)]
+    national, por_uf = [0] * minutes, {}
     for uf, mun, minuto, votos in con.execute(f"""
         SELECT sigla_uf, id_municipio_tse, hour(minuto_bsb) * 60 + minute(minuto_bsb), votos
         FROM c_votos_minuto WHERE ano = {ANO} AND turno = {TURNO} AND sigla_uf <> 'ZZ'""").fetchall():
@@ -734,6 +735,8 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
         if not 0 <= m < minutes:
             raise SystemExit(f"minute {minuto} is outside the frame range")
         counts[index[(uf, mun)]][m] += votos
+        national[m] += votos
+        por_uf.setdefault(uf, [0] * minutes)[m] += votos
     last = {}  # the last minute any section of the town votes
     for uf, mun, minuto in con.execute(f"""
         SELECT sigla_uf, id_municipio_tse, max(hour(ultimo_voto) * 60 + minute(ultimo_voto))
@@ -756,6 +759,9 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
             else:
                 level = FLOOR
             pixels[m * n + k] = level
+    # The curves the pages draw (votes per minute, Brazil and per state) come from the same votes.
+    tot.update(national=national, uf=dict(sorted(por_uf.items())))
+    (FRAMES / "totals.json").write_text(json.dumps(tot, separators=(",", ":")))
     png = png_gray_up(n, minutes, bytes(pixels))
     (FRAMES / "frames.png").write_bytes(png)
     row = (17 * 60 + 36 - start) * n
