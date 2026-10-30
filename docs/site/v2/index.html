@@ -844,12 +844,29 @@ const ready = (async () => {
   });
   $("pular").addEventListener("click", () => { state.town = null; afterAnswer(); });
 }
+// The closing urna's steps, in the order the section files give their seconds (fim_log).
+const FIM = ["Operador selecionou: Encerrar votação", "Procedimento de encerramento confirmado",
+  "Gerando relatório [BU] [INÍCIO]", "Imprimindo relatório [BU] via nº [1]", "Fim de impressão",
+  "Gerando arquivo de resultado [bu.dat] + [Início]", "Gerando arquivo de resultado [log.jez] + [Início]"];
+// One section from a town-and-zona file: a row named by `campos`; an aggregated section is
+// its principal's number and takes that row.
+function secao(z, n) {
+  let row = z.secoes[n], agregada_a = null;
+  if (typeof row === "string") { agregada_a = row; row = z.secoes[row]; }
+  if (!Array.isArray(row)) return null;
+  const s = Object.fromEntries(z.campos.map((c, i) => [c, row[i]]));
+  let t = 0;
+  const p2 = v => String(Math.floor(v)).padStart(2, "0");
+  s.fim_log = s.fim_log ? s.fim_log.map((d, i) => { t += d; return { hora: `${p2(t / 3600)}:${p2(t % 3600 / 60)}:${p2(t % 60)}`, texto: FIM[i] }; }) : null;
+  s.agregada_a = agregada_a;
+  return s;
+}
 async function afterAnswer() {
   state.sec = null; state.cz = null;
   const t = state.town;
   if (t) state.cz = (await loadCidades(t.uf)).cidades[t.id] || null;
   if (t && state.zona && state.secao) {
-    try { const z = await get(`data/secoes/${t.uf}/${state.zona}.json`); state.sec = z.secoes[state.secao] || null; } catch { state.sec = null; }
+    try { state.sec = secao(await get(`data/secoes/${t.uf}/${t.id}-${state.zona}.json`), state.secao); } catch { state.sec = null; }
   }
   $("eco").textContent = !t ? "" : state.sec ? `${t.nome}, zona ${state.zona}, seção ${state.secao}.`
     : state.zona ? `${t.nome}. Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : `${t.nome}.`;
@@ -865,7 +882,8 @@ async function afterAnswer() {
   const i = byId.get(id); if (i == null) return;
   state.town = { i, id, uf: towns.uf[i], nome: towns.nome[i] };
   $("cidade").value = `${state.town.nome}, ${state.town.uf}`; $("ir").disabled = false;
-  state.zona = q.get("zona") || ""; state.secao = q.get("secao") || "";
+  const pad = v => v ? v.replace(/\D/g, "").padStart(4, "0").slice(-4) : "";
+  state.zona = pad(q.get("zona")); state.secao = pad(q.get("secao"));
   $("zona").value = state.zona; $("secao").value = state.secao;
   state.hora = q.has("hora") ? +q.get("hora") : null;
   await afterAnswer();
@@ -1091,7 +1109,7 @@ renderHoras();
   function montar(mi) {
     const tw = state.town, key = `${tw.id}|${state.secao}|${mi.fecha}|${mi.chega}`;
     if (T?.key === key) return T;
-    const ls = linhas(mi), n = ls.length, imp = ls.findIndex(l => /impresso/i.test(l.texto));
+    const ls = linhas(mi), n = ls.length, imp = ls.findIndex(l => /impresso|imprimindo/i.test(l.texto));
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
     const lugar = `${tw.nome}, ${tw.uf}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}`;
