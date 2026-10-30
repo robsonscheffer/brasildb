@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O Brasil votando</title>
+<meta name="description" content="O dia em que 127 milhões votaram, minuto a minuto. Cada urna anota a hora de cada voto; juntamos todas. O segundo turno de 2026, cidade por cidade.">
+<meta property="og:title" content="O Brasil votando">
+<meta property="og:description" content="O dia em que 127 milhões votaram, minuto a minuto. Veja sua cidade acender.">
+<meta property="og:image" content="https://robsonscheffer.github.io/brasildb/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: #070a12;
+    --fg: #ece8dc;
+    --muted: #9a9ca6;
+    --line: #262a38;
+    --accent: #ffb43c;
+    --card: rgba(7,10,18,.86);
+    --bar-h: 72px;       /* the timeline bar */
+    --beat-h: 150px;     /* room for the floating card above it */
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body { font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.45; }
+  a { color: var(--accent); }
+  button { font: inherit; }
+  .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* The stage is one screen: map, clock, timeline. The method text lives below it. */
+  .stage { position: relative; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
+  canvas#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas#c.drag { cursor: grabbing; }
+  .hud { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); top: max(18px, env(safe-area-inset-top, 0px)); display: grid; gap: 6px; max-width: 360px; }
+  .clock { font-size: clamp(44px, 9vw, 92px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; font-variant-numeric: tabular-nums; }
+  .clock small { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
+  .total { font-size: clamp(14px, 3.2vw, 18px); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .total b { color: var(--fg); font-weight: 600; }
+  .cta { margin-top: 8px; font-size: 14px; color: var(--muted); max-width: 30ch; }
+  .share { margin-top: 2px; justify-self: start; background: var(--accent); color: var(--bg); border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .share:hover { filter: brightness(1.08); }
+  .find { position: relative; margin-top: 6px; width: min(260px, 100%); }
+  .find input {
+    width: 100%; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 14px; font-size: 14px; outline: none;
+  }
+  .find input:focus { border-color: var(--accent); }
+  .find input::placeholder { color: var(--muted); }
+  .hits { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px 0; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px; z-index: 4; }
+  .hits:empty { display: none; }
+  .hits li { padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  .hits li:hover, .hits li.on { background: rgba(255,180,60,.14); }
+  .hits li span { color: var(--muted); }
+  .reset {
+    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(max(18px, env(safe-area-inset-top, 0px)) + 58px);
+    background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .reset:hover { border-color: var(--accent); }
+  .play {
+    position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(18px, env(safe-area-inset-top, 0px));
+    width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--card);
+    color: var(--fg); cursor: pointer; display: grid; place-items: center; padding: 0;
+  }
+  .play svg { width: 22px; height: 22px; fill: currentColor; }
+  .play:hover { border-color: var(--accent); }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+
+  /* Town tooltip. */
+  .tip {
+    position: absolute; z-index: 3; pointer-events: none; min-width: 180px; max-width: 240px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    font-size: 14px; line-height: 1.35; opacity: 0; transition: opacity .15s; transform: translate(-50%, calc(-100% - 14px));
+  }
+  .tip.on { opacity: 1; }
+  .tip b { display: block; font-size: 16px; }
+  .tip span { color: var(--muted); }
+  .tip i { font-style: normal; color: var(--accent); }
+
+  /* The timeline: one bar across the screen (the day curve), the playhead over it, the
+     current beat's card floating above the playhead. Drag the bar to scrub. */
+  .timeline { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--bar-h) + var(--beat-h)); pointer-events: none; }
+  .timeline::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(7,10,18,.96) var(--bar-h), rgba(7,10,18,.55) 60%, rgba(7,10,18,0)); }
+  canvas#bar { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: var(--bar-h); display: block; pointer-events: auto; cursor: ew-resize; touch-action: none; }
+  .beat {
+    position: absolute; bottom: calc(var(--bar-h) + 10px); width: 360px; max-width: calc(100vw - 24px);
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px 10px;
+    display: grid; gap: 4px; pointer-events: auto; transition: opacity .25s;
+  }
+  .beat::after { content: ""; position: absolute; left: var(--tail, 50%); bottom: -7px; width: 12px; height: 12px; background: var(--card); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+  .beat .k { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .beat h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+  .beat h2.big { font-size: 24px; }
+  .beat p { margin: 0; font-size: 14px; line-height: 1.35; color: #cfccc3; }
+  .beat .next { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .beat .next b { color: var(--fg); font-weight: 600; }
+  .more { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(var(--bar-h) + 8px); font-size: 13px; color: var(--muted); text-decoration: none; pointer-events: auto; }
+  .more:hover { color: var(--accent); }
+
+  .after { position: relative; background: var(--bg); border-top: 1px solid var(--line); padding-block: 40px 60px; }
+  .after .in { max-width: 62ch; margin: 0 auto; display: grid; gap: 12px; }
+  .after h2 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .after p { margin: 0; }
+  .after .legend { display: grid; gap: 6px; color: var(--muted); font-size: 15px; margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+  .legend .dim::before { background: rgba(255,180,60,.16); }
+  .legend .lit::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .legend .size::before { width: 14px; height: 14px; border: 1px solid var(--muted); background: transparent; }
+  footer { color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 12px; }
+
+  /* Phone: clock small on top, map in the middle, card and bar at the bottom. */
+  @media (max-width: 600px) {
+    :root { --bar-h: 60px; --beat-h: 176px; }
+    .hud { gap: 2px; max-width: calc(100vw - 90px); }
+    .clock { font-size: 40px; }
+    .clock small { display: none; }
+    .cta { display: none; }
+    .share { margin-top: 6px; padding: 6px 12px; font-size: 13px; }
+    .play { width: 44px; height: 44px; }
+    .beat { left: 12px !important; right: 12px; width: auto; }
+    .beat h2.big { font-size: 20px; }
+    .find { width: 100%; }
+    .more { bottom: calc(var(--bar-h) + var(--beat-h) + 2px); font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="c"></canvas>
+  <div class="loading" id="loading">carregando o dia…</div>
+  <div class="tip" id="tip"></div>
+  <div class="hud">
+    <div class="clock"><span id="clock">07:50</span><small>horário de Brasília</small></div>
+    <div class="total"><b id="total">0</b> votos até agora</div>
+    <div class="cta">Em que minuto você votou? Arraste a linha do tempo até ele e compartilhe.</div>
+    <div class="find">
+      <input id="find" type="search" placeholder="sua cidade" autocomplete="off" aria-label="Buscar cidade">
+      <ul class="hits" id="hits"></ul>
+    </div>
+    <button class="share" id="share">compartilhar este minuto</button>
+  </div>
+  <button class="play" id="play" aria-label="Pausar">
+    <svg id="ico" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+  </button>
+  <button class="reset" id="reset" hidden>ver o país</button>
+  <div class="timeline">
+    <article class="beat" id="beat"></article>
+    <a class="more" href="#como">como foi feito ↓</a>
+    <canvas id="bar" aria-label="Linha do tempo do dia; arraste para mudar a hora"></canvas>
+  </div>
+</div>
+
+<section class="after gutter" id="como">
+  <div class="in">
+    <h2>Como foi feito</h2>
+    <p>Cada urna grava um log com a hora de cada voto. O TSE publica esses arquivos. Lemos os logs de
+      497.896 seções do segundo turno, convertemos cada relógio para o horário de Brasília e contamos
+      os votos por minuto, cidade por cidade.</p>
+    <p>O brilho de uma cidade é o quanto suas urnas registraram naquele minuto, comparado com o minuto
+      mais movimentado dela no dia. O tamanho é o eleitorado.</p>
+    <p>O log diz quando a urna registrou um voto. Não diz em quem. Nada aqui identifica eleitor ou
+      candidato.</p>
+    <div class="legend">
+      <span class="size">tamanho: eleitores aptos na cidade</span>
+      <span class="dim">apagado: nenhum voto naquele minuto</span>
+      <span class="lit">aceso: a cidade no seu ritmo máximo do dia</span>
+    </div>
+    <p>A "fila" de uma cidade: uma urna registra cerca de um voto por minuto. Quando a cidade fica
+      perto do seu ritmo máximo por muito tempo, é porque há gente esperando em quase toda seção.
+      Contamos os minutos em que ela ficou a 80% ou mais do próprio pico.</p>
+    <h2>De onde vêm as notícias</h2>
+    <p>Os números de votos, seções e horários saem dos logs. O resto vem da imprensa do dia:
+      a decisão do STF e a pausa na totalização
+      (<a href="https://www.poder360.com.br/">Poder360</a>,
+      <a href="https://www.conjur.com.br/">Conjur</a>,
+      <a href="https://www.infomoney.com.br/">InfoMoney</a>);
+      a chuva de granizo e os locais sem luz em Minas
+      (<a href="https://www.cnnbrasil.com.br/">CNN Brasil</a>,
+      <a href="https://www.otempo.com.br/">O Tempo</a>);
+      abstenção, urnas trocadas e o fim da totalização
+      (<a href="https://www.tse.jus.br/comunicacao/noticias">TSE</a>,
+      <a href="https://www.gazetadopovo.com.br/">Gazeta do Povo</a>).</p>
+    <footer>Dados: TSE, logs das urnas (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>).
+      Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.
+      Feito por <a href="https://github.com/robsonscheffer">Robson Scheffer</a>.</footer>
+  </div>
+</section>
+
+<script>
+(async function () {
+  const LON0 = -74.2, LON1 = -34.6, LAT0 = 5.6, LAT1 = -34.0;
+  const KX = Math.cos(15 * Math.PI / 180);
+  const FAST = 10, SLOW = 3;         // replay minutes per second, between beats and inside one
+  const HOLD = 3;                    // seconds of dark before the loop restarts
+  const $ = id => document.getElementById(id);
+  const canvas = $("c"), ctx = canvas.getContext("2d");
+  const [towns, totals, borders, events, img] = await Promise.all([
+    fetch("../data/towns.json").then(r => r.json()),
+    fetch("../data/totals.json").then(r => r.json()),
+    fetch("../data/borders.json").then(r => r.json()),
+    fetch("../data/events.json").then(r => r.json()),
+    new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "../data/frames.png"; }),
+  ]);
+  const N = towns.id.length, M = totals.minutes, START = totals.start, END = START + M - 1;
+  const CAPS = { AC: "rio branco", AL: "maceio", AP: "macapa", AM: "manaus", BA: "salvador", CE: "fortaleza", DF: "brasilia", ES: "vitoria", GO: "goiania", MA: "sao luis", MT: "cuiaba", MS: "campo grande", MG: "belo horizonte", PA: "belem", PB: "joao pessoa", PR: "curitiba", PE: "recife", RJ: "rio de janeiro", RN: "natal", RS: "porto alegre", RO: "porto velho", RR: "boa vista", SC: "florianopolis", SP: "sao paulo", SE: "aracaju", TO: "palmas", PI: "teresina" };
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const names = towns.nome.map(norm);
+  const isCapital = new Uint8Array(N), capitals = [];
+  for (let i = 0; i < N; i++) if (CAPS[towns.uf[i]] === names[i]) { isCapital[i] = 1; capitals.push(i); }
+  const hhmm = min => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
+
+  const off = document.createElement("canvas");
+  off.width = N; off.height = M;
+  const octx = off.getContext("2d"); octx.drawImage(img, 0, 0);
+  const rgba = octx.getImageData(0, 0, N, M).data;
+  const raw = new Uint8Array(N * M), lit = new Float32Array(N * M);
+  for (let k = 0; k < N * M; k++) { raw[k] = rgba[k * 4]; lit[k] = Math.pow(rgba[k * 4] / 255, 1.4); }
+  const cumul = []; let acc = 0;
+  for (const v of totals.national) { acc += v; cumul.push(acc); }
+  const nat = totals.national;
+  const maxPerMin = Math.max(...nat.map((v, m) => (nat[Math.max(0, m - 1)] + v + nat[Math.min(M - 1, m + 1)]) / 3));
+
+  // Base projection (equirectangular, longitude scaled for 15 degrees south) plus a camera
+  // whose focus is a map coordinate, so a resize keeps the view.
+  let W = 0, H = 0, sx = 1, sy = 1, ox = 0, oy = 0, dpr = 1, ax = 0, ay = 0;
+  const px = new Float32Array(N), py = new Float32Array(N), pr = new Float32Array(N);
+  const HOME = { lon: (LON0 + LON1) / 2, lat: (LAT0 + LAT1) / 2, z: 1 };
+  const cam = { ...HOME }, camA = { ...HOME }, camB = { ...HOME };
+  let camT0 = 0, camDur = 2.2;
+  const cssPx = name => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  function layout() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = Math.round(canvas.clientWidth * dpr); H = Math.round(canvas.clientHeight * dpr);
+    canvas.width = W; canvas.height = H;
+    const wide = W > H;
+    const bottom = (cssPx("--bar-h") + (wide ? 40 : cssPx("--beat-h"))) * dpr;
+    const top = wide ? 0 : 110 * dpr;
+    const mw = (LON1 - LON0) * KX, mh = LAT0 - LAT1;
+    const avail = H - bottom - top;
+    const s = Math.min((W * (wide ? 0.60 : 0.96)) / mw, (avail * (wide ? 0.90 : 0.96)) / mh);
+    sx = s * KX; sy = s;
+    ox = wide ? W - mw * s - 0.04 * W : (W - mw * s) / 2;
+    oy = top + (avail - mh * s) / 2;
+    ax = ox + mw * s / 2; ay = oy + mh * s / 2;
+    const rmax = 0.022 * Math.min(W, avail * 1.2), amax = Math.sqrt(towns.aptos[0]);
+    for (let i = 0; i < N; i++) {
+      px[i] = ox + (towns.lon[i] - LON0) * sx;
+      py[i] = oy + (LAT0 - towns.lat[i]) * sy;
+      pr[i] = Math.max(1.0 * dpr, rmax * Math.sqrt(towns.aptos[i]) / amax);
+    }
+  }
+  const X = lon => ox + (lon - LON0) * sx, Y = lat => oy + (LAT0 - lat) * sy;
+  function setView(view, now) {
+    const to = view ? { lon: view[0], lat: view[1], z: view[2] } : { ...HOME };
+    if (to.lon === camB.lon && to.lat === camB.lat && to.z === camB.z) return;
+    Object.assign(camA, cam); Object.assign(camB, to); camT0 = now;
+  }
+  // The user's own camera: once they drag, zoom or pick a city, the story stops moving
+  // the view until they press "ver o país".
+  let storyCam = true;
+  function clampCam() {
+    cam.z = Math.max(1, Math.min(80, cam.z));
+    cam.lon = Math.max(LON0, Math.min(LON1, cam.lon)); cam.lat = Math.max(LAT1, Math.min(LAT0, cam.lat));
+  }
+  function takeCamera() {
+    if (storyCam) { storyCam = false; $("reset").hidden = false; }
+    clampCam(); Object.assign(camA, cam); Object.assign(camB, cam);
+  }
+  function zoomAt(cx, cy, factor) {
+    const pxx = cx * dpr, pyy = cy * dpr;
+    const bx = (pxx - ax) / cam.z + X(cam.lon), by = (pyy - ay) / cam.z + Y(cam.lat);
+    const z = Math.max(1, Math.min(80, cam.z * factor));
+    const fx = bx - (pxx - ax) / z, fy = by - (pyy - ay) / z;
+    cam.z = z; cam.lon = LON0 + (fx - ox) / sx; cam.lat = LAT0 - (fy - oy) / sy;
+    takeCamera();
+  }
+  function panBy(dx, dy) { cam.lon -= dx * dpr / (cam.z * sx); cam.lat += dy * dpr / (cam.z * sy); takeCamera(); }
+  function moveCamera(now) {
+    const u = Math.min(1, (now - camT0) / 1000 / camDur), e = u * u * (3 - 2 * u);
+    cam.lon = camA.lon + (camB.lon - camA.lon) * e;
+    cam.lat = camA.lat + (camB.lat - camA.lat) * e;
+    cam.z = Math.exp(Math.log(camA.z) + (Math.log(camB.z) - Math.log(camA.z)) * e);
+  }
+
+  // Sky: a faint dawn band at the start, night after sunset (18:10 in Brasilia that day).
+  function sky(t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const dawn = Math.max(0, 1 - (t - START) / 90), night = Math.min(1, Math.max(0, (t - 1070) / 60));
+    g.addColorStop(0, `rgb(${7 + 4 * dawn - 3 * night},${10 + 6 * dawn - 4 * night},${18 + 14 * dawn - 8 * night})`);
+    g.addColorStop(1, `rgb(${7 + 18 * dawn - 3 * night},${10 + 8 * dawn - 4 * night},${18 + 4 * dawn - 8 * night})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  const LEVELS = 16;
+  const buckets = Array.from({ length: LEVELS + 1 }, () => []);
+  let lastMinute = -1, shown = 0, picked = -1;
+  function draw(t) {
+    const m0 = Math.max(0, Math.min(M - 1, Math.floor(t - START))), m1 = Math.min(M - 1, m0 + 1), f = Math.min(1, Math.max(0, t - START - m0));
+    sky(t);
+    ctx.save();
+    const fx = X(cam.lon), fy = Y(cam.lat);
+    ctx.translate(ax, ay); ctx.scale(cam.z, cam.z); ctx.translate(-fx, -fy);
+    const rz = 1 / Math.sqrt(cam.z);
+    ctx.lineWidth = 1 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.beginPath();
+    for (const ring of borders) {
+      ring.forEach(([lon, lat], k) => k ? ctx.lineTo(X(lon), Y(lat)) : ctx.moveTo(X(lon), Y(lat)));
+      ctx.closePath();
+    }
+    ctx.stroke();
+
+    for (const b of buckets) b.length = 0;
+    for (let i = 0; i < N; i++) {
+      const v = lit[m0 * N + i] * (1 - f) + lit[m1 * N + i] * f;
+      buckets[Math.min(LEVELS, Math.round(v * LEVELS))].push(i);
+    }
+    for (let L = Math.ceil(LEVELS * 0.3); L <= LEVELS; L++) {
+      const ids = buckets[L]; if (!ids.length) continue;
+      const v = L / LEVELS;
+      ctx.fillStyle = `rgba(255,170,50,${0.10 * v})`;
+      ctx.beginPath();
+      for (const i of ids) { const r = (pr[i] * (1.8 + 1.6 * v) + 2 * dpr) * rz; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      ctx.fill();
+    }
+    for (let L = 0; L <= LEVELS; L++) {
+      const ids = buckets[L]; if (!ids.length) continue;
+      const v = L / LEVELS;
+      ctx.fillStyle = v === 0 ? "rgba(255,180,60,0.13)"
+        : `rgba(255,${Math.round(165 + 70 * v)},${Math.round(45 + 170 * v)},${0.22 + 0.78 * v})`;
+      ctx.beginPath();
+      for (const i of ids) { const r = pr[i] * (0.85 + 0.45 * v) * rz; ctx.moveTo(px[i] + r, py[i]); ctx.arc(px[i], py[i], r, 0, 6.2832); }
+      ctx.fill();
+    }
+    if (picked >= 0) {
+      const r = pr[picked] * 1.3 * rz + 3 * dpr;
+      ctx.lineWidth = 1.5 * dpr / cam.z; ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath(); ctx.arc(px[picked], py[picked], r, 0, 6.2832); ctx.stroke();
+    }
+    // Capital names: a pin per capital, at screen size whatever the zoom, brighter when zoomed in.
+    const fs = 11 * dpr / cam.z, a = (W / dpr < 700 && cam.z < 1.6) ? 0 : Math.min(1, 0.45 + 0.25 * Math.log2(cam.z));
+    ctx.font = `600 ${fs}px "Inter Tight", system-ui, sans-serif`; ctx.textBaseline = "middle";
+    for (const i of capitals) {
+      if (a <= 0) break;
+      const r = pr[i] * rz + 3 * dpr / cam.z, x = px[i] + r, y = py[i];
+      ctx.lineWidth = 3 * dpr / cam.z; ctx.strokeStyle = `rgba(7,10,18,${0.8 * a})`; ctx.strokeText(towns.nome[i], x, y);
+      ctx.fillStyle = `rgba(236,232,220,${a})`; ctx.fillText(towns.nome[i], x, y);
+    }
+    ctx.restore();
+
+    const minute = Math.floor(t);
+    if (minute !== lastMinute) { lastMinute = minute; $("clock").textContent = hhmm(minute); }
+    const target = cumul[Math.max(0, Math.min(M - 1, minute - START))];
+    shown += (target - shown) * 0.18; if (Math.abs(target - shown) < 2) shown = target;
+    $("total").textContent = fmt(shown);
+    drawBar(t);
+    if (picked >= 0) placeTip();
+  }
+
+  // The timeline bar: the day curve across the width, hour labels, beat markers, playhead.
+  const bar = $("bar"), bctx = bar.getContext("2d");
+  let barBase = null, bw = 0, bh = 0, bl = 0, br = 0;
+  const xOfT = t => bl + (t - START) / (M - 1) * (br - bl);
+  const tOfX = x => START + Math.max(0, Math.min(1, (x - bl) / (br - bl))) * (M - 1);
+  function buildBar() {
+    bw = Math.round(bar.clientWidth * dpr); bh = Math.round(bar.clientHeight * dpr);
+    bar.width = bw; bar.height = bh;
+    bl = 14 * dpr; br = bw - 14 * dpr;
+    barBase = document.createElement("canvas"); barBase.width = bw; barBase.height = bh;
+    const c = barBase.getContext("2d");
+    const top = 10 * dpr, base = bh - 18 * dpr;
+    const yOf = m => base - Math.min(1, nat[m] / maxPerMin) * (base - top);
+    c.beginPath(); c.moveTo(bl, base);
+    for (let m = 0; m < M; m++) c.lineTo(xOfT(START + m), yOf(m));
+    c.lineTo(br, base); c.closePath();
+    c.fillStyle = "rgba(255,180,60,0.18)"; c.fill();
+    c.beginPath();
+    for (let m = 0; m < M; m++) c[m ? "lineTo" : "moveTo"](xOfT(START + m), yOf(m));
+    c.strokeStyle = "rgba(255,180,60,0.85)"; c.lineWidth = 1.2 * dpr; c.stroke();
+    c.fillStyle = "rgba(154,156,166,0.9)"; c.font = `${11 * dpr}px "Inter Tight", system-ui, sans-serif`; c.textAlign = "center";
+    for (let h = 8; h <= 19; h++) {
+      const x = xOfT(h * 60);
+      c.fillRect(x, base, dpr, 4 * dpr);
+      if (h % 2 === 0 || bw > 900 * dpr) c.fillText(`${h}h`, x, bh - 4 * dpr);
+    }
+    for (const ev of events) {
+      const x = xOfT(ev.t), m = Math.max(0, Math.min(M - 1, ev.t - START));
+      c.fillStyle = "rgba(236,232,220,0.95)";
+      c.beginPath(); c.arc(x, yOf(m), 2.6 * dpr, 0, 6.2832); c.fill();
+    }
+  }
+  function drawBar(t) {
+    bctx.clearRect(0, 0, bw, bh); bctx.drawImage(barBase, 0, 0);
+    const x = xOfT(t);
+    bctx.fillStyle = "rgba(255,180,60,0.10)"; bctx.fillRect(bl, 0, x - bl, bh - 18 * dpr);
+    bctx.fillStyle = "rgba(236,232,220,0.95)"; bctx.fillRect(x - dpr, 0, 2 * dpr, bh - 14 * dpr);
+    const beat = $("beat"), cw = beat.offsetWidth, vw = canvas.clientWidth;
+    let left = x / dpr - cw / 2;
+    left = Math.max(12, Math.min(vw - cw - 12, left));
+    if (window.innerWidth > 600) { beat.style.left = `${left}px`; beat.style.setProperty("--tail", `${Math.max(16, Math.min(cw - 16, x / dpr - left))}px`); }
+    else beat.style.setProperty("--tail", `${Math.max(16, Math.min(vw - 40, x / dpr - 12))}px`);
+  }
+  let scrubbing = false;
+  const barSeek = e => seek(tOfX((e.clientX - bar.getBoundingClientRect().left) * dpr));
+  bar.addEventListener("pointerdown", e => { scrubbing = true; bar.setPointerCapture(e.pointerId); barSeek(e); });
+  bar.addEventListener("pointermove", e => { if (scrubbing) barSeek(e); });
+  bar.addEventListener("pointerup", () => { scrubbing = false; });
+  bar.addEventListener("pointercancel", () => { scrubbing = false; });
+
+  // Tap or hover a town: its numbers up to this minute.
+  function townAt(cx, cy) {
+    const bx = (cx * dpr - ax) / cam.z + X(cam.lon), by = (cy * dpr - ay) / cam.z + Y(cam.lat);
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < N; i++) {
+      const d = Math.hypot(px[i] - bx, py[i] - by), lim = pr[i] / Math.sqrt(cam.z) + (isCapital[i] ? 16 : 9) * dpr / cam.z;
+      if (d < lim && d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  function tipText(i, t) {
+    const upTo = Math.max(0, Math.min(M - 1, Math.floor(t) - START));
+    let sofar = 0; for (let m = 0; m <= upTo; m++) sofar += raw[m * N + i] / 255 * towns.pico[i];
+    sofar = Math.min(towns.votos[i], sofar);
+    return `<b>${towns.nome[i]}, ${towns.uf[i]}</b>` +
+      `<span>${fmt(towns.aptos[i])} eleitores · ${fmt(towns.secoes[i])} seções</span><br>` +
+      `<i>${fmt(sofar)}</i> <span>votos até ${hhmm(Math.floor(t))} de ${fmt(towns.votos[i])}</span><br>` +
+      fila(i);
+  }
+  // The queue line. Minutes the town held 80% of its peak rate, i.e. a line at every section.
+  function fila(i) {
+    const n = towns.fila[i];
+    if (n < 20) return `<span>sem fila: ritmo máximo às</span> <i>${hhmm(towns.pico_min[i])}</i>`;
+    const dur = n >= 60 ? `${Math.floor(n / 60)}h${String(n % 60).padStart(2, "0")}` : `${n} min`;
+    return `<span>fila: no limite por</span> <i>${dur}</i><span>, até</span> <i>${hhmm(towns.fila_ate[i])}</i>`;
+  }
+  function placeTip() {
+    const tip = $("tip");
+    const x = (ax + (px[picked] - X(cam.lon)) * cam.z) / dpr, y = (ay + (py[picked] - Y(cam.lat)) * cam.z) / dpr;
+    tip.style.left = `${Math.max(120, Math.min(canvas.clientWidth - 120, x))}px`;
+    tip.style.top = `${Math.max(90, y - pr[picked] / dpr)}px`;
+    tip.innerHTML = tipText(picked, t);
+  }
+  let pinned = false;
+  function pick(i) { picked = i; $("tip").classList.toggle("on", i >= 0); if (i >= 0) placeTip(); }
+
+  // Pointer work on the map: a tap picks a town, a drag pans, two fingers or the wheel zoom.
+  const ptrs = new Map();
+  let dragging = false, pinch0 = 0, pinchMid = null, down = null;
+  const mid = () => { const a = [...ptrs.values()]; return a.length < 2 ? null : { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2, d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) }; };
+  canvas.addEventListener("pointerdown", e => {
+    canvas.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    down = { x: e.clientX, y: e.clientY }; dragging = false;
+    const m = mid(); if (m) { pinch0 = m.d; pinchMid = m; }
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId)) {
+      if (e.pointerType === "mouse" && !pinned) { const i = townAt(e.clientX, e.clientY); if (i >= 0 || picked >= 0) pick(i); }
+      return;
+    }
+    const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size >= 2) {
+      const m = mid();
+      if (pinchMid) { panBy(m.x - pinchMid.x, m.y - pinchMid.y); zoomAt(m.x, m.y, m.d / pinch0); }
+      pinch0 = m.d; pinchMid = m; dragging = true;
+      return;
+    }
+    if (!dragging && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) return;
+    dragging = true; canvas.classList.add("drag"); panBy(dx, dy);
+  });
+  const up = e => {
+    ptrs.delete(e.pointerId); pinchMid = null;
+    if (ptrs.size) return;
+    canvas.classList.remove("drag");
+    if (!dragging && down) { const i = townAt(e.clientX, e.clientY); pinned = false; pick(i === picked ? -1 : i); if (i < 0) { city = -1; $("find").value = ""; } }
+    down = null; dragging = false;
+  };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+  canvas.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0025)); }, { passive: false });
+
+  // "Sua cidade": find a town by name, fly there and pin its numbers.
+  let city = -1, hitIds = [];
+  function goCity(i, fly) {
+    city = i; pinned = true; pick(i);
+    $("find").value = `${towns.nome[i]}, ${towns.uf[i]}`; $("hits").innerHTML = ""; hitIds = []; $("find").blur();
+    if (storyCam) { storyCam = false; $("reset").hidden = false; }
+    const to = { lon: towns.lon[i], lat: towns.lat[i], z: 10 };
+    if (fly) { Object.assign(camA, cam); Object.assign(camB, to); camT0 = performance.now(); }
+    else { Object.assign(cam, to); Object.assign(camA, to); Object.assign(camB, to); }
+  }
+  function renderHits(q) {
+    const box = $("hits"); hitIds = [];
+    if (q.length < 2) { box.innerHTML = ""; return; }
+    const starts = [], inside = [];
+    for (let i = 0; i < N && starts.length < 8; i++) {
+      const n = names[i]; if (n.startsWith(q)) starts.push(i); else if (inside.length < 8 && n.includes(q)) inside.push(i);
+    }
+    hitIds = starts.concat(inside).slice(0, 8);
+    box.innerHTML = hitIds.map((i, k) => `<li data-i="${i}" class="${k === 0 ? "on" : ""}">${towns.nome[i]} <span>${towns.uf[i]}</span></li>`).join("");
+  }
+  $("find").addEventListener("input", e => renderHits(norm(e.target.value.trim())));
+  $("find").addEventListener("keydown", e => { if (e.key === "Enter" && hitIds.length) goCity(hitIds[0], true); if (e.key === "Escape") { $("hits").innerHTML = ""; hitIds = []; } });
+  $("hits").addEventListener("pointerdown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); goCity(+li.dataset.i, true); } });
+  $("reset").addEventListener("click", () => {
+    storyCam = true; pinned = false; city = -1; pick(-1); $("reset").hidden = true; $("find").value = "";
+    setView(events[active].view, performance.now());
+  });
+
+  // The beat card above the playhead: the current event, and a hint of the next one.
+  let active = -1;
+  function eventAt(t) { let k = 0; for (let i = 0; i < events.length; i++) if (t >= events[i].t) k = i; return k; }
+  function showEvent(k, now) {
+    if (k === active) return;
+    active = k;
+    const ev = events[k], nx = events[k + 1];
+    const beat = $("beat");
+    beat.style.opacity = 0;
+    setTimeout(() => {
+      beat.innerHTML = `<div class="k">${ev.k}</div><h2 class="${k === 0 ? "big" : ""}">${ev.title}</h2><p>${ev.text}</p>` +
+        (nx ? `<div class="next">a seguir, <b>${nx.k}</b>: ${nx.title}</div>` : `<div class="next">o dia recomeça em instantes</div>`);
+      beat.style.opacity = 1;
+    }, k === 0 && active === 0 ? 0 : 180);
+    if (storyCam) setView(ev.view, now);
+  }
+
+  // Playback. One clock drives the map, the bar, the card and the camera.
+  let t = START, playing = true, last = performance.now(), holdUntil = 0;
+  function seek(min) {
+    t = Math.max(START, Math.min(END, min)); holdUntil = 0;
+    shown = cumul[Math.max(0, Math.min(M - 1, Math.floor(t) - START))];
+    showEvent(eventAt(t), performance.now()); draw(t);
+  }
+  function speedAt(t) { const ev = events[eventAt(t)]; return t < ev.t + ev.dur ? SLOW : FAST; }
+  function tick(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (playing && !scrubbing && now >= holdUntil) {
+      t += dt * speedAt(t);
+      if (t > END) { t = END; holdUntil = now + HOLD * 1000; }
+    }
+    if (holdUntil && now >= holdUntil && playing) { t = START; holdUntil = 0; }
+    const k = eventAt(t); if (k !== active) showEvent(k, now);
+    moveCamera(now);
+    draw(t);
+    requestAnimationFrame(tick);
+  }
+  const ICON_PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>', ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
+  function setPlaying(p) { playing = p; $("ico").innerHTML = p ? ICON_PAUSE : ICON_PLAY; $("play").setAttribute("aria-label", p ? "Pausar" : "Tocar"); }
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("share").addEventListener("click", async () => {
+    const minute = hhmm(Math.floor(t));
+    const url = `${location.origin}${location.pathname}?t=${minute}` + (city >= 0 ? `&cidade=${towns.id[city]}` : "");
+    const text = city >= 0
+      ? `Às ${minute}, ${towns.nome[city]} estava assim. O segundo turno minuto a minuto, cidade por cidade.`
+      : `Às ${minute} o Brasil estava assim. Veja sua cidade acender: o segundo turno minuto a minuto.`;
+    const b = $("share");
+    if (navigator.share) { try { await navigator.share({ title: "O Brasil votando", text, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); b.textContent = "link copiado"; }
+    catch { b.textContent = url; }
+    setTimeout(() => { b.textContent = "compartilhar este minuto"; }, 2500);
+  });
+
+  // For scripts (tests, the video render): replay.seek(13 * 60 + 30) draws that minute.
+  window.replay = {
+    seek(min) { setPlaying(false); seek(min); Object.assign(cam, camB); draw(t); },
+    pick, goCity, zoomAt, panBy, get t() { return t; }, get playing() { return playing; }, get active() { return active; },
+    get cam() { return { ...cam }; }, get storyCam() { return storyCam; }, get city() { return city; },
+  };
+
+  const params = new URLSearchParams(location.search), q = params.get("t"), qc = params.get("cidade");
+  if (q) { const [h, m] = q.split(":").map(Number); t = h * 60 + (m || 0); setPlaying(false); }
+
+  layout(); buildBar(); showEvent(eventAt(t), performance.now()); Object.assign(cam, camB); draw(t);
+  if (qc) { const i = towns.id.indexOf(qc); if (i >= 0) { goCity(i, false); draw(t); } } $("loading").remove();
+  new ResizeObserver(() => { layout(); buildBar(); draw(t); }).observe(canvas);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

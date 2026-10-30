@@ -1,4 +1,4 @@
-"""Write mock data for the v2 walk (docs/site/v2/data/) in the P3 contract shapes.
+"""Write mock data for the v2 walk (docs/site/data/) in the P3 contract shapes.
 
 Every file carries "mock": true so the page labels it "dados simulados". The real build
 (scripts/site_data.py, task W1) writes the same paths and shapes with "mock": false.
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 V1 = ROOT / "docs/site/data"
-OUT = ROOT / "docs/site/v2/data"
+OUT = ROOT / "docs/site/data"
 HORAS = list(range(8, 20))  # hour bands 08h..19h, Brasília time
 
 

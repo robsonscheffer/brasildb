@@ -1,11 +1,11 @@
 """Build the v2 walk's data files from the lake (P4). Same paths and shapes as the mock.
 
   uv run python scripts/site_v2_data.py cache          # once: lake views -> $BRASILDB_DATA/site_v2.duckdb
-  uv run python scripts/site_v2_data.py curiosidades   # docs/site/v2/data/curiosidades.json
-  uv run python scripts/site_v2_data.py chegada        # docs/site/v2/data/chegada.json
-  uv run python scripts/site_v2_data.py cidades        # docs/site/v2/data/cidades/<UF>.json
-  uv run python scripts/site_v2_data.py secoes         # docs/site/v2/data/secoes/<UF>/<municipio>-<zona>.json
-  uv run python scripts/site_v2_data.py urna           # docs/site/v2/data/urna.json
+  uv run python scripts/site_v2_data.py curiosidades   # docs/site/data/curiosidades.json
+  uv run python scripts/site_v2_data.py chegada        # docs/site/data/chegada.json
+  uv run python scripts/site_v2_data.py cidades        # docs/site/data/cidades/<UF>.json
+  uv run python scripts/site_v2_data.py secoes         # docs/site/data/secoes/<UF>/<municipio>-<zona>.json
+  uv run python scripts/site_v2_data.py urna           # docs/site/data/urna.json
   uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels) and totals.json (the curves)
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
@@ -32,7 +32,7 @@ from brasildb import config, lake, sqlrun  # noqa: E402
 from brasildb.tse.paths import SectionKey, aux_url  # noqa: E402
 
 ANO, TURNO = 2026, 2
-OUT = ROOT / "docs/site/v2/data"
+OUT = ROOT / "docs/site/data"
 
 
 def dump(path: Path, obj) -> None:
