@@ -338,7 +338,7 @@
 
 <!-- The rail: where the reader is in the nine folds. Desktop: right edge. Phone: a strip under the top edge. -->
 <nav class="trilha" id="trilha" aria-label="Partes da história">
-  <a href="#primeiro"><i></i><span>primeiro</span></a>
+  <a href="#primeiro"><i></i><span>o domingo</span></a>
   <a href="#abertura"><i></i><span>abertura</span></a>
   <a href="#onde-votou"><i></i><span>onde votou</span></a>
   <a href="#dia-no-mapa"><i></i><span>o dia no mapa</span></a>
@@ -346,7 +346,7 @@
   <a href="#fechamento"><i></i><span>fechamento</span></a>
   <a href="#encerramento"><i></i><span>encerramento</span></a>
   <a href="#transmissao"><i></i><span>apuração</span></a>
-  <a href="#compartilhamento"><i></i><span>compartilhamento</span></a>
+  <a href="#compartilhamento"><i></i><span>seu cartão</span></a>
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
 <div class="barra dica" id="barra">
@@ -436,7 +436,7 @@
   <div class="palco duplo">
     <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. A fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -483,7 +483,7 @@
 
 <!-- 9. The card -->
 <section class="cartao gx" id="compartilhamento">
-  <span class="k">09 · para guardar</span>
+  <span class="k">09 · seu cartão</span>
   <p class="mid">Guarde o seu 25 de outubro num cartão.</p>
   <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: o seu voto foi um dos 128.236.074, com a sua cidade e hora."></canvas>
   <div class="info">
@@ -1177,14 +1177,14 @@ renderHoras();
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
   const cur = id => curios.itens.find(i => i.id === id);
-  const fila = somaMin(nat, 1020, 1030);
+  const fila = somaMin(nat, 1020, 1030), resto = somaMin(nat, 1030, ULTM + 1);
   const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
   const passos_ = [
     fato(cur("primeira_fim")),
-    { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham, a fila continua.", seg: [1019, 1021],
+    { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", seg: [1019, 1021],
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
-    { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
-      texto: `${fmt(fila)} votos entre 17h e 17h10. Depois das 17h10, quase nada.` },
+    { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos, quase todos na fila votaram.", seg: [1020, 1030],
+      texto: `${fmt(fila)} votos entre 17h e 17h10. Das 17h10 ao último voto, às ${hfala(ULT)}, mais ${fmt(resto)}: cerca de ${fmt(resto / (ULTM + 1 - 1030))} por minuto no país.` },
     fato(cur("stf"), [STFM, STFM + 1]),
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
@@ -1372,10 +1372,10 @@ renderHoras();
 
 /* ---------- 9. The card ---------- */
 // The reader's lines: what the card says under the number, also listed beside it.
+// Town and hour only: a section plus the hour narrows the sharer to a few hundred voters.
 function cartaoLinhas() {
   const l = [];
   if (state.town) l.push(["onde", `em ${rot(state.town)}`, rot(state.town)]);
-  if (state.sec) l.push(["seção", `zona ${state.zona}, seção ${state.secao}`, `zona ${state.zona}, seção ${state.secao}`]);
   if (state.hora != null) l.push(["hora", `por volta das ${state.hora}h`, `por volta das ${state.hora}h`]);
   return l;
 }
@@ -1415,14 +1415,16 @@ async function drawCard() {
   ctx.fillStyle = "#8e8a80"; ctx.font = '400 26px "JetBrains Mono"'; ctx.fillText("votando.brasildb.org", 80, 1300);
 }
 // One button that says what it does: share the image where the browser can, else download it.
+// The shared link is the bare site: whoever opens it starts at their own town, not the sharer's.
+const LINK = location.origin + location.pathname;
 const PODE_PARTILHAR = !!navigator.canShare?.({ files: [new File([""], "x.png", { type: "image/png" })] });
 $("share").textContent = PODE_PARTILHAR ? "Compartilhar imagem" : "Baixar imagem";
 $("share").addEventListener("click", async () => {
   await drawCard();
   const blob = await new Promise(r => $("card").toBlob(r, "image/png"));
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
-  const onde = state.town ? `, em ${rot(state.town)}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
-  const texto = `Meu voto foi um dos ${fmt(TOTAL)} do segundo turno de 2026${onde}${hora}. Veja o seu: ${location.href}`;
+  const onde = state.town ? `, em ${rot(state.town)}` : "", hora = state.hora != null ? `, por volta das ${state.hora}h` : "";
+  const texto = `Meu voto foi um dos ${fmt(TOTAL)} do segundo turno de 2026${onde}${hora}. Que horas você votou? ${LINK}`;
   if (PODE_PARTILHAR && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); } catch {}
     return;
@@ -1431,7 +1433,7 @@ $("share").addEventListener("click", async () => {
 });
 $("copiar").addEventListener("click", async () => {
   const b = $("copiar");
-  try { await navigator.clipboard.writeText(location.href); b.textContent = "Link copiado"; } catch { b.textContent = "Não deu para copiar"; }
+  try { await navigator.clipboard.writeText(LINK); b.textContent = "Link copiado"; } catch { b.textContent = "Não deu para copiar"; }
   setTimeout(() => { b.textContent = "Copiar link"; }, 2000);
 });
 near($("compartilhamento"), drawCard);
