@@ -195,6 +195,27 @@
   .prox:hover { border-color: var(--accent); color: var(--accent); }
   .prox kbd { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
   @media (max-width: 640px) { .prox { right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); } .prox kbd { display: none; } }
+  /* The phone bar (W8 N1-N3): back, the fold's name and number, next; the name opens the list. */
+  .barra, .indice { display: none; }
+  @media (max-width: 640px) {
+    .prox { display: none; }
+    .barra { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; position: fixed; z-index: 12; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); height: 52px; background: rgba(15,19,32,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
+    .barra button { height: 52px; background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .barra .seta2 { font-size: 22px; line-height: 1; }
+    .barra .seta2:disabled { color: var(--line); }
+    .barra #barranome { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .barra #barranome small { color: var(--muted); font-size: 11px; margin-left: 6px; }
+    .barra.dica #barranome { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 14px; }
+    .indice { position: fixed; z-index: 13; left: 12px; right: 12px; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 62px); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+    .indice.aberto { display: block; }
+    .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
+    .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
+    .trilha .nome { display: none; }
+    body:has(input:focus) .barra, body:has(input:focus) .indice { display: none; }
+    .cartao { padding-bottom: calc(10vh + 64px); }
+    footer { padding-bottom: 96px; }
+  }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
   /* Hour tap */
@@ -327,6 +348,12 @@
   <a href="#compartilhamento"><i></i><span>compartilhamento</span></a>
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
+<div class="barra dica" id="barra">
+  <button class="seta2" id="barraant" type="button" aria-label="Voltar">‹</button>
+  <button id="barranome" type="button" aria-expanded="false" aria-controls="indice">Role para começar, ou toque em ›</button>
+  <button class="seta2" id="barraprox" type="button" aria-label="Próximo">›</button>
+</div>
+<ol class="indice" id="indice" aria-label="Partes da história"></ol>
 
 <!-- 1. The hook: the number, the first vote, the first minute -->
 <section class="cena" id="primeiro" style="--len:560vh">
@@ -564,6 +591,17 @@ addEventListener("keydown", e => {
   if (!d) return; e.preventDefault(); pular(d);
 });
 for (const b of document.querySelectorAll(".prox")) b.addEventListener("click", () => pular(1));
+$("barraant").addEventListener("click", () => pular(-1));
+$("barraprox").addEventListener("click", () => pular(1));
+$("barranome").addEventListener("click", () => {
+  const ab = $("indice").classList.toggle("aberto");
+  $("barranome").setAttribute("aria-expanded", ab);
+});
+addEventListener("click", e => {
+  if ($("indice").classList.contains("aberto") && !e.target.closest("#indice, #barranome")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); }
+});
+$("indice").addEventListener("click", e => { if (e.target.closest("a")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); } });
+addEventListener("scroll", () => { if (scrollY > 40) $("barra").classList.remove("dica"); }, { passive: true });
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
   for (const s of scenes) {
@@ -614,6 +652,12 @@ function trilha(vh) {
   });
   ticks.forEach((a, i) => { a.classList.toggle("on", i === on); a.classList.toggle("feita", on >= 0 && i < on); if (i === on) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
   $("trilhanome").textContent = on >= 0 ? ticks[on].querySelector("span").textContent : "";
+  // The phone bar names the fold and its place among the visible ones.
+  const vis = ticks.filter(a => !a.hidden), k = vis.indexOf(ticks[on]);
+  if (!$("barra").classList.contains("dica") && k >= 0) $("barranome").innerHTML = `${vis[k].querySelector("span").textContent}<small>${k + 1} de ${vis.length}</small>`;
+  $("barraant").disabled = scrollY < 2;
+  const lista = vis.map((a, i) => `<li><a href="${a.getAttribute("href")}" class="${a === ticks[on] ? "on" : ""}">${a.querySelector("span").textContent}<span>${i + 1}</span></a></li>`).join("");
+  if ($("indice").dataset.l !== lista) { $("indice").innerHTML = lista; $("indice").dataset.l = lista; }
 }
 // The charts lay out below the clock's real bottom, never a fixed fraction of the height (R2).
 // TOPO is in CSS px; the clock's size animates, so the scene re-renders when that ends.
@@ -1144,7 +1188,7 @@ renderHoras();
     const yt = ty + 76 * dpr, yb = Math.max(yt + 70 * dpr, H - 0.2 * H);
     const X = m => x0 + (m - A) / (B - A) * (x1 - x0), Y = v => yb - (yb - yt) * Math.sqrt(v / max);
     ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Votos por minuto, das 16h ao último voto", xl, ty);
-    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText("escala comprimida para mostrar os poucos votos do fim", xl, ty + 18 * dpr);
+    ctx.fillStyle = "rgba(236,232,220,.6)"; ctx.font = `${12 * dpr}px "JetBrains Mono"`; ctx.fillText(W / dpr < 480 ? "escala comprimida, para ver os votos do fim" : "escala comprimida para mostrar os poucos votos do fim", xl, ty + 18 * dpr);
     // The vertical scale: votes in a minute, on the compressed axis.
     ctx.textAlign = "right"; ctx.lineWidth = 1 * dpr;
     for (const v of [100, 1000, 10000, max]) {
