@@ -50,6 +50,8 @@ class Texto(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style"):
             self.dentro = tag
+        if dict(attrs).get("property") in ("og:image:width", "og:image:height"):
+            return  # the preview image's pixel size, not a number the reader sees
         self.visivel += [v for k, v in attrs if k in self.ATTRS and v]
 
     def handle_endtag(self, tag):
