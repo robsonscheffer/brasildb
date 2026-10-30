@@ -8,7 +8,7 @@
 <script>if (new URLSearchParams(location.search).has("t")) location.replace("explorar/" + location.search + location.hash);</script>
 <meta property="og:title" content="O Brasil votando">
 <meta property="og:description" content="Que horas o Brasil votou? 128.236.074 votos, cidade por cidade. Descubra quantas pessoas votaram com você.">
-<meta property="og:image" content="https://robsonscheffer.github.io/brasildb/og.jpg">
+<meta property="og:image" content="https://votando.brasildb.org/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1407,7 +1407,7 @@ async function drawCard() {
   ctx.fillStyle = "#ffb43c"; ctx.font = "400 176px \"Instrument Serif\""; ctx.fillText(fmt(TOTAL), 74, 1060);
   ctx.fillStyle = "#ece8dc"; ctx.font = "400 42px \"Inter Tight\"";
   linhas.forEach(([, l], i) => ctx.fillText(l, 80, 1130 + i * 54));
-  ctx.fillStyle = "#8e8a80"; ctx.font = '400 26px "JetBrains Mono"'; ctx.fillText("robsonscheffer.github.io/brasildb", 80, 1300);
+  ctx.fillStyle = "#8e8a80"; ctx.font = '400 26px "JetBrains Mono"'; ctx.fillText("votando.brasildb.org", 80, 1300);
 }
 // One button that says what it does: share the image where the browser can, else download it.
 const PODE_PARTILHAR = !!navigator.canShare?.({ files: [new File([""], "x.png", { type: "image/png" })] });
@@ -1432,5 +1432,6 @@ $("copiar").addEventListener("click", async () => {
 near($("compartilhamento"), drawCard);
 tick();
 </script>
+<!-- Cloudflare Web Analytics --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "178daf2ffd2549459e51cf7b3dd0f8fb"}'></script>
 </body>
 </html>
