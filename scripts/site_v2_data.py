@@ -185,9 +185,15 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     f = Fatos(con)
     BR, ZZ = "sigla_uf <> 'ZZ'", "sigla_uf = 'ZZ'"
 
-    sql = "SELECT sum(votos) FILTER (WHERE sigla_uf <> 'ZZ'), sum(votos) FILTER (WHERE sigla_uf = 'ZZ'), sum(votos), count(DISTINCT id_municipio_tse) FILTER (WHERE sigla_uf = 'ZZ') FROM r2.secao_dia"
-    br, zz, tot, cidades_zz = f.q(sql)[0]
-    f.add("total", 1, f"{fmt(tot)} votos", f"{fmt(br)} no Brasil e {fmt(zz)} em {cidades_zz} cidades no exterior.",
+    # The total is the TSE's official turnout; the log misses the sections without a log.
+    sql = """SELECT sum(a.comparecimento) FILTER (WHERE a.sigla_uf <> 'ZZ'), sum(a.comparecimento) FILTER (WHERE a.sigla_uf = 'ZZ'),
+                    sum(a.comparecimento), count(DISTINCT a.id_municipio_tse) FILTER (WHERE a.sigla_uf = 'ZZ' AND a.comparecimento > 0),
+                    (SELECT sum(votos) FROM r2.secao_dia)
+             FROM r2.aptos a"""
+    br, zz, tot, cidades_zz, log = f.q(sql)[0]
+    f.add("total", 1, f"{fmt(tot)} votos",
+          f"{fmt(br)} no Brasil e {fmt(zz)} em {cidades_zz} cidades no exterior, segundo o TSE. "
+          f"Os logs das urnas registram {fmt(log)} deles com hora.",
           None, {"uf": "BR"}, tot, sql)
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, "true", False)
