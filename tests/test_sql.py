@@ -280,3 +280,14 @@ def test_a_vote_counts_once_per_section(con):
     con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
     assert _q(con, "SELECT votos FROM main.secao_dia WHERE id_municipio_tse = '57932'") == [(4,)]
     assert _q(con, "SELECT sum(votos) FROM main.votos_minuto WHERE id_municipio_tse = '57932'") == [(4,)]
+
+
+def test_model_of_an_urna_switched_on_the_day_before(con):
+    l = Linhas()
+    # RS 77777: the urna starts on Saturday and is never restarted, so its model line is
+    # dated the day before; a later model line on election night is not the closing urna's.
+    l.add("RS", "77777", "0001", "0001", _ts(DIA_ANTES, "16:00"), "modelo_urna", "UE2015")
+    l.votos("RS", "77777", "0001", "0001", ["08:00"])
+    l.add("RS", "77777", "0001", "0001", _ts(DIA, "09:00"), "modelo_urna", "UE2020", membro="a.jez/logd.dat")
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    assert _q(con, "SELECT modelo FROM main.secao_dia WHERE id_municipio_tse = '77777'") == [("UE2015",)]

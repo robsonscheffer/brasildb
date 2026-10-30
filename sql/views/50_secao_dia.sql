@@ -64,9 +64,19 @@ resto AS (
            count(*) FILTER (WHERE tipo_evento = 'sem_atividade') AS sem_atividade,
            count(*) FILTER (WHERE tipo_evento = 'justificativa') AS justificativas,
            bool_or(tipo_evento = 'contingencia') AS contingencia,
-           count(DISTINCT arquivo_membro) AS n_logs,
-           max(valor) FILTER (WHERE tipo_evento = 'modelo_urna' AND arquivo_membro = 'logd.dat') AS modelo
+           count(DISTINCT arquivo_membro) AS n_logs
     FROM dia
+    GROUP BY ALL
+),
+-- The closing urna's model: its last model line up to election night. An urna switched on the
+-- day before and never restarted logs its model only on that day.
+modelo AS (
+    SELECT e.ano, e.turno, e.sigla_uf, e.id_municipio_tse, e.zona, e.secao,
+           arg_max(e.valor, e.data_hora) AS modelo
+    FROM br_tse_urna_logs.eventos e
+    JOIN main.eleicoes el ON el.ano = e.ano AND el.turno = e.turno
+    WHERE e.tipo_evento = 'modelo_urna' AND e.arquivo_membro = 'logd.dat'
+      AND CAST(e.data_hora AS DATE) <= el.data
     GROUP BY ALL
 )
 SELECT r.ano, r.turno, r.sigla_uf, r.id_municipio_tse, r.zona, r.secao,
@@ -77,7 +87,8 @@ SELECT r.ano, r.turno, r.sigla_uf, r.id_municipio_tse, r.zona, r.secao,
        coalesce(q.quedas, 0) AS quedas,
        coalesce(q.min_bateria, 0) AS min_bateria,
        q.primeira_queda,
-       r.contingencia, r.n_logs, r.modelo
+       r.contingencia, r.n_logs, m.modelo
 FROM resto r
 LEFT JOIN votos v USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao)
-LEFT JOIN quedas q USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao);
+LEFT JOIN quedas q USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao)
+LEFT JOIN modelo m USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao);
