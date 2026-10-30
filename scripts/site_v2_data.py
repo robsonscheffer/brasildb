@@ -5,6 +5,7 @@
   uv run python scripts/site_v2_data.py chegada        # docs/site/v2/data/chegada.json
   uv run python scripts/site_v2_data.py cidades        # docs/site/v2/data/cidades/<UF>.json
   uv run python scripts/site_v2_data.py secoes         # docs/site/v2/data/secoes/<UF>/<municipio>-<zona>.json
+  uv run python scripts/site_v2_data.py urna           # docs/site/v2/data/urna.json
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
 """
@@ -415,6 +416,54 @@ JOIN enc USING (sigla_uf, id_municipio_tse, zona, secao, arquivo_hash)
 JOIN main.fuso_municipio f
   ON f.ano = {ANO} AND f.turno = {TURNO} AND f.sigla_uf = d.sigla_uf AND f.id_municipio_tse = d.id_municipio_tse
 WHERE d.linha >= enc.l0"""
+# W2: the urna of the first vote in Brazil, from power-on to its twelfth vote. Only these
+# event types leave the lake; mesário and título lines never do.
+URNA_TIPOS = ("urna_ligada", "relatorio", "urna_pronta", "eleitor_habilitado", "voto_computado")
+
+
+def urna(con: duckdb.DuckDBPyConnection, n_votos: int = 12, n_minuto: int = 160) -> dict:
+    """urna.json: the section of the first vote in Brazil (D3 order) and its log lines on
+    election day, then the first minute (08:00 to 08:00:59 Brasília) as n_minuto votes spread
+    evenly over the minute's votes in D3 order. Times are Brasília."""
+    f = Fatos(con)
+    (uf, mun, z, sec, _, _), _ = voto_extremo(f, "sigla_uf <> 'ZZ'", False)
+    votos = f.q(f"SELECT comparecimento FROM r2.aptos WHERE sigla_uf = '{uf}' AND id_municipio_tse = '{mun}' "
+                f"AND zona = '{z}' AND secao = '{sec}'")[0][0]
+    tipos = ", ".join(f"'{t}'" for t in URNA_TIPOS)
+    linhas, n = [], 0
+    for t, tipo, valor, msg in f.q(f"""
+            SELECT e.data_hora - to_minutes(fu.fuso_minutos), e.tipo_evento, e.valor, e.mensagem
+            FROM br_tse_urna_logs.eventos e
+            JOIN r2.fuso_municipio fu USING (sigla_uf, id_municipio_tse)
+            WHERE e.ano = {ANO} AND e.turno = {TURNO} AND e.sigla_uf = '{uf}' AND e.id_municipio_tse = '{mun}'
+              AND e.zona = '{z}' AND e.secao = '{sec}' AND e.arquivo_membro = 'logd.dat'
+              AND CAST(e.data_hora AS DATE) = DATE '{DIA}' AND e.tipo_evento IN ({tipos})
+            ORDER BY e.linha"""):
+        if tipo == "relatorio" and valor != "ZERÉSIMA":
+            continue
+        linhas.append({"hora": t.strftime("%H:%M:%S"), "tipo": tipo, "texto": msg})
+        n += tipo == "voto_computado"
+        if n == n_votos:
+            break
+    total = f.q(f"SELECT sum(votos) FROM r2.votos_minuto WHERE sigla_uf <> 'ZZ' "
+                f"AND minuto_bsb = TIMESTAMP '{DIA} 08:00:00'")[0][0]
+    rows = f.q(f"""WITH v AS ({VOTO_BSB} AND e.sigla_uf <> 'ZZ'
+                   AND e.data_hora BETWEEN TIMESTAMP '{DIA} 05:59:00' AND TIMESTAMP '{DIA} 09:01:00')
+                   SELECT sigla_uf, id_municipio_tse, hora_bsb FROM v
+                   WHERE hora_bsb >= TIMESTAMP '{DIA} 08:00:00' AND hora_bsb < TIMESTAMP '{DIA} 08:01:00'
+                   ORDER BY {ORDEM}""")
+    if len(rows) != total:
+        raise SystemExit(f"first minute: {len(rows)} votes in the log, {total} in votos_minuto")
+    resto = rows[1:]  # the page shows the first vote on its own line
+    passo = len(resto) / n_minuto
+    minuto = [{"hora": r[2].strftime("%H:%M:%S"), "municipio": f.nomes[r[:2]], "uf": r[0]}
+              for r in (resto[int(k * passo)] for k in range(min(n_minuto, len(resto))))]
+    return {"mock": False,
+            "secao": {"uf": uf, "municipio": f.nomes[(uf, mun)], "zona": z, "secao": sec, "votos": votos},
+            "linhas": linhas,
+            "primeiro_minuto": {"votos": total, "linhas": minuto},
+            "fonte": "Log da urna, TSE (dados abertos); o primeiro minuto mostra 1 em cada "
+                     f"{round(passo)} votos, em ordem de hora"}
 
 
 def r2_views(con: duckdb.DuckDBPyConnection) -> None:
@@ -639,7 +688,7 @@ def sample_aux(fraction: float, seed: int, rps: float) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes"])
+    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna"])
     ap.add_argument("--fraction", type=float, default=0.01)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--rps", type=float, default=10)
@@ -661,6 +710,9 @@ def main() -> None:
     elif a.step == "secoes":
         con = duckdb.connect(str(cache_path()), read_only=True)
         secoes(con)
+    elif a.step == "urna":
+        con = duckdb.connect(str(cache_path()), read_only=True)
+        dump(OUT / "urna.json", urna(con))
 
 
 if __name__ == "__main__":
