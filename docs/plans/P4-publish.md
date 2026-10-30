@@ -33,12 +33,16 @@ checks each line; a line is closed when its evidence is written next to it.
 
 ## Facts
 
-- [ ] F1 Every row of P4's W1 table read against its SQL by a second session.
-- [ ] F2 The "pico" fact (421.314) includes abroad; the Brazil curve peaks at 420.848. Say
-      which one the page shows.
+- [x] F1 Every row of P4's W1 table read against its SQL by a second session.
+      Evidence: nine facts corrected in #39 (2026-10-30).
+- [x] F2 The "pico" fact (421.314) includes abroad; the Brazil curve peaks at 420.848. Say
+      which one the page shows. Evidence: the fact is Brazil only now, 420.848, as the page (#39).
 - [ ] F3 The STF minute: a source for the decision's time, or the page stops naming 17h15.
-- [ ] F4 The time-zone country list (`PAIS`) checked against a source.
-- [x] F5 The MG towns file is 37 KB gzip, over the 33 KB budget. Towns are now one array each, times in minutes, no aptos or secoes: MG 37.2 -> 27.6 KB gzip, SP 29.6 -> 22.1, largest 27.6.
+- [x] F4 The time-zone country list (`PAIS`) checked against a source.
+      Evidence: all zones in zone.tab; city names and República do Congo fixed in #40 (2026-10-30).
+- [x] F5 The MG towns file is 37 KB gzip, over the 33 KB budget.
+      Evidence: towns are now one array each, times in minutes, no aptos or secoes (#35):
+      MG 37.2 -> 27.6 KB gzip, SP 29.6 -> 22.1, largest 27.6.
 
 ## Public
 
