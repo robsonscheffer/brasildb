@@ -286,6 +286,7 @@
     .cartao .k { grid-row: 2; } .cartao .mid { grid-row: 3; } .cartao .info { grid-row: 4; } .cartao .acoes { grid-row: 5; }
   }
   footer { border-top: 1px solid var(--line); padding-top: 28px; padding-bottom: 60px; color: var(--muted); font-size: 15px; max-width: 760px; margin: 0 auto; }
+  footer p { margin: 0 0 12px; }
 
   @media (max-width: 640px) {
     .cena3 { grid-template-columns: minmax(0, 1fr) 22px 92px; gap: 10px; padding: calc(var(--topo) + 24px) 16px 0 var(--gx); }
@@ -497,7 +498,8 @@
 </section>
 
 <footer class="gx">
-  Dados: logs das urnas e boletins do TSE, segundo turno de 2026. <a href="como.html#fontes">Fontes e método</a>. <a href="explorar/">Explorar o mapa</a>.
+  <p>Projeto independente, sem vínculo com o TSE. O resultado oficial é o do TSE. Fizemos estas contas com os dados abertos do próprio TSE e podemos ter errado: veja <a href="como.html#diferencas">onde os números não batem</a> e <a href="como.html#limites">como avisar</a>.</p>
+  <p>Dados: logs das urnas e boletins do TSE (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>), segundo turno de 2026. <a href="como.html#fontes">Fontes e método</a>. <a href="explorar/">Explorar o mapa</a>. Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.</p>
 </footer>
 
 <script type="module">
