@@ -1,6 +1,6 @@
 """Every number the v2 walk shows has a source in its data files (P4 W6).
 
-  python3 scripts/site_v2_check.py             # docs/site/v2: prints each number without a source, exits 1
+  python3 scripts/site_v2_check.py             # docs/site: prints each number without a source, exits 1
 
 A source is a fact in curiosidades.json that carries its SQL: its valor, its hora, and the
 numbers of its titulo and texto (the data script builds those from the query). Checked:
@@ -19,7 +19,7 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
-SITE = Path(__file__).resolve().parent.parent / "docs/site/v2"
+SITE = Path(__file__).resolve().parent.parent / "docs/site"
 NUM = re.compile(r"(?<![\d.])\d{1,3}(?:\.\d{3})+(?![\d.])|(?<![\d.:])\d{4,}(?![\d.:])")
 HORA = re.compile(r"\b(\d{2})(?::|h)(\d{2})(?::(\d{2}))?\b")
 LITERAL = re.compile(r"(?<![\w.])\d{6,}(?![\w.])")
