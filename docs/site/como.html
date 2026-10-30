@@ -3,35 +3,142 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Como funciona e como fizemos</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=IBM+Plex+Mono&display=swap">
+<title>Como funciona e como fizemos · O Brasil votando</title>
+<meta name="description" content="Os termos do dia de uma urna, as fontes do TSE, o método e onde os números não batem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-  :root { --bg:#0a0c13; --fg:#efe8da; --muted:#8e8a80; --accent:#9fe8d2; --line:#232736; color-scheme: dark; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:"Fraunces",Georgia,serif; font-size:19px; line-height:1.55; }
-  main { max-width:680px; margin:0 auto; padding:10vh 16px; }
-  h1 { font-size:clamp(34px,7vw,60px); line-height:1.05; font-weight:600; }
-  h2 { margin-top:56px; font-size:28px; }
-  h3 { margin:32px 0 4px; font-size:21px; }
-  :target { color:var(--accent); }
-  .k { font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
-  a { color:var(--accent); }
-  p.todo { color:var(--muted); }
+  :root {
+    --bg: #070a12; --bg2: #0f1320; --fg: #ece8dc; --muted: #9a9ca6; --line: #262a38; --accent: #ffb43c;
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  main { max-width: 680px; margin: 0 auto; padding: 10vh 16px 14vh; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 8vw, 68px); line-height: 1.02; margin: 14px 0 18px; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 5vw, 40px); line-height: 1.1; margin: 72px 0 8px; padding-top: 24px; border-top: 1px solid var(--line); }
+  h3 { font-size: 19px; font-weight: 600; margin: 36px 0 4px; scroll-margin-top: 24px; }
+  p { margin: 0 0 14px; }
+  .lead { font-family: var(--serif); font-size: clamp(22px, 3.6vw, 27px); line-height: 1.25; color: var(--muted); }
+  .k { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  h3:target { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .85em; background: var(--bg2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  ul { padding-left: 20px; margin: 0 0 14px; }
+  li { margin-bottom: 6px; }
+  .tab { overflow-x: auto; margin: 10px 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  td.n, th.n { text-align: right; }
+  nav.indice { margin: 28px 0 0; font-size: 16px; }
+  nav.indice a { margin-right: 14px; white-space: nowrap; }
+  .volta { margin-top: 64px; }
 </style>
 </head>
 <body><main>
-<span class="k">Rascunho</span>
+<span class="k">O Brasil votando · método</span>
 <h1>Como funciona e como fizemos</h1>
-<h2>Parte 1. O dia de uma urna</h2>
-<h3 id="urna">Urna</h3><p class="todo">Texto a escrever.</p>
-<h3 id="zeresima">Zerésima</h3><p>O recibo de zero votos, impresso antes do primeiro eleitor.</p>
-<h3 id="zona">Zona</h3><p class="todo">Texto a escrever.</p>
-<h3 id="secao">Seção</h3><p class="todo">Texto a escrever.</p>
-<h3 id="biometria">Biometria</h3><p class="todo">Texto a escrever.</p>
-<h3 id="bateria">Bateria</h3><p class="todo">Texto a escrever.</p>
-<h3 id="contingencia">Urna de contingência</h3><p class="todo">Texto a escrever.</p>
-<h3 id="boletim">Boletim de urna</h3><p class="todo">Texto a escrever.</p>
-<h3 id="totalizacao">Totalização</h3><p class="todo">Texto a escrever.</p>
+<p class="lead">O que cada termo do site quer dizer, de onde vem cada número e onde os números não batem.</p>
+<nav class="indice" aria-label="Nesta página">
+  <a href="#dia">O dia de uma urna</a> <a href="#fontes">Fontes</a> <a href="#metodo">Método</a> <a href="#diferencas">Onde não bate</a> <a href="#chegada">A apuração</a>
+</nav>
+
+<h2 id="dia">Parte 1. O dia de uma urna</h2>
+<p>Todos os números são do segundo turno, domingo, 25 de outubro de 2026.</p>
+
+<h3 id="urna">Urna</h3>
+<p>A urna eletrônica é o computador em que o eleitor vota. Cada seção tem uma. Os logs mostram quatro modelos em uso: UE2020 em 199.889 seções, UE2022 em 198.327, UE2015 em 87.248 e UE2013 em 12.377. Em 1.337 seções o log não diz o modelo.</p>
+
+<h3 id="log">Log da urna</h3>
+<p>Cada urna grava um arquivo de registro, o log: uma linha por evento, com a data e a hora do relógio da urna. A urna liga, imprime a zerésima, habilita um eleitor, computa um voto, passa para a bateria, encerra. O log não guarda em quem o eleitor votou. O TSE publica o log de cada seção, e este site é feito dessas linhas.</p>
+
+<h3 id="zeresima">Zerésima</h3>
+<p>Antes do primeiro eleitor, a urna imprime a zerésima: um relatório com zero votos para cada candidato. Ela mostra que a urna começou o dia vazia.</p>
+
+<h3 id="zona">Zona eleitoral</h3>
+<p>A zona é a área de um cartório eleitoral. Uma cidade grande tem várias zonas; várias cidades pequenas podem dividir uma. O número da zona se repete entre estados, então uma zona é sempre zona e estado. No Brasil votaram 2.640 zonas.</p>
+
+<h3 id="secao">Seção eleitoral</h3>
+<p>A seção é a sala onde você vota: uma urna, uma mesa e uma lista de eleitores. Uma seção típica tem 327 eleitores aptos; a maior tem 930. O número da sua seção está no título de eleitor e no e-Título.</p>
+<p id="agregada">Quando duas seções votam na mesma urna, uma delas é agregada à outra, e os votos aparecem no número da seção principal. No Brasil, 16.567 seções foram agregadas, segundo a lista de seções do TSE. Se você digitar uma seção agregada, o site mostra a urna da principal.</p>
+
+<h3 id="biometria">Biometria</h3>
+<p>O mesário digita o título do eleitor, o eleitor põe o dedo no leitor e a urna confere a digital antes de liberar o voto. Se a digital não é lida, o mesário libera o voto pelo documento. As duas coisas ficam no log.</p>
+
+<h3 id="bateria">Bateria</h3>
+<p>Toda urna tem bateria própria. Quando a luz cai, o log registra a troca para a bateria, e a votação segue. Entre o primeiro e o último voto, 62.409 urnas passaram para a bateria ao menos uma vez; em 18.717 delas, o tempo na bateria somou dez minutos ou mais.</p>
+
+<h3 id="contingencia">Urna de contingência</h3>
+<p>Se uma urna falha, a Justiça Eleitoral troca por uma urna de contingência, e a votação continua de onde parou. Os votos da urna que falhou continuam valendo. A seção fica com dois logs, ou mais. Como contamos essas seções está em <a href="#trocadas">Urnas trocadas</a>.</p>
+
+<h3 id="encerramento">Encerramento</h3>
+<p>A votação termina às 17h de Brasília. Quem já está na fila vota. Depois do último eleitor, o mesário encerra a urna, que imprime o boletim e grava o resultado.</p>
+
+<h3 id="boletim">Boletim de urna</h3>
+<p>O boletim de urna (BU) é o resultado da seção, impresso em várias vias e gravado numa mídia. Uma via fica na porta da seção. A mídia leva o resultado para ser transmitido ao TSE. Este site não mostra resultados de candidatos.</p>
+
+<h3 id="totalizacao">Totalização</h3>
+<p>O TSE soma os boletins de todas as seções. O site de resultados registra a hora em que cada seção entrou na soma. Essa é a curva do fim da noite; o que essa hora mede está em <a href="#chegada">A apuração</a>.</p>
+
+<h3 id="hora">Hora de Brasília e hora local</h3>
+<p>Todas as horas do site são de Brasília. O relógio da urna marca a hora local, e nós a convertemos. Nos 22 municípios do Acre e em 11 do Amazonas, a hora local é duas horas a menos; em 339 municípios de Rondônia, Roraima, Mato Grosso, Mato Grosso do Sul e do resto do Amazonas, uma hora a menos; em Fernando de Noronha, uma a mais. Por isso as urnas do Acre abriram às 6h da manhã, hora local.</p>
+<p>No exterior, a urna também marca a hora da cidade. A faixa sob o mapa usa a hora de Brasília. Quando você escolhe uma cidade do exterior, o dia da sua urna aparece na hora local, a que você viu no relógio.</p>
+
 <h2 id="fontes">Parte 2. Fontes e método</h2>
-<p class="todo">Fontes do TSE, este repositório, o conjunto de dados, as 9 seções que não batem e as 1.352 seções sem log.</p>
-<p><a href="./">Voltar</a></p>
+
+<h3 id="fontes-lista">Fontes</h3>
+<ul>
+  <li>Logs das urnas: o arquivo de cada seção no site de resultados do TSE, <code>resultados.tse.jus.br/oficial/ele2026/arquivo-urna</code>.</li>
+  <li>Eleitores aptos e comparecimento por seção: dados abertos do TSE, arquivo <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip"><code>detalhe_votacao_secao_2026.zip</code></a>.</li>
+  <li>Códigos dos municípios: dados abertos do TSE, arquivo <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/municipio_tse_ibge/municipio_tse_ibge.zip"><code>municipio_tse_ibge.zip</code></a>.</li>
+  <li>Hora em que cada seção entrou na soma: o arquivo <code>cs.json</code> de cada estado no site de resultados, campo <code>ha</code>.</li>
+  <li>Código, consultas e dados: o repositório <a href="https://github.com/robsonscheffer/brasildb">github.com/robsonscheffer/brasildb</a>. Cada número da página principal vem com a consulta SQL que o produz, no arquivo <code>data/curiosidades.json</code>.</li>
+</ul>
+
+<h3 id="metodo">Método</h3>
+<ul>
+  <li><b>Um voto</b> é uma linha "voto computado" do log, no dia da eleição. Cada voto conta uma vez. Às vezes o arquivo de uma seção traz também o log de outra seção; essas linhas ficam de fora. Às vezes traz uma cópia do próprio log; uma urna nunca registra dois votos no mesmo segundo, então cada segundo conta uma vez por seção.</li>
+  <li><b>O total</b> do site, 128.236.074 votos, é o comparecimento oficial do TSE: 127.854.631 no Brasil e 381.443 no exterior. Os logs dão hora a 128.235.189 desses votos. Os mapas, as curvas e as horas usam os votos com hora.</li>
+  <li><b>Empates</b>: o primeiro voto, o último e o voto de número 100 milhões saem da ordem por hora de Brasília, depois estado, município, zona, seção e linha do log.</li>
+  <li><b>O mapa</b> acende uma cidade no minuto em que ela tem voto, com a média de três minutos (o anterior, o próprio e o seguinte).</li>
+  <li id="metade"><b>A primeira cidade a chegar à metade</b> só conta cidades com mil votos ou mais no dia. Sem esse piso, ganharia uma cidade muito pequena.</li>
+  <li id="solimoes"><b>Alto Solimões</b> é a microrregião 13003 do IBGE, nove municípios do Amazonas: Amaturá, Atalaia do Norte, Benjamin Constant, Fonte Boa, Jutaí, Santo Antônio do Içá, São Paulo de Olivença, Tabatinga e Tonantins.</li>
+</ul>
+
+<h3 id="diferencas">Onde os números não batem</h3>
+<p>No Brasil, toda seção com eleitores tem log. Em 6 seções, o log tem menos votos que o comparecimento oficial, 54 votos ao todo. Em três delas a urna foi trocada.</p>
+<div class="tab"><table>
+  <thead><tr><th>Município</th><th>Zona</th><th>Seção</th><th class="n">No log</th><th class="n">TSE</th><th class="n">Logs</th></tr></thead>
+  <tbody>
+    <tr><td>São José de Ribamar, MA</td><td>0047</td><td>0609</td><td class="n">188</td><td class="n">224</td><td class="n">2</td></tr>
+    <tr><td>Ibotirama, BA</td><td>0173</td><td>0235</td><td class="n">204</td><td class="n">217</td><td class="n">3</td></tr>
+    <tr><td>Boa Vista do Incra, RS</td><td>0017</td><td>0191</td><td class="n">90</td><td class="n">92</td><td class="n">2</td></tr>
+    <tr><td>Santa Rita, PB</td><td>0002</td><td>0254</td><td class="n">303</td><td class="n">304</td><td class="n">1</td></tr>
+    <tr><td>Conde, BA</td><td>0021</td><td>0178</td><td class="n">233</td><td class="n">234</td><td class="n">1</td></tr>
+    <tr><td>Parnaíba, PI</td><td>0003</td><td>0216</td><td class="n">258</td><td class="n">259</td><td class="n">1</td></tr>
+  </tbody>
+</table></div>
+<p>No exterior, 70 seções não têm log de urna nem no site de resultados nem nos dados abertos. Em 43 delas ninguém votou; as outras 27 somam 831 votos. Esses votos estão no total, mas não nas horas.</p>
+<p>Nenhuma seção tem mais votos no log que no comparecimento oficial. Por isso nenhuma seção sem log poderia ter um voto depois do último que mostramos.</p>
+
+<h3 id="trocadas">Urnas trocadas</h3>
+<p>Contamos uma urna trocada quando a seção tem dois logs ou mais: 1.842 seções no Brasil. Outra contagem possível é a mensagem "Urna de contingência" no log, que aparece em 1.971 seções; em 133 delas há um log só. Ficamos com os logs, porque cada log é uma urna que de fato votou.</p>
+
+<h3 id="chegada">A apuração: o que a hora de chegada mede</h3>
+<p>A curva da noite usa o campo <code>ha</code> do <code>cs.json</code>: 497.897 seções, a primeira às 16h59 e a última às 23h21. Para saber se <code>ha</code> é a primeira ou a última vez que a seção entrou na soma, comparamos uma amostra de 4.948 seções com o arquivo de cada uma.</p>
+<ul>
+  <li><code>ha</code> é a primeira vez que a seção foi totalizada. Ela fica, na mediana, 2 minutos depois da hora de recebimento do arquivo; em 90% das seções, até 1h30 depois.</li>
+  <li>Em 39 seções, um arquivo foi reenviado num dia seguinte. A hora do arquivo mudou para esse dia; <code>ha</code> manteve a noite da eleição.</li>
+  <li>Nenhuma seção entrou na soma entre 18h e 19h.</li>
+</ul>
+
+<h3 id="fora">O que o site não mostra</h3>
+<p>O site não mostra em quem as pessoas votaram, nem resultados por candidato. Ele mostra quando o Brasil votou.</p>
+
+<p class="volta"><a href="./">Voltar para O Brasil votando</a></p>
 </main></body></html>
