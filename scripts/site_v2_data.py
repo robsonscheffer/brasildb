@@ -81,7 +81,7 @@ SOLIMOES = ["1300060", "1300201", "1300607", "1301605", "1302306", "1303700", "1
 PAIS = {  # time zone -> country of every city abroad (each zone here holds one country); a miss fails loudly
     "Africa/Abidjan": "Costa do Marfim", "Africa/Accra": "Gana", "Africa/Addis_Ababa": "Etiópia",
     "Africa/Algiers": "Argélia", "Africa/Bamako": "Mali", "Africa/Bissau": "Guiné-Bissau",
-    "Africa/Blantyre": "Malawi", "Africa/Brazzaville": "Congo", "Africa/Cairo": "Egito",
+    "Africa/Blantyre": "Malawi", "Africa/Brazzaville": "República do Congo", "Africa/Cairo": "Egito",
     "Africa/Casablanca": "Marrocos", "Africa/Conakry": "Guiné", "Africa/Dakar": "Senegal",
     "Africa/Dar_es_Salaam": "Tanzânia", "Africa/Douala": "Camarões", "Africa/Gaborone": "Botsuana",
     "Africa/Harare": "Zimbábue", "Africa/Johannesburg": "África do Sul",
@@ -140,11 +140,26 @@ UFNOME = {"AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá", "BA":
           "TO": "Tocantins"}
 
 
+# Cities abroad whose TSE name is not the usual one in Portuguese or in the city's own language.
+NOME_EXTERIOR = {
+    "Barein": "Manama", "Dacca": "Daca", "Dar Es Salaam": "Dar es Salaam", "Kuaite": "Cidade do Kuwait",
+    "Ciudad Del Este": "Ciudad del Este", "Salto Del Guairá": "Salto del Guairá", "Paso Los Libres": "Paso de los Libres",
+    "Santa Cruz de La Sierra": "Santa Cruz de la Sierra", "Port Of Spain": "Port of Spain", "Saint Johns": "St. John's",
+    "Kingston-Jamaica": "Kingston", "Panama": "Panamá", "Guatemala": "Cidade da Guatemala", "Mexico": "Cidade do México",
+    "St Georges de Loyapock": "Saint-Georges-de-l'Oyapock",
+}
+
+
 def nome_pt(n: str) -> str:
     """'Rio De Janeiro' -> 'Rio de Janeiro': articles and 'e' lower case inside a name."""
     w = n.split(" ")
     return " ".join(x.lower() if k and x in ("De", "Do", "Da", "Dos", "Das", "E", "D'") else x
                     for k, x in enumerate(w))
+
+
+def nome_exterior(n: str) -> str:
+    """A TSE city name abroad, as the page shows it."""
+    return NOME_EXTERIOR.get(nome_pt(n.title()), nome_pt(n.title()))
 
 
 def em(uf: str) -> str:
@@ -183,7 +198,7 @@ class Fatos:
         self.nomes = dict(((u, i), nome_pt(n)) for u, i, n in con.execute(
             "SELECT sigla_uf, id_municipio_tse, nome FROM br_bd_diretorios_brasil.municipio").fetchall())
         for i, n, tz in con.execute("SELECT id_municipio_tse, nome, tz FROM main.fuso_exterior").fetchall():
-            self.nomes[("ZZ", i)] = (nome_pt(n.title()), tz)
+            self.nomes[("ZZ", i)] = (nome_exterior(n), tz)
         self.itens: list[dict] = []
 
     def q(self, sql: str) -> list[tuple]:
@@ -680,7 +695,7 @@ def exterior(con: duckdb.DuckDBPyConnection) -> dict:
             FROM main.fuso_exterior f JOIN r2.aptos a ON a.sigla_uf = 'ZZ' AND a.id_municipio_tse = f.id_municipio_tse
             GROUP BY ALL HAVING sum(a.aptos) > 0 ORDER BY f.fuso_minutos DESC, f.nome""").fetchall():
         v = votos.get(mun, {})
-        c = {"id": mun, "nome": nome_pt(nome.title()), "pais": PAIS[tz], "fuso": fuso,
+        c = {"id": mun, "nome": nome_exterior(nome), "pais": PAIS[tz], "fuso": fuso,
              "votos": int(comp), "aptos": int(aptos), "primeiro": min(v, default=None), "ultimo": max(v, default=None)}
         if v:
             mean3 = lambda m: (v.get(m - 1, 0) + v.get(m, 0) + v.get(m + 1, 0)) / 3
