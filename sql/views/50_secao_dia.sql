@@ -1,6 +1,7 @@
 -- One row per section and round: the day's shape from the log. Times are Brasilia (urna clock
 -- minus the town's fuso), election day only. A section whose urna was replaced has two logs
--- (arquivo_membro); counts sum both, times span both, modelo is the closing urna's.
+-- (arquivo_membro); votes come from main.votos (each vote once), times span both logs, modelo
+-- is the closing urna's.
 -- quedas and min_bateria count energia=bateria lines between the first and last vote; a line
 -- lasts until the next energia line of the same log, else that log's last line (a replaced urna
 -- stops there), and never past the last vote. A flicker counts as a few seconds.
@@ -15,9 +16,14 @@ WITH dia AS (
     WHERE CAST(e.data_hora AS DATE) = el.data
 ),
 votos AS (
-    SELECT ano, turno, sigla_uf, id_municipio_tse, zona, secao,
-           min(hora_bsb) AS primeiro_voto, max(hora_bsb) AS ultimo_voto, count(*) AS votos
-    FROM dia WHERE tipo_evento = 'voto_computado'
+    SELECT v.ano, v.turno, v.sigla_uf, v.id_municipio_tse, v.zona, v.secao,
+           min(v.data_hora - to_minutes(f.fuso_minutos)) AS primeiro_voto,
+           max(v.data_hora - to_minutes(f.fuso_minutos)) AS ultimo_voto,
+           count(*) AS votos
+    FROM main.votos v
+    JOIN main.fuso_municipio f
+      ON f.ano = v.ano AND f.turno = v.turno
+     AND f.sigla_uf = v.sigla_uf AND f.id_municipio_tse = v.id_municipio_tse
     GROUP BY ALL
 ),
 fim_log AS (

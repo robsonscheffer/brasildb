@@ -39,11 +39,11 @@ class Linhas:
     def __init__(self) -> None:
         self.rows: list[tuple] = []
 
-    def add(self, uf, mun, zona, secao, ts, tipo, valor=None, membro="logd.dat") -> None:
+    def add(self, uf, mun, zona, secao, ts, tipo, valor=None, membro="logd.dat", mensagem="msg") -> None:
         linha = len(self.rows) + 1
         self.rows.append((
             2026, 2, uf, mun, zona, secao, "hash1", linha, ts, "INFO", "02299969",
-            "VOTA", "msg", tipo, valor, membro,
+            "VOTA", mensagem, tipo, valor, membro,
         ))
 
     def votos(self, uf, mun, zona, secao, horas: list[str], dia: dt.date = DIA) -> None:
@@ -257,3 +257,26 @@ def test_battery_of_a_replaced_urna_ends_with_its_log(con):
     con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
     rows = _q(con, "SELECT votos, quedas, min_bateria, n_logs FROM main.secao_dia WHERE id_municipio_tse = '88888'")
     assert rows == [(4, 1, 30.0, 2)]  # 09:30 to 10:00, not to the last vote at 16:00
+
+
+def test_a_vote_counts_once_per_section(con):
+    l = Linhas()
+    sec = ("ES", "57932", "0009", "0085")
+    voto = dict(tipo="voto_computado", valor="Presidente")
+    # The section's own urna: three votes.
+    l.add(*sec, _ts(DIA_ANTES, "10:00"), None, mensagem="Seção Eleitoral: 0085", membro="a.jez/logd.dat")
+    for h in ["08:00", "08:01", "08:02"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="a.jez/logd.dat")
+    # A copy of it on the replacement card repeats two of those seconds.
+    for h in ["08:00", "08:01"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="b-ME.jez/logd.dat")
+    # Another section's log filed in this archive: its votes belong to 0112.
+    l.add(*sec, _ts(DIA_ANTES, "10:00"), None, mensagem="Seção Eleitoral: 0112", membro="c.jez/logd.dat")
+    for h in ["08:03", "08:04"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="c.jez/logd.dat")
+    # The contingency urna names section 0000 and votes once more.
+    l.add(*sec, _ts(DIA_ANTES, "09:00"), None, mensagem="Seção Eleitoral: 0000")
+    l.add(*sec, _ts(DIA, "09:00"), **voto)
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    assert _q(con, "SELECT votos FROM main.secao_dia WHERE id_municipio_tse = '57932'") == [(4,)]
+    assert _q(con, "SELECT sum(votos) FROM main.votos_minuto WHERE id_municipio_tse = '57932'") == [(4,)]

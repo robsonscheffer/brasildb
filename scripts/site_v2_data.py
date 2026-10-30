@@ -163,10 +163,9 @@ class Fatos:
 VOTO_BSB = f"""
 SELECT e.sigla_uf, e.id_municipio_tse, e.zona, e.secao, e.linha,
        e.data_hora - to_minutes(f.fuso_minutos) AS hora_bsb
-FROM br_tse_urna_logs.eventos e
+FROM main.votos e
 JOIN r2.fuso_municipio f USING (sigla_uf, id_municipio_tse)
-WHERE e.ano = {ANO} AND e.turno = {TURNO} AND e.tipo_evento = 'voto_computado'
-  AND CAST(e.data_hora AS DATE) = DATE '{DIA}'"""
+WHERE e.ano = {ANO} AND e.turno = {TURNO}"""
 ORDEM = "hora_bsb, sigla_uf, id_municipio_tse, zona, secao, linha"  # P4 D3
 
 
