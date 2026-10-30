@@ -748,10 +748,12 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
         end = max(voting[-1] if voting else -1, last.get((towns["uf"][k], towns["id"][k]), -1))
         for m in range(minutes):
             level = 0
-            if mean3[m]:
+            if not voting or not voting[0] <= m <= end:
+                pass  # the centred mean would light the minute before the first vote
+            elif mean3[m]:
                 bucket = round(min(1.0, mean3[m] / peak) * LEVELS / STEP) * STEP
                 level = round(255 * (bucket / LEVELS) ** (1 / GAMMA)) if bucket else FLOOR
-            elif voting and voting[0] <= m <= end:
+            else:
                 level = FLOOR
             pixels[m * n + k] = level
     png = png_gray_up(n, minutes, bytes(pixels))
