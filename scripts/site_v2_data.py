@@ -291,18 +291,18 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
 
     sql = f"SELECT count(*) FILTER (WHERE abertura >= TIMESTAMP '{DIA} 08:00:00' AND abertura < TIMESTAMP '{DIA} 08:01:00'), count(*) FILTER (WHERE abertura < TIMESTAMP '{DIA} 08:00:00'), count(*) FROM r2.secao_dia WHERE {BR}"
     no_minuto, antes, n_br = f.q(sql)[0]
-    f.add("abertura_tie", 2, "Todas abriram juntas",
-          f"{fmt(no_minuto)} urnas abriram no minuto das 8h." + (" Nenhuma antes." if antes == 0 else f" {fmt(antes)} antes."),
+    f.add("abertura_tie", 2, "Quase todas abriram juntas",
+          f"{fmt(no_minuto)} seções ({round(100 * no_minuto / n_br)}%) abriram no minuto das 8h." + (" Nenhuma antes." if antes == 0 else f" {fmt(antes)} antes."),
           "08:00", {"uf": "BR"}, no_minuto, sql)
 
     sql = f"SELECT strftime(min(abertura), '%H:%M'), strftime(median(abertura), '%H:%M') FROM r2.secao_dia WHERE sigla_uf = 'AC'"
     ac_min, ac_med = f.q(sql)[0]
-    f.add("abertura", 3, "O país abre de uma vez",
-          "No mesmo minuto, de Brasília ao Acre, onde ainda eram 6h da manhã.",
-          "08:00", {"uf": "BR"}, n_br, sql)
+    f.add("abertura", 3, "O país abre quase de uma vez",
+          "A maioria das urnas abre no mesmo minuto, de Brasília ao Acre, onde ainda eram 6h da manhã.",
+          "08:00", {"uf": "BR"}, no_minuto, sql)
     f.itens[-1]["nota"] = f"Abertura no Acre, hora de Brasília: primeira {ac_min}, mediana {ac_med}."
 
-    sql = "SELECT minuto_bsb, sum(votos) v FROM r2.votos_minuto GROUP BY 1 ORDER BY v DESC, minuto_bsb LIMIT 1"
+    sql = "SELECT minuto_bsb, sum(votos) v FROM r2.votos_minuto WHERE sigla_uf <> 'ZZ' GROUP BY 1 ORDER BY v DESC, minuto_bsb LIMIT 1"
     m, v = f.q(sql)[0]
     f.add("pico", 3, "O pico", f"{fmt(v)} votos em um minuto.", m.strftime("%H:%M"), {"uf": "BR"}, v, sql)
 
@@ -314,7 +314,7 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     uf, mun, m, tot_c = f.q(sql)[0]
     l = f.lugar(uf, mun)
     f.add("metade_primeira", 4, f"{l['municipio']}, metade às {hfala(m.strftime('%H:%M'))}",
-          f"Das cidades com mil votos ou mais, a primeira a chegar à metade dos seus votos. Foram {fmt(tot_c)} no dia.",
+          f"Das cidades com pelo menos mil votos no dia, a primeira no Brasil a chegar à metade dos seus votos. Foram {fmt(tot_c)} no dia.",
           m.strftime("%H:%M"), l, tot_c, sql)
 
     sql = f"""SELECT sigla_uf, sum(votos) FILTER (WHERE hour(minuto_bsb) = 11) h11,
@@ -352,8 +352,8 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
         raise ValueError("no local clock holds most of Alto Solimões; rewrite the solimoes line")
     local = m + timedelta(minutes=fu)
     f.add("solimoes", 4, f"Alto Solimões, 90% às {hfala(m.strftime('%H:%M'))}",
-          f"Nos nove municípios do Alto Solimões, no Amazonas, nove em cada dez eleitores já tinham votado. "
-          f"O Brasil só chegou lá às {hfala(m_br.strftime('%H:%M'))}. Na maioria deles, o relógio local marcava "
+          f"Nos nove municípios do Alto Solimões, no Amazonas, nove em cada dez votos do dia já tinham sido dados. "
+          f"O Brasil só chegou a 90% dos votos às {hfala(m_br.strftime('%H:%M'))}. Na maioria deles, o relógio local marcava "
           f"{hfala(local.strftime('%H:%M'))}, e a urna tinha aberto às {8 + fu // 60}h da manhã.",
           m.strftime("%H:%M"), {"uf": "AM", "municipio": "Alto Solimões", "lat": -4.25, "lon": -69.94}, tot_s,
           sql + " ; " + sql_br + " ; " + sql_fu)
@@ -397,9 +397,9 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     l = f.lugar(uf, mun, z, s)
     horas_b = mb / 60
     f.add("sem_luz", 5, "A luz caiu. A urna seguiu na bateria",
-          f"{fmt(n_q)} urnas passaram para a bateria em algum momento do dia. "
+          f"{fmt(n_q)} seções passaram para a bateria durante a votação. "
           f"Em {f.onde(l)}, uma delas votou {int(horas_b)} horas e {round(mb % 60)} minutos na bateria."
-          if horas_b >= 1 else f"{fmt(n_q)} urnas passaram para a bateria em algum momento do dia.",
+          if horas_b >= 1 else f"{fmt(n_q)} seções passaram para a bateria durante a votação.",
           None, {"uf": "BR"}, n_q, sql + " ; " + sql2)
 
     sql = f"""SELECT sigla_uf, id_municipio_tse, hour(primeira_queda) h, count(*) n FROM r2.secao_dia
@@ -407,7 +407,7 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     uf, mun, h, n = f.q(sql)[0]
     l = f.lugar(uf, mun)
     f.add("bateria_cidade", 5, f"{l['municipio']}, {n} urnas na bateria",
-          f"Entre {h}h e {h + 1}h, {n} urnas de {l['municipio']} ficaram ao menos dez minutos na bateria.",
+          f"{n} urnas de {l['municipio']} passaram para a bateria entre {h}h e {h + 1}h e ficaram nela ao menos dez minutos no dia.",
           f"{h:02d}:00", l, n, sql)
 
     sql = f"""SELECT count(*) FILTER (WHERE n_logs > 1), count(*) FILTER (WHERE contingencia) FROM r2.secao_dia WHERE {BR}"""
@@ -430,13 +430,16 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
               AND minuto_bsb >= TIMESTAMP '{DIA} 17:15:00' GROUP BY 1 ORDER BY 2 DESC"""
     rows = f.q(sql)
     f.add("stf", 8, "O STF estende a votação até as 19h",
-          f"Depois das 17h15, {fmt(sum(r[1] for r in rows))} votos: "
+          f"A partir das 17h15, {fmt(sum(r[1] for r in rows))} votos: "
           + ", ".join(f"{fmt(n)} {em(u)}" for u, n in rows[:3]) + ".",
           "17:15", {"uf": rows[0][0]}, sum(r[1] for r in rows), sql, certo=False)
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, "id_municipio_tse = (SELECT id_municipio_tse FROM br_bd_diretorios_brasil.municipio WHERE id_municipio = '2605459')", True)
     l = f.lugar(uf, mun, z, s)
-    f.add("noronha", 8, f"Fernando de Noronha, {hfala(hora(t))}", "O último voto da ilha.", hora(t), l, None, sql)
+    fm = f.q(f"SELECT fuso_minutos FROM r2.fuso_municipio WHERE sigla_uf = '{uf}' AND id_municipio_tse = '{mun}'")[0][0]
+    local = t + timedelta(minutes=fm)
+    f.add("noronha", 8, f"Fernando de Noronha, {hfala(hora(t))}",
+          f"O último voto da ilha foi às {hfala(hora(t))} em Brasília ({hfala(hora(local))} na ilha).", hora(t), l, None, sql)
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, BR, True)
     l = f.lugar(uf, mun, z, s)
