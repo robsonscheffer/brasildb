@@ -45,7 +45,8 @@ checks each line; a line is closed when its evidence is written next to it.
 - [ ] P1 A new OG image (one static image), replacing v1's `og.jpg`.
 - [ ] P2 Share text and card checked on WhatsApp and Instagram, on a phone.
 - [ ] P3 Meta description, page title and `robots`.
-- [ ] P4 A line naming the source (TSE open data) and the repo on the card or the footer.
+- [x] P4 A line naming the source (TSE open data) and the repo on the card or the footer.
+      Evidence: footer of the walk and `/explorar/`, plus the note at the top of `como.html` (2026-10-30).
 - [ ] P5 Old share links: `?t=` to `/explorar/`, `/v2/` to `/`, town links keep working.
 
 ## Access
