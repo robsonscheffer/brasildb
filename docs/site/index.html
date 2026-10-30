@@ -531,7 +531,16 @@ const loadFrames = once(() => new Promise((ok, err) => { const i = new Image(); 
 let CH = null;
 const loadChegada = once(() => get("data/chegada.json").then(j => (CH = j)));
 const cidadesUF = {};
-const loadCidades = uf => (cidadesUF[uf] ||= get(`data/cidades/${uf}.json`));
+// A town is [...campos, ...horas]; times are minutes (null if none). Decoded to {votos, pico: "HH:MM", ..., horas}.
+const loadCidades = uf => (cidadesUF[uf] ||= get(`data/cidades/${uf}.json`).then(d => {
+  const n = d.campos.length, out = {};
+  for (const [id, r] of Object.entries(d.cidades)) {
+    const c = { horas: r.slice(n) };
+    d.campos.forEach((k, i) => { c[k] = k === "votos" || k === "fuso" || r[i] === null ? r[i] : hhmm(r[i]); });
+    out[id] = c;
+  }
+  return { ...d, cidades: out };
+}));
 
 // First screen: the hook, the facts and the national curve (37 KB gzip) that drives the clock.
 const [urna, curios, TOT] = await Promise.all([get("data/urna.json"), get("data/curiosidades.json"), get("data/totals.json")]);
