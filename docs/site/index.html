@@ -477,6 +477,7 @@ async function get(path) {
 const once = (fn) => { let p; return () => (p ||= fn()); };
 const loadBorders = once(() => get("data/borders.json"));
 const loadTowns = once(() => get("data/towns.json"));
+const loadExterior = once(() => get("data/exterior.json"));
 const loadFrames = once(() => new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = "data/frames.png"; }));
 let CH = null;
 const loadChegada = once(() => get("data/chegada.json").then(j => (CH = j)));
@@ -646,6 +647,12 @@ function onde(l) {
 
 // Reader state, mirrored in the URL so a shared link reopens the same town.
 const state = { town: null, zona: "", secao: "", sec: null, cz: null, hora: null };
+// A town is "Cidade, UF" in Brazil and "Cidade, País" abroad (uf ZZ). Abroad, the town and
+// section files hold the urna's local time; fuso is local minus Brasília, in minutes.
+const rot = t => `${t.nome}, ${t.uf === "ZZ" ? t.pais : t.uf}`;
+const fora = () => state.town?.uf === "ZZ";
+const fuso = () => (fora() && state.cz?.fuso) || 0;
+const bsb = s => hhmm(hm(s) - fuso()); // a local HH:MM as Brasília HH:MM
 function saveURL() {
   const q = new URLSearchParams();
   if (state.town) q.set("cidade", state.town.id);
@@ -813,12 +820,18 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
 }
 
 /* ---------- 4. The question ---------- */
-let towns = null, names = null, byId = null;
+let towns = null, names = null, byId = null, EXT = null, extNames = null;
+// The search holds Brazil's towns, then the cities abroad (index N + k).
+const carregarLugares = once(async () => {
+  [towns, EXT] = await Promise.all([loadTowns(), loadExterior()]);
+  names = towns.nome.map(norm); extNames = EXT.cidades.map(c => norm(c.nome));
+  byId = new Map(towns.id.map((id, i) => [String(id), i]));
+});
+const lugarDe = j => j < towns.id.length ? { i: j, id: String(towns.id[j]), uf: towns.uf[j], nome: towns.nome[j] }
+  : (c => ({ i: null, id: c.id, uf: "ZZ", nome: c.nome, pais: c.pais }))(EXT.cidades[j - towns.id.length]);
 const ready = (async () => {
   await new Promise(r => near($("abertura"), r, "50% 0px"));
-  towns = await loadTowns();
-  names = towns.nome.map(norm);
-  byId = new Map(towns.id.map((id, i) => [String(id), i]));
+  await carregarLugares();
   loadFrames(); // prefetch the map while the reader answers
 })();
 {
@@ -829,10 +842,10 @@ const ready = (async () => {
     const q = norm(input.value.trim());
     state.town = null; $("ir").disabled = true;
     if (q.length < 2) { hits.innerHTML = ""; return; }
-    const a = [], b = [];
-    for (let i = 0; i < names.length && a.length < 8; i++) { if (names[i].startsWith(q)) a.push(i); else if (b.length < 8 && names[i].includes(q)) b.push(i); }
+    const a = [], b = [], todos = names.concat(extNames);
+    for (let i = 0; i < todos.length && a.length < 8; i++) { if (todos[i].startsWith(q)) a.push(i); else if (b.length < 8 && todos[i].includes(q)) b.push(i); }
     ids = a.concat(b).slice(0, 8); cur = -1;
-    hits.innerHTML = ids.map(i => `<li data-i="${i}">${towns.nome[i]}<span>${towns.uf[i]}</span></li>`).join("");
+    hits.innerHTML = ids.map(i => { const l = lugarDe(i); return `<li data-i="${i}">${l.nome}<span>${l.uf === "ZZ" ? l.pais : l.uf}</span></li>`; }).join("");
   });
   input.addEventListener("keydown", e => {
     if (!ids.length) return;
@@ -841,8 +854,8 @@ const ready = (async () => {
   });
   hits.addEventListener("click", e => { const li = e.target.closest("li"); if (li) pick(+li.dataset.i); });
   function pick(i) {
-    state.town = { i, id: String(towns.id[i]), uf: towns.uf[i], nome: towns.nome[i] };
-    input.value = `${towns.nome[i]}, ${towns.uf[i]}`; hits.innerHTML = ""; ids = [];
+    state.town = lugarDe(i);
+    input.value = rot(state.town); hits.innerHTML = ""; ids = [];
     $("ir").disabled = false; loadCidades(state.town.uf);
   }
   $("ir").addEventListener("click", async () => {
@@ -888,10 +901,11 @@ async function afterAnswer() {
 (async () => {
   const q = new URLSearchParams(location.search); const id = q.get("cidade");
   if (!id) { if (q.has("hora")) { state.hora = +q.get("hora"); renderHoras(); drawCard(); } return; }
-  towns = await loadTowns(); names = towns.nome.map(norm); byId = new Map(towns.id.map((x, i) => [String(x), i]));
-  const i = byId.get(id); if (i == null) return;
-  state.town = { i, id, uf: towns.uf[i], nome: towns.nome[i] };
-  $("cidade").value = `${state.town.nome}, ${state.town.uf}`; $("ir").disabled = false;
+  await carregarLugares();
+  const i = byId.get(id), k = EXT.cidades.findIndex(c => c.id === id);
+  if (i == null && k < 0) return;
+  state.town = lugarDe(i ?? towns.id.length + k);
+  $("cidade").value = `${rot(state.town)}`; $("ir").disabled = false;
   const pad = v => v ? v.replace(/\D/g, "").padStart(4, "0").slice(-4) : "";
   state.zona = pad(q.get("zona")); state.secao = pad(q.get("secao"));
   $("zona").value = state.zona; $("secao").value = state.secao;
@@ -904,13 +918,15 @@ async function afterAnswer() {
   const el = $("dia-no-mapa"), c = $("c7"), host = $("c7passos");
   let M = null; // decoded map data, built once
   async function build() {
-    const [t, img, borders] = await Promise.all([loadTowns(), loadFrames(), loadBorders()]);
+    const [t, img, borders, ext] = await Promise.all([loadTowns(), loadFrames(), loadBorders(), loadExterior()]);
     const N = t.id.length, MM = TOT.minutes;
     const off = document.createElement("canvas"); off.width = N; off.height = MM;
     const o = off.getContext("2d"); o.drawImage(img, 0, 0);
     const px = o.getImageData(0, 0, N, MM).data, lit = new Float32Array(N * MM);
     for (let k = 0; k < N * MM; k++) lit[k] = Math.pow(px[k * 4] / 255, 1.4);
-    M = { t, lit, N, MM, borders, x: new Float32Array(N), y: new Float32Array(N), r: new Float32Array(N), P: null };
+    // The strip under the map: the cities abroad with timed votes, east to west.
+    const fx = ext.cidades.filter(c => c.niveis);
+    M = { t, lit, N, MM, borders, x: new Float32Array(N), y: new Float32Array(N), r: new Float32Array(N), P: null, fx, fxX: [], fxY: 0 };
     layout(); $("c7load").hidden = true; tick();
   }
   // The map fills its column below the clock. It is re-laid when the column or the clock changes size.
@@ -918,8 +934,10 @@ async function afterAnswer() {
     if (!M) return;
     const { W, H, dpr } = fit(c), key = `${W}x${H}@${TOPO}`;
     if (M.key === key) return; M.key = key;
-    const top = topo(dpr) + 6 * dpr, bot = 0.05 * H;
+    const top = topo(dpr) + 6 * dpr, bot = 0.03 * H + 52 * dpr; // 52px: the strip abroad
     M.P = projectIn(0.03 * W, top, 0.94 * W, H - top - bot);
+    M.fxY = H - 0.03 * H - 24 * dpr;
+    M.fxX = M.fx.map((_, k) => 0.06 * W + (0.88 * W) * (k + 0.5) / M.fx.length);
     const amax = Math.sqrt(Math.max(...M.t.aptos)), rmax = 0.02 * Math.min(W, H);
     for (let i = 0; i < M.N; i++) { M.x[i] = M.P.X(M.t.lon[i]); M.y[i] = M.P.Y(M.t.lat[i]); M.r[i] = Math.max(0.9 * dpr, rmax * Math.sqrt(M.t.aptos[i]) / amax); }
   }
@@ -943,9 +961,22 @@ async function afterAnswer() {
       fato(cur("ultimo_voto")),
     ];
     const tw = state.town;
-    if (tw && towns) {
+    if (tw && fora() && state.cz) {
+      // Abroad: the city's busiest minute if the map shows it; else, at 08:00, whether the city
+      // had already closed or was still voting (its peak came before Brazil opened).
+      const cz = state.cz, t = hm(cz.pico) - cz.fuso, fimB = hm(cz.ultimo_voto) - cz.fuso, lugar = { uf: "ZZ", municipio: tw.nome, pais: tw.pais };
+      const sec = state.sec ? ` Na sua seção, ${state.sec.votos}.` : "";
+      its.push(t >= 480 && t <= ULTM
+        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais cheio.`,
+            texto: `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}, hora local.${sec}`, lugar }
+        : fimB < 480
+        ? { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, a votação já tinha acabado.`,
+            texto: `${fmt(cz.votos)} pessoas votaram na cidade. A última, às ${hfala(cz.ultimo_voto)}, hora local.${sec}`, lugar }
+        : { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, já eram ${hfala(hhmm(480 + cz.fuso))}.`,
+            texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais cheio foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
+    } else if (tw && towns) {
       const cz = state.cz, i = tw.i;
-      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${tw.nome}, ${tw.uf}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais cheio.`,
+      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais cheio.`,
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
@@ -958,6 +989,28 @@ async function afterAnswer() {
   const L = 16, buckets = Array.from({ length: L + 1 }, () => []);
   // The day-long facts take p 0.86 to 0.96; the stage fades after that.
   const saltos = () => { const { ag, dia } = planejar(); return [0, ...ag.paradas(q => ABRE + q * 0.8), ...dia.map((_, i) => 0.86 + (i + 0.5) / dia.length * 0.10)]; };
+  // The strip: one dot per city abroad, lit by its votes that minute (Brasília); dim once it
+  // has closed. Returns where the reader's own city sits, for the leader line.
+  function faixa(ctx, t, fim, W, dpr) {
+    const m = clamp(Math.round(t) - TOT.start, 0, TOT.minutes - 1), y = M.fxY, r = clamp(W / M.fx.length * 0.32, 1.6 * dpr, 3.2 * dpr);
+    let n = 0, meu = null;
+    M.fx.forEach((c, k) => {
+      const x = M.fxX[k], lv = fim ? 0 : +c.niveis[m], antes = !fim && t < c.primeiro;
+      if (lv) n++;
+      ctx.fillStyle = lv ? `rgba(255,${Math.round(180 + 61 * lv / 8)},${Math.round(60 + 154 * lv / 8)},${0.35 + 0.65 * lv / 8})` : antes ? "rgba(255,180,60,.10)" : "rgba(236,232,220,.28)";
+      ctx.beginPath(); ctx.arc(x, y, r * (lv ? 1 + 0.5 * lv / 8 : 1), 0, 6.283); ctx.fill();
+      if (fora() && c.id === state.town.id) meu = k;
+    });
+    ctx.font = `${11 * dpr}px "JetBrains Mono"`; ctx.fillStyle = "rgba(236,232,220,.6)";
+    ctx.fillText(fim ? `exterior · ${M.fx.length} cidades com votos` : `exterior · ${n} de ${M.fx.length} cidades votando agora`, 0.06 * W, y + 18 * dpr);
+    if (meu == null) return null;
+    const x = M.fxX[meu];
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(x, y, r + 5 * dpr, 0, 6.283); ctx.stroke();
+    ctx.font = `600 ${13 * dpr}px "Inter Tight"`;
+    const lab = rot(state.town), lw = ctx.measureText(lab).width, dir = x + 16 * dpr + lw > W ? -1 : 1;
+    rotulo(ctx, lab, dir < 0 ? x - 16 * dpr - lw : x + 16 * dpr, y - 18 * dpr, dpr, "#ffffff");
+    return dir < 0 ? [x, y - 18 * dpr] : [x + 24 * dpr + lw, y - 18 * dpr];
+  }
   scene(el, p => {
     abrir("abre-mapa", p);
     const { ag, dia, lista } = planejar(), fim = p > 0.86;
@@ -970,7 +1023,7 @@ async function afterAnswer() {
     const S = TOT.start, m0 = clamp(Math.floor(t - S), 0, M.MM - 1), m1 = Math.min(M.MM - 1, m0 + 1), f = t - S - m0;
     const { ctx, W, H, dpr } = fit(c);
     ctx.fillStyle = "#070a12"; ctx.fillRect(0, 0, W, H);
-    const tudo = e && e.lugar.lat == null;
+    const tudo = e && !e.seu && e.lugar.lat == null;
     drawBorders(ctx, M.borders, M.P, tudo ? "rgba(255,180,60,.30)" : "rgba(236,232,220,.08)", 1 * dpr);
     for (const b of buckets) b.length = 0;
     // After 17:00 any town still voting keeps a visible light, so the reader sees how few are left.
@@ -1000,10 +1053,12 @@ async function afterAnswer() {
       anc = dir < 0 ? [x + 12 * dpr, y] : [x + 30 * dpr + lw, y]; // the line leaves after the label
     }
     const tw = state.town;
-    if (tw) {
+    const sx = faixa(ctx, t, fim, W, dpr);
+    if (sx && e?.seu) anc = sx;
+    if (tw && !fora()) {
       const i = tw.i, r = M.r[i] * 1.4 + 6 * dpr;
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.6 * dpr; ctx.beginPath(); ctx.arc(M.x[i], M.y[i], r, 0, 6.283); ctx.stroke();
-      const nw = rotulo(ctx, `${tw.nome}, ${tw.uf}`, M.x[i] + r + 10 * dpr, M.y[i], dpr, "#ffffff");
+      const nw = rotulo(ctx, `${rot(tw)}`, M.x[i] + r + 10 * dpr, M.y[i], dpr, "#ffffff");
       if (e?.seu) anc = [M.x[i] + r + 18 * dpr + nw, M.y[i]];
     }
     ligar(c, ctx, anc, host, dpr);
@@ -1014,7 +1069,7 @@ async function afterAnswer() {
 /* ---------- Hour tap ---------- */
 function renderHoras() {
   const tw = state.town, box = $("horas");
-  $("horalead").textContent = tw ? `Que horas você votou em ${tw.nome}, ${tw.uf}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
+  $("horalead").textContent = tw ? `Que horas você votou em ${rot(tw)}${fora() ? ", na hora local" : ""}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
   const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote (ULT)
   box.innerHTML = bands.map(h => `<button data-h="${h}" class="${state.hora === h ? "on" : ""}">${h}h</button>`).join("");
   if (state.hora != null) comVoce(state.hora);
@@ -1022,15 +1077,16 @@ function renderHoras() {
 $("horas").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.hora = +b.dataset.h; saveURL(); renderHoras(); drawCard(); });
 async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
-  if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${tw.nome}, ${tw.uf}`; }
+  if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${rot(tw)}${fora() ? ", na hora local" : ""}`; }
   // The hour in the whole country: how many voted and where it ranks in the day.
   const fim = x => x === 18 ? ULTM + 1 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
   const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
   const dia = h >= 17 ? "Depois dos portões fechados, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
     : rank >= 9 ? "Uma das horas mais calmas do dia." : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
-  const pais = lugar === "no Brasil" ? "" : ` No Brasil, ${fmt(br)} votos.`;
-  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 ? `o último voto, ${hfala(ULT)}` : `${h + 1}h`}</small>`;
+  // Abroad the hour is local, so the Brazil comparison does not apply.
+  const pais = lugar === "no Brasil" || fora() ? "" : ` No Brasil, ${fmt(br)} votos.`;
+  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${fora() ? "" : dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 && !fora() ? `o último voto, ${hfala(ULT)}` : `${h + 1}h`}</small>`;
 }
 renderHoras();
 
@@ -1122,13 +1178,13 @@ renderHoras();
     const ls = linhas(mi), n = ls.length, imp = ls.findIndex(l => /impresso|imprimindo/i.test(l.texto));
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
-    const lugar = `${tw.nome}, ${tw.uf}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}`;
+    const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
     const tipica = mi.exata ? "" : " Esta é a urna típica da cidade: digite zona e seção para ver a sua.";
     const its = [
       { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna encerra a votação.`, texto: `Ela já sabe o resultado: contou cada voto na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
       { h: "transmissão", titulo: "O resultado é transmitido ao TSE.", texto: "O mesmo boletim, agora a caminho de Brasília." },
-      { h: `${mi.chega} · Brasília`, titulo: `${hfala(mi.chega)}. O resultado chega a Brasília.`, texto: `${durTxt} depois do encerramento, já na apuração.` },
+      { h: `${bsb(mi.chega)} · Brasília`, titulo: `${hfala(bsb(mi.chega))}. O resultado chega a Brasília.`, texto: `${durTxt} depois do encerramento, já na apuração.` },
     ];
     T = { key, ls, n, imp, last, b, its }; return T;
   }
@@ -1136,7 +1192,7 @@ renderHoras();
   scene(el, p => {
     const mi = minha(); if (!mi || !state.town) return null;
     abrir("abre-encerramento", p);
-    $("abre-urna").textContent = mi.exata ? "A sua urna fecha, imprime e transmite." : `A urna de ${state.town.nome}, ${state.town.uf} fecha, imprime e transmite.`;
+    $("abre-urna").textContent = mi.exata ? "A sua urna fecha, imprime e transmite." : `A urna de ${rot(state.town)} fecha, imprime e transmite.`;
     const { key, ls, n, imp, last, b, its } = montar(mi);
     const fase1 = clamp((p - ABRE) / 0.44), k = Math.min(n, Math.floor(fase1 * (n + 0.999)));
     const viaja = clamp((p - 0.55) / 0.33), chegou = p >= 0.88;
@@ -1146,10 +1202,10 @@ renderHoras();
     }
     const papelH = k > imp ? Math.min(150, 40 + (k - imp) * 34) : 0;
     papel.style.height = `${papelH}px`;
-    papel.innerHTML = `<b>BOLETIM DE URNA</b>${state.town.nome}, ${state.town.uf}<br>${state.sec ? `Zona ${state.zona} · Seção ${state.secao}<br>Eleitores aptos ${state.sec.aptos}<br>Compareceram ${state.sec.votos}<br>` : "Urna típica da cidade<br>"}Encerramento ${ls[0].hora}`;
+    papel.innerHTML = `<b>BOLETIM DE URNA</b>${rot(state.town)}<br>${state.sec ? `Zona ${state.zona} · Seção ${state.secao}<br>Eleitores aptos ${state.sec.aptos}<br>Compareceram ${state.sec.votos}<br>` : "Urna típica da cidade<br>"}Encerramento ${ls[0].hora}`;
     sinal.forEach((d, j) => { const q = clamp(viaja * 1.3 - j * 0.15); d.style.left = `calc(${q * 100}% - 5px)`; d.style.setProperty("--q", `calc(${q * 100}% - 5px)`); d.style.opacity = viaja > 0 && viaja < 1 && q > 0 && q < 1 ? 1 : 0; });
     tse.classList.toggle("on", chegou);
-    $("tsehora").textContent = chegou ? mi.chega : " ";
+    $("tsehora").textContent = chegou ? bsb(mi.chega) : " ";
     const e = p < ABRE ? null : chegou ? its[3] : viaja > 0 ? its[2] : k > imp ? its[1] : its[0];
     passos(host, its, e);
     // The leader line, from the piece of the trip the step talks about: the screen, the paper, the signal, the TSE.
@@ -1165,7 +1221,7 @@ renderHoras();
       ligar(c, ctx, anc, host, dpr, via);
     }
     const t = chegou ? b : viaja > 0 ? lerp(last, b, viaja) : seg(ls[Math.max(0, k - 1)].hora);
-    return { txt: hms(t), sub: chegou ? "resultado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : `${state.town.nome}, ${state.town.uf}` };
+    return { txt: hms(t), sub: (chegou ? "resultado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : `${rot(state.town)}`) + (fora() ? " · hora local" : "") };
   }, () => [0, ABRE, ABRE + 0.44 * 0.55, 0.62, 0.9]);
 }
 
@@ -1195,7 +1251,8 @@ renderHoras();
     if (!R) montar();
     const mi = minha(), key = mi ? mi.chega + state.town.uf : "";
     if (R.key !== key) {
-      const extra = mi ? [{ t: hm(mi.chega), seu: true, uf: state.town.uf, h: `${mi.chega} · ${state.town.uf}`, titulo: mi.exata ? "A sua urna transmite o resultado." : `As urnas de ${state.town.nome}, ${state.town.uf} transmitem.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
+      const tc = mi ? hm(bsb(mi.chega)) : null, cabe = tc != null && tc >= R.A && tc <= R.A + R.n - 1;
+      const extra = cabe ? [{ t: tc, seu: true, uf: state.town.uf, h: `${hhmm(tc)} · ${fora() ? rot(state.town) : state.town.uf}`, titulo: mi.exata ? "A sua urna transmite o resultado." : `As urnas de ${rot(state.town)} transmitem.`, texto: mi.exata ? "" : "Por volta desta hora." }] : [];
       R.lista = [...R.passos, ...extra].sort((a, b) => a.t - b.t);
       R.ag = agenda(R.lista, R.A, R.A + R.n - 1, 50); R.key = key;
     }
@@ -1248,7 +1305,7 @@ async function drawCard() {
   ctx.fillStyle = "#ece8dc"; ctx.font = "italic 400 78px \"Instrument Serif\""; ctx.fillText("Você foi um dos", 80, 800);
   ctx.fillStyle = "#ffb43c"; ctx.font = "400 150px \"Instrument Serif\""; ctx.fillText(fmt(TOTAL), 80, 940);
   const linhas = [];
-  if (state.town) linhas.push(`em ${state.town.nome}, ${state.town.uf}`);
+  if (state.town) linhas.push(`em ${rot(state.town)}`);
   if (state.sec) linhas.push(`zona ${state.zona}, seção ${state.secao}`);
   if (state.hora != null) linhas.push(`por volta das ${state.hora}h`);
   ctx.fillStyle = "#ece8dc"; ctx.font = "400 44px \"Inter Tight\"";
@@ -1260,7 +1317,7 @@ $("share").addEventListener("click", async () => {
   const blob = await new Promise(r => $("card").toBlob(r, "image/png"));
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
   const url = location.href;
-  const onde = state.town ? `, em ${state.town.nome}, ${state.town.uf}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
+  const onde = state.town ? `, em ${rot(state.town)}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
   const texto = `Eu fiz parte dessa história. Um dos ${fmt(TOTAL)} votos do segundo turno${onde}${hora}. Veja o seu momento. ${url}`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); return; } catch { return; }
