@@ -196,7 +196,8 @@
   .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .btn[disabled] { opacity: .35; cursor: default; transform: none; filter: none; }
   .pular { color: var(--muted); font-size: 16px; }
-  .eco { margin-top: 18px; color: var(--accent); min-height: 1.5em; font-family: var(--serif); font-size: 22px; }
+  .eco { margin-top: 14px; color: var(--accent); font-family: var(--serif); font-size: 22px; line-height: 1.25; }
+  .eco:empty { display: none; }
 
   /* 7. The map */
   /* A title card opens every chart fold (U6): its number and name, what the reader will see, how to move on. */
@@ -427,12 +428,12 @@
     </div>
     <small>Opcional: com zona e seção, você vê a sua urna. Estão no título de eleitor ou no app e-Título.</small>
   </div>
+  <div class="eco" id="eco" aria-live="polite"></div>
   <div class="comvoce" id="comvoce" aria-live="polite"></div>
   <div class="acoes">
     <button class="btn" id="ir" disabled>Ver o dia no mapa</button>
     <a class="pular" href="#dia-no-mapa" id="pular">Pular esta pergunta</a>
   </div>
-  <div class="eco" id="eco"></div>
 </section>
 
 <!-- 5. The map -->
@@ -977,6 +978,14 @@ function secao(z, n) {
   s.agregada_a = agregada_a;
   return s;
 }
+// The reader's urna in one line: who voted, when it closed, when the TSE counted it.
+function suaUrna(s) {
+  const local = fora() ? " (hora local)" : "";
+  const votos = s.votos != null && s.aptos ? ` ${fmt(s.votos)} de ${fmt(s.aptos)} eleitores votaram nela.` : "";
+  const fecha = s.encerramento ? ` Fechou às ${hfala(s.encerramento)}${local}` : "";
+  const soma = s.chegada ? `${fecha ? " e" : " A urna"} entrou na contagem do TSE às ${hfala(s.chegada)}${fora() ? " (hora de Brasília)" : ""}.` : fecha ? "." : "";
+  return `Sua urna: zona ${state.zona}, seção ${state.secao}.${votos}${fecha}${soma}`;
+}
 async function afterAnswer() {
   const pad = v => v.replace(/\D/g, "").padStart(4, "0").slice(-4);
   const z = $("zona").value.trim(), n = $("secao").value.trim();
@@ -987,7 +996,7 @@ async function afterAnswer() {
   if (t && state.zona && state.secao) {
     try { state.sec = secao(await get(`data/secoes/${t.uf}/${t.id}-${state.zona}.json`), state.secao); } catch { state.sec = null; }
   }
-  $("eco").textContent = !t ? "" : state.sec ? `Zona ${state.zona}, seção ${state.secao}: a sua urna aparece no fim do dia.`
+  $("eco").textContent = !t ? "" : state.sec ? suaUrna(state.sec)
     : state.zona ? `Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : "";
   $("encerramento").hidden = !minha();
   if (minha()) loadChegada();
