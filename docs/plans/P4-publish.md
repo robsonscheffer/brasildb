@@ -16,11 +16,20 @@ checks each line; a line is closed when its evidence is written next to it.
 
 ## Copy
 
-- [ ] C1 Every line of the walk through the copywriting skill, then copy-editing.
-- [ ] C2 Every sentence names a place, a minute or a number.
-- [ ] C3 No "seguro", no "fraude", no side, no candidate; no em-dashes; pt-BR.
-- [ ] C4 Each term links to `como.html#<term>`.
-- [ ] C5 The night copy says "entrou na soma", not "transmite": `ha` is the count time.
+- [x] C1 Every line of the walk through the copywriting skill, then copy-editing.
+      Evidence: each changed line is listed old to new in the W8 copy PR; site_v2_check clean.
+- [x] C2 Every sentence names a place, a minute or a number.
+      Exempt: the hook's two lines under the 128.236.074 headline, note headlines whose time line
+      carries the minute, buttons, prompts and the map legend, and the STF "decisão" line (F3).
+- [x] C3 No "seguro", no "fraude", no side, no candidate; no em-dashes; pt-BR.
+      Evidence: grep finds none of these in index.html or curiosidades.json (2026-10-30).
+- [x] C4 Each term links to `como.html#<term>`.
+      Evidence: urna, log, zona, secao, zeresima, hora, metade, solimoes, bateria, contingencia,
+      encerramento, boletim, totalizacao and chegada link where the walk first uses them.
+      Biometria, agregada and diferencas never appear in the walk, so they have no link.
+- [x] C5 The night copy says "entrou na soma", not "transmite": `ha` is the count time.
+      Evidence: the night fold counts "seções somadas"; its label is "apuração"; the urna trip's
+      last step says "entra na soma do TSE". 0 console errors at 390x844 and 1440x900.
 
 ## Facts
 
