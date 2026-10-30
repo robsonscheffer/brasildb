@@ -905,7 +905,7 @@ let towns = null, names = null, byId = null, EXT = null, extNames = null;
 // The search holds Brazil's towns, then the cities abroad (index N + k).
 const carregarLugares = once(async () => {
   [towns, EXT] = await Promise.all([loadTowns(), loadExterior()]);
-  names = towns.nome.map(norm); extNames = EXT.cidades.map(c => norm(c.nome));
+  names = towns.nome.map(norm); extNames = EXT.cidades.map(c => norm(`${c.nome} ${c.pais}`));
   byId = new Map(towns.id.map((id, i) => [String(id), i]));
 });
 const lugarDe = j => j < towns.id.length ? { i: j, id: String(towns.id[j]), uf: towns.uf[j], nome: towns.nome[j] }
