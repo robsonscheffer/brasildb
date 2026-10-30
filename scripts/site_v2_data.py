@@ -5,6 +5,7 @@
   uv run python scripts/site_v2_data.py chegada        # docs/site/data/chegada.json
   uv run python scripts/site_v2_data.py cidades        # docs/site/data/cidades/<UF>.json
   uv run python scripts/site_v2_data.py secoes         # docs/site/data/secoes/<UF>/<municipio>-<zona>.json
+  uv run python scripts/site_v2_data.py exterior       # docs/site/data/exterior.json (cities abroad)
   uv run python scripts/site_v2_data.py urna           # docs/site/data/urna.json
   uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels) and totals.json (the curves)
 
@@ -20,7 +21,8 @@ import struct
 import sys
 import time
 import zlib
-from datetime import timedelta
+from collections import defaultdict
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import duckdb
@@ -76,11 +78,58 @@ def build_cache(only: list[str] | None = None) -> None:
 DIA = "2026-10-25"
 SOLIMOES = ["1300060", "1300201", "1300607", "1301605", "1302306", "1303700", "1303908",
             "1304062", "1304237"]  # IBGE microregion 13003 Alto Solimoes (servicodados.ibge.gov.br)
-PAIS = {  # time zone -> country, only for cities a fact names; a miss fails loudly
-    "Pacific/Auckland": "Nova Zelândia", "Australia/Sydney": "Austrália", "Asia/Tokyo": "Japão",
-    "America/Los_Angeles": "Estados Unidos", "America/Vancouver": "Canadá",
-    "America/New_York": "Estados Unidos", "America/Chicago": "Estados Unidos",
-    "Europe/Lisbon": "Portugal", "America/Guatemala": "Guatemala", "America/Mexico_City": "México",
+PAIS = {  # time zone -> country of every city abroad (each zone here holds one country); a miss fails loudly
+    "Africa/Abidjan": "Costa do Marfim", "Africa/Accra": "Gana", "Africa/Addis_Ababa": "Etiópia",
+    "Africa/Algiers": "Argélia", "Africa/Bamako": "Mali", "Africa/Bissau": "Guiné-Bissau",
+    "Africa/Blantyre": "Malawi", "Africa/Brazzaville": "Congo", "Africa/Cairo": "Egito",
+    "Africa/Casablanca": "Marrocos", "Africa/Conakry": "Guiné", "Africa/Dakar": "Senegal",
+    "Africa/Dar_es_Salaam": "Tanzânia", "Africa/Douala": "Camarões", "Africa/Gaborone": "Botsuana",
+    "Africa/Harare": "Zimbábue", "Africa/Johannesburg": "África do Sul",
+    "Africa/Kinshasa": "República Democrática do Congo", "Africa/Lagos": "Nigéria",
+    "Africa/Libreville": "Gabão", "Africa/Lome": "Togo", "Africa/Luanda": "Angola",
+    "Africa/Lusaka": "Zâmbia", "Africa/Malabo": "Guiné Equatorial", "Africa/Maputo": "Moçambique",
+    "Africa/Nairobi": "Quênia", "Africa/Ouagadougou": "Burkina Faso", "Africa/Porto-Novo": "Benin",
+    "Africa/Sao_Tome": "São Tomé e Príncipe", "Africa/Tripoli": "Líbia", "Africa/Tunis": "Tunísia",
+    "Africa/Windhoek": "Namíbia", "America/Antigua": "Antígua e Barbuda",
+    "America/Argentina/Buenos_Aires": "Argentina", "America/Argentina/Cordoba": "Argentina",
+    "America/Argentina/Mendoza": "Argentina", "America/Asuncion": "Paraguai",
+    "America/Barbados": "Barbados", "America/Belize": "Belize", "America/Bogota": "Colômbia",
+    "America/Caracas": "Venezuela", "America/Cayenne": "Guiana Francesa",
+    "America/Chicago": "Estados Unidos", "America/Costa_Rica": "Costa Rica",
+    "America/El_Salvador": "El Salvador", "America/Guatemala": "Guatemala",
+    "America/Guayaquil": "Equador", "America/Guyana": "Guiana", "America/Havana": "Cuba",
+    "America/Jamaica": "Jamaica", "America/La_Paz": "Bolívia", "America/Lima": "Peru",
+    "America/Los_Angeles": "Estados Unidos", "America/Managua": "Nicarágua",
+    "America/Mexico_City": "México", "America/Montevideo": "Uruguai", "America/Nassau": "Bahamas",
+    "America/New_York": "Estados Unidos", "America/Panama": "Panamá",
+    "America/Paramaribo": "Suriname", "America/Port-au-Prince": "Haiti",
+    "America/Port_of_Spain": "Trinidad e Tobago", "America/Santiago": "Chile",
+    "America/Santo_Domingo": "República Dominicana", "America/St_Lucia": "Santa Lúcia",
+    "America/Tegucigalpa": "Honduras", "America/Toronto": "Canadá", "America/Vancouver": "Canadá",
+    "Asia/Almaty": "Cazaquistão", "Asia/Amman": "Jordânia", "Asia/Baghdad": "Iraque",
+    "Asia/Bahrain": "Bahrein", "Asia/Baku": "Azerbaijão", "Asia/Bangkok": "Tailândia",
+    "Asia/Beirut": "Líbano", "Asia/Colombo": "Sri Lanka", "Asia/Damascus": "Síria",
+    "Asia/Dhaka": "Bangladesh", "Asia/Dili": "Timor-Leste", "Asia/Dubai": "Emirados Árabes Unidos",
+    "Asia/Hebron": "Palestina", "Asia/Ho_Chi_Minh": "Vietnã", "Asia/Hong_Kong": "China",
+    "Asia/Jakarta": "Indonésia", "Asia/Jerusalem": "Israel", "Asia/Karachi": "Paquistão",
+    "Asia/Kathmandu": "Nepal", "Asia/Kolkata": "Índia", "Asia/Kuala_Lumpur": "Malásia",
+    "Asia/Kuwait": "Kuwait", "Asia/Manila": "Filipinas", "Asia/Muscat": "Omã",
+    "Asia/Nicosia": "Chipre", "Asia/Pyongyang": "Coreia do Norte", "Asia/Qatar": "Catar",
+    "Asia/Riyadh": "Arábia Saudita", "Asia/Seoul": "Coreia do Sul", "Asia/Shanghai": "China",
+    "Asia/Singapore": "Singapura", "Asia/Taipei": "Taiwan", "Asia/Tbilisi": "Geórgia",
+    "Asia/Tehran": "Irã", "Asia/Tokyo": "Japão", "Asia/Yangon": "Mianmar", "Asia/Yerevan": "Armênia",
+    "Atlantic/Cape_Verde": "Cabo Verde", "Australia/Sydney": "Austrália",
+    "Europe/Amsterdam": "Países Baixos", "Europe/Athens": "Grécia", "Europe/Belgrade": "Sérvia",
+    "Europe/Berlin": "Alemanha", "Europe/Bratislava": "Eslováquia", "Europe/Brussels": "Bélgica",
+    "Europe/Bucharest": "Romênia", "Europe/Budapest": "Hungria", "Europe/Copenhagen": "Dinamarca",
+    "Europe/Dublin": "Irlanda", "Europe/Helsinki": "Finlândia", "Europe/Istanbul": "Turquia",
+    "Europe/Kyiv": "Ucrânia", "Europe/Lisbon": "Portugal", "Europe/Ljubljana": "Eslovênia",
+    "Europe/London": "Reino Unido", "Europe/Madrid": "Espanha", "Europe/Moscow": "Rússia",
+    "Europe/Oslo": "Noruega", "Europe/Paris": "França", "Europe/Prague": "Tchéquia",
+    "Europe/Rome": "Itália", "Europe/Sarajevo": "Bósnia e Herzegovina", "Europe/Sofia": "Bulgária",
+    "Europe/Stockholm": "Suécia", "Europe/Tallinn": "Estônia", "Europe/Tirane": "Albânia",
+    "Europe/Vienna": "Áustria", "Europe/Warsaw": "Polônia", "Europe/Zagreb": "Croácia",
+    "Europe/Zurich": "Suíça", "Pacific/Auckland": "Nova Zelândia",
 }
 UFNOME = {"AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá", "BA": "Bahia",
           "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás",
@@ -550,25 +599,39 @@ def hhmm_(m: int | None) -> str | None:
     return None if m is None else f"{m // 60:02d}:{m % 60:02d}"
 
 
+def fusos(con: duckdb.DuckDBPyConnection) -> dict[tuple, int]:
+    """(UF, municipio) -> minutes from Brasília to the urna's local time; 0 in Brazil (P4 D4)."""
+    return defaultdict(int, {("ZZ", m): f for m, f in con.execute(
+        "SELECT id_municipio_tse, fuso_minutos FROM main.fuso_exterior").fetchall()})
+
+
+def local(ts, fuso: int):
+    return None if ts is None else ts + timedelta(minutes=fuso)
+
+
 def cidades(con: duckdb.DuckDBPyConnection) -> None:
-    """W3: cidades/<UF>.json, Brazil only (the town search has no city abroad yet). votos and
-    aptos are the TSE's official turnout and electorate; pico, metade and horas come from the
-    log's votes per minute; fechamento is the median close, chegada the median `ha`. No name:
-    the page has it from towns.json, and MG stays near the 33 KB gzip budget (37 KB)."""
+    """W3: cidades/<UF>.json, and ZZ for the cities abroad. votos and aptos are the TSE's
+    official turnout and electorate; pico, metade and horas come from the log's votes per
+    minute; fechamento is the median close, chegada the median `ha`. Times are Brasília, and
+    abroad the urna's local time (the one a voter there remembers) with the city's `fuso`.
+    No name: the page has it from towns.json and exterior.json. MG is 37 KB gzip."""
+    fuso = fusos(con)
     base = con.execute("""
         SELECT a.sigla_uf, a.id_municipio_tse, sum(a.comparecimento), sum(a.aptos), count(*),
                max(s.ultimo_voto), quantile_disc(s.encerramento, 0.5)
         FROM r2.aptos a LEFT JOIN r2.secao_dia s USING (sigla_uf, id_municipio_tse, zona, secao)
-        WHERE a.sigla_uf <> 'ZZ' GROUP BY 1, 2""").fetchall()
+        GROUP BY 1, 2""").fetchall()
     curva: dict[tuple, list] = {}
     for uf, mun, minuto, v in con.execute("""SELECT sigla_uf, id_municipio_tse, minuto_bsb, votos
-            FROM r2.votos_minuto WHERE sigla_uf <> 'ZZ' ORDER BY 1, 2, 3""").fetchall():
-        curva.setdefault((uf, mun), []).append((minuto, v))
+            FROM r2.votos_minuto ORDER BY 1, 2, 3""").fetchall():
+        curva.setdefault((uf, mun), []).append((local(minuto, fuso[(uf, mun)]), v))
     cheg: dict[tuple, list] = {}
     for (uf, mun, _, _), m in chegadas().items():
-        cheg.setdefault((uf, mun), []).append(m)
+        cheg.setdefault((uf, mun), []).append(m + fuso[(uf, mun)])
     por_uf: dict[str, dict] = {}
     for uf, mun, votos, aptos, secoes, ultimo, fecha in base:
+        f = fuso[(uf, mun)]
+        ultimo, fecha = local(ultimo, f), local(fecha, f)
         c = curva.get((uf, mun), [])
         horas = [0] * len(HORAS)
         for minuto, v in c:
@@ -584,9 +647,43 @@ def cidades(con: duckdb.DuckDBPyConnection) -> None:
             "votos": int(votos), "aptos": int(aptos), "secoes": secoes,
             "pico": pico, "metade": metade, "ultimo_voto": hm_(ultimo), "horas": horas,
             "fechamento": hm_(fecha), "chegada": hhmm_(mediana(cheg.get((uf, mun), []))),
+            **({"fuso": f} if uf == "ZZ" else {}),
         }
     for uf, cs in sorted(por_uf.items()):
-        dump(OUT / f"cidades/{uf}.json", {"mock": False, "uf": uf, "horas": HORAS, "cidades": cs})
+        dump(OUT / f"cidades/{uf}.json", {"mock": False, "uf": uf, "hora": "local" if uf == "ZZ" else "Brasília",
+                                          "horas": HORAS, "cidades": cs})
+
+
+def exterior(con: duckdb.DuckDBPyConnection) -> dict:
+    """exterior.json: the cities abroad, for the strip under the map and the town search.
+    One row per city with voters, east to west. primeiro and ultimo are the first and last
+    vote in Brasília minutes after Sunday 00:00 (Saturday is negative). niveis is one digit
+    per map minute (totals.json `start` and `minutes`): 0 outside the city's voting span, 1 to
+    8 its 3-minute mean against its own peak, 1 also for a quiet minute inside the span."""
+    tot = json.loads((FRAMES / "totals.json").read_text())
+    start, minutes = tot["start"], tot["minutes"]
+    dia0 = con.execute("SELECT data FROM main.eleicoes WHERE ano = ? AND turno = ?", [ANO, TURNO]).fetchone()[0]
+    of = lambda ts: int((ts - datetime.combine(dia0, datetime.min.time())).total_seconds() // 60)
+    votos: dict[str, dict[int, int]] = {}
+    for mun, minuto, v in con.execute("""SELECT id_municipio_tse, minuto_bsb, votos
+            FROM r2.votos_minuto WHERE sigla_uf = 'ZZ'""").fetchall():
+        votos.setdefault(mun, {})[of(minuto)] = v
+    cidades = []
+    for mun, nome, tz, fuso, comp, aptos in con.execute("""
+            SELECT f.id_municipio_tse, f.nome, f.tz, f.fuso_minutos, sum(a.comparecimento), sum(a.aptos)
+            FROM main.fuso_exterior f JOIN r2.aptos a ON a.sigla_uf = 'ZZ' AND a.id_municipio_tse = f.id_municipio_tse
+            GROUP BY ALL HAVING sum(a.aptos) > 0 ORDER BY f.fuso_minutos DESC, f.nome""").fetchall():
+        v = votos.get(mun, {})
+        c = {"id": mun, "nome": nome_pt(nome.title()), "pais": PAIS[tz], "fuso": fuso,
+             "votos": int(comp), "aptos": int(aptos), "primeiro": min(v, default=None), "ultimo": max(v, default=None)}
+        if v:
+            mean3 = lambda m: (v.get(m - 1, 0) + v.get(m, 0) + v.get(m + 1, 0)) / 3
+            peak = max(mean3(m) for m in v)
+            c["niveis"] = "".join(
+                "0" if not c["primeiro"] <= m <= c["ultimo"] else str(max(1, round(8 * mean3(m) / peak)))
+                for m in range(start, start + minutes))
+        cidades.append(c)
+    return {"mock": False, "hora": "Brasília", "start": start, "minutes": minutes, "cidades": cidades}
 
 
 SECAO_CAMPOS = ["abertura", "primeiro_voto", "ultimo_voto", "encerramento", "votos", "aptos", "chegada", "fim_log"]
@@ -598,13 +695,14 @@ def secoes(con: duckdb.DuckDBPyConnection) -> None:
     Times are Brasília HH:MM; votos and aptos are official. fim_log holds FIM_PASSOS as
     seconds: the first step's second of the day, then each step's gap to the one before; the
     page holds the step texts. A section aggregated into another (cs `nsp`) is the principal's
-    number as a string. Brazil only, like the town search."""
+    number as a string. Abroad (ZZ) every time is the urna's local time, like cidades/ZZ.json."""
     cheg = chegadas()
+    fuso = fusos(con)
     passos: dict[tuple, dict] = {}
     for uf, mun, z, sec, h, linha, msg, t in con.execute(
             "SELECT sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, linha, mensagem, hora_bsb "
-            "FROM r2.fim_log WHERE sigla_uf <> 'ZZ' ORDER BY 1, 2, 3, 4, 5, 6").fetchall():
-        passos.setdefault((uf, mun, z, sec), {}).setdefault(h, []).append((msg, t))
+            "FROM r2.fim_log ORDER BY 1, 2, 3, 4, 5, 6").fetchall():
+        passos.setdefault((uf, mun, z, sec), {}).setdefault(h, []).append((msg, local(t, fuso[(uf, mun)])))
     def fim_log(k):
         logs = passos.get(k)
         if not logs:
@@ -624,13 +722,14 @@ def secoes(con: duckdb.DuckDBPyConnection) -> None:
             SELECT a.sigla_uf, a.id_municipio_tse, a.zona, a.secao, s.abertura, s.primeiro_voto,
                    s.ultimo_voto, s.encerramento, a.comparecimento, a.aptos
             FROM r2.aptos a JOIN r2.secao_dia s USING (sigla_uf, id_municipio_tse, zona, secao)
-            WHERE a.sigla_uf <> 'ZZ' AND s.encerramento IS NOT NULL""").fetchall():
-        k = (uf, mun, z, sec)
+            WHERE s.encerramento IS NOT NULL""").fetchall():
+        k, f = (uf, mun, z, sec), fuso[(uf, mun)]
         if k not in cheg:
             continue
-        dia[k] = [hm_(ab), hm_(pv), hm_(uv), hm_(enc), votos, aptos, hhmm_(cheg[k]), fim_log(k)]
+        dia[k] = [hm_(local(ab, f)), hm_(local(pv, f)), hm_(local(uv, f)), hm_(local(enc, f)),
+                  votos, aptos, hhmm_(cheg[k] + f), fim_log(k)]
     for r in cs_sections():
-        if r["uf"] == "zz" or r["nsp"] is None:
+        if r["nsp"] is None:
             continue
         uf, mun, z = r["uf"].upper(), r["mun"].zfill(5), r["zona"].zfill(4)
         if (uf, mun, z, str(r["nsp"]).zfill(4)) in dia:
@@ -771,7 +870,7 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames"])
+    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames", "exterior"])
     ap.add_argument("--fraction", type=float, default=0.01)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--rps", type=float, default=10)
@@ -793,6 +892,8 @@ def main() -> None:
     elif a.step == "secoes":
         con = duckdb.connect(str(cache_path()), read_only=True)
         secoes(con)
+    elif a.step == "exterior":
+        dump(OUT / "exterior.json", exterior(duckdb.connect(str(cache_path()), read_only=True)))
     elif a.step == "urna":
         con = duckdb.connect(str(cache_path()), read_only=True)
         dump(OUT / "urna.json", urna(con))
