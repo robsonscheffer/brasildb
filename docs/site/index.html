@@ -64,7 +64,7 @@
   .topo::before { display: none; }
   .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: var(--gx); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid #4a3a1e; background: rgba(7,10,18,.85); border-radius: 999px; padding: 4px 10px; }
 
-  /* The rail: nine ticks, the current fold lit and its name beside it, a fill that grows with the scroll. */
+  /* The rail: eight ticks, the current fold lit and its name beside it, a fill that grows with the scroll. */
   .trilha { position: fixed; z-index: 11; right: max(20px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); display: grid; gap: 12px; justify-items: end; }
   .trilha a { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); outline-offset: 6px; }
   .trilha a span { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: 0; transform: translateX(6px); transition: opacity .25s, transform .25s; order: -1; }
@@ -75,7 +75,7 @@
   .trilha a.on i { width: 32px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), rgba(255,180,60,.25) 0); }
   .trilha .nome { display: none; }
   @media (max-width: 640px) {
-    .trilha { right: 16px; left: 16px; top: max(10px, env(safe-area-inset-top)); transform: none; grid-template-columns: repeat(9, 1fr); gap: 4px; justify-items: stretch; }
+    .trilha { right: 16px; left: 16px; top: max(10px, env(safe-area-inset-top)); transform: none; grid-template-columns: repeat(8, 1fr); gap: 4px; justify-items: stretch; }
     .trilha .nome { grid-column: 1 / -1; grid-row: 2; }
     .trilha a i { width: 100%; height: 3px; }
     .trilha a.on i { width: 100%; }
@@ -170,17 +170,23 @@
   .campo input, .mais input { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; font: inherit; font-size: 22px; outline: none; transition: border-color .2s, box-shadow .2s; }
   .campo input:focus, .mais input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
   .campo input::placeholder, .mais input::placeholder { color: var(--muted); }
+  .campo select { width: 100%; appearance: none; -webkit-appearance: none; background: var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23ffb43c' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 20px center; color: var(--fg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 48px 18px 20px; font: inherit; font-size: 22px; outline: none; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+  .campo select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .campo select.vazio { color: var(--muted); }
+  .linha { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 10px; margin-top: 32px; }
+  .linha .campo { margin-top: 0; }
+  .mais { margin-top: 10px; color: var(--muted); }
+  @media (max-width: 640px) {
+    .campo input, .campo select { font-size: 17px; padding: 15px 14px; }
+    .mais .par input { font-size: 16px; padding: 12px 14px; }
+    .campo select { padding-right: 36px; background-position: right 14px center; }
+  }
   .hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px 0; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; z-index: 5; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
   .hits:empty { display: none; }
   .hits li { padding: 10px 20px; cursor: pointer; }
   .hits li span { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: 10px; }
   .hits li.on, .hits li:hover { background: var(--accent-dim); }
-  details.mais { margin-top: 18px; color: var(--muted); }
-  details.mais summary { cursor: pointer; font-size: 17px; list-style: none; }
-  details.mais summary::-webkit-details-marker { display: none; }
-  details.mais summary::before { content: "+"; display: inline-block; width: 1.4em; color: var(--accent); font-family: var(--mono); }
-  details.mais[open] summary::before { content: "–"; }
-  .mais .par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .mais .par { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 10px; }
   .mais input { font-size: 18px; padding: 12px 16px; }
   .mais small { display: block; margin-top: 8px; font-size: 14px; }
   .acoes { display: flex; gap: 20px; align-items: center; margin-top: 28px; flex-wrap: wrap; }
@@ -229,12 +235,9 @@
   }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
-  /* Hour tap */
-  .horas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-  .horas button { background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; font-family: var(--mono); font-size: 15px; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
-  .horas button:hover { border-color: var(--muted); }
-  .horas button.on { border-color: var(--accent); color: var(--bg); background: var(--accent); }
-  .comvoce { margin-top: 22px; font-family: var(--serif); font-size: clamp(26px, 4.8vw, 36px); line-height: 1.12; min-height: 2.5em; }
+  /* The answer under the form */
+  .comvoce { margin-top: 22px; font-family: var(--serif); font-size: clamp(24px, 4.4vw, 32px); line-height: 1.15; }
+  .comvoce:empty { display: none; }
   .comvoce small { display: block; font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 10px; }
 
   /* Your urna's trip: the urna, its paper, the transmission */
@@ -339,7 +342,7 @@
 </style>
 </head>
 <body>
-<a class="pula" href="#onde-votou">Pular para "Onde você votou"</a>
+<a class="pula" href="#onde-votou">Pular para "Onde e quando você votou"</a>
 <a class="pula" href="#compartilhamento">Pular para o cartão</a>
 <div class="sr" id="falado" aria-live="polite" aria-atomic="true"></div>
 <div class="topo k">25 out 2026</div>
@@ -347,13 +350,12 @@
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
 <div class="rew" id="rew" aria-live="polite"></div>
 
-<!-- The rail: where the reader is in the nine folds. Desktop: right edge. Phone: a strip under the top edge. -->
+<!-- The rail: where the reader is in the eight folds. Desktop: right edge. Phone: a strip under the top edge. -->
 <nav class="trilha" id="trilha" aria-label="Partes da história">
   <a href="#primeiro"><i></i><span>o domingo</span></a>
   <a href="#abertura"><i></i><span>abertura</span></a>
-  <a href="#onde-votou"><i></i><span>onde votou</span></a>
+  <a href="#onde-votou"><i></i><span>seu dia</span></a>
   <a href="#dia-no-mapa"><i></i><span>o dia no mapa</span></a>
-  <a href="#quando-votou"><i></i><span>quando votou</span></a>
   <a href="#fechamento"><i></i><span>fechamento</span></a>
   <a href="#encerramento"><i></i><span>encerramento</span></a>
   <a href="#transmissao"><i></i><span>apuração</span></a>
@@ -403,24 +405,29 @@
 
 <!-- 4. The turn -->
 <section class="pergunta gx" id="onde-votou">
-  <span class="k">03 · onde votou</span>
-  <h2 class="big">Onde você votou?</h2>
-  <p class="mid" style="margin-top:14px;color:var(--muted)">Digite sua cidade e veja o seu dia, das 8h ao último voto.</p>
-  <div class="campo">
-    <input id="cidade" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Sua cidade" aria-label="Sua cidade">
-    <ul class="hits" id="hits" role="listbox"></ul>
-  </div>
-  <details class="mais">
-    <summary>Tem o título à mão? Zona e seção mostram a sua urna, a que você tocou.</summary>
-    <div class="par">
-      <input id="zona" inputmode="numeric" placeholder="Zona" aria-label="Zona">
-      <input id="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção">
+  <span class="k">03 · seu dia</span>
+  <h2 class="big">Onde e quando você votou?</h2>
+  <p class="mid" style="margin-top:14px;color:var(--muted)">Escolha a cidade e a hora. Descubra quantas pessoas votaram com você.</p>
+  <div class="linha">
+    <div class="campo">
+      <input id="cidade" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Sua cidade" aria-label="Sua cidade">
+      <ul class="hits" id="hits" role="listbox"></ul>
     </div>
-    <small>Estão no seu título de eleitor ou no app e-Título.</small>
-  </details>
+    <div class="campo">
+      <select id="hora" class="vazio" aria-label="A que horas você votou"></select>
+    </div>
+  </div>
+  <div class="mais">
+    <div class="par">
+      <input id="zona" inputmode="numeric" placeholder="Zona" aria-label="Zona, opcional">
+      <input id="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção, opcional">
+    </div>
+    <small>Opcional: com zona e seção, você vê a sua urna. Estão no título de eleitor ou no app e-Título.</small>
+  </div>
+  <div class="comvoce" id="comvoce" aria-live="polite"></div>
   <div class="acoes">
-    <button class="btn" id="ir" disabled>Ver minha cidade</button>
-    <a class="pular" href="#dia-no-mapa" id="pular">Ver o Brasil inteiro</a>
+    <button class="btn" id="ir" disabled>Ver o dia no mapa</button>
+    <a class="pular" href="#dia-no-mapa" id="pular">Pular esta pergunta</a>
   </div>
   <div class="eco" id="eco"></div>
 </section>
@@ -435,19 +442,12 @@
   </div>
 </section>
 
-<section class="flow gx" id="quando-votou" style="min-height:100svh">
-  <span class="k">05 · quando votou</span>
-  <p class="lead" id="horalead">Que horas você votou? Toque na hora e descubra quantos votaram com você.</p>
-  <div class="horas" id="horas"></div>
-  <div class="comvoce" id="comvoce"></div>
-</section>
-
 <!-- 6. The close, with your urna pinned -->
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">06 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">05 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -479,7 +479,7 @@
     </div>
     <canvas class="fio" id="c10" aria-hidden="true"></canvas>
     <div class="passos" id="c10passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-encerramento"><div><span class="k">07 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. <b>Role</b> para acompanhar.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-encerramento"><div><span class="k">06 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. <b>Role</b> para acompanhar.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -488,13 +488,13 @@
   <div class="palco duplo">
     <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções somadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">08 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. <b>Role</b> para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">07 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. <b>Role</b> para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
 <!-- 9. The card -->
 <section class="cartao gx" id="compartilhamento">
-  <span class="k">09 · seu cartão</span>
+  <span class="k">08 · seu cartão</span>
   <p class="mid">Guarde o seu 25 de outubro num cartão.</p>
   <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: o seu voto foi um dos 128.236.074, com a sua cidade e hora."></canvas>
   <div class="info">
@@ -932,7 +932,7 @@ const ready = (async () => {
   input.addEventListener("input", async () => {
     await ready;
     const q = norm(input.value.trim());
-    state.town = null; $("ir").disabled = true;
+    if (state.town) { state.town = null; $("ir").disabled = true; renderHoras(); }
     if (q.length < 2) { hits.innerHTML = ""; return; }
     const a = [], b = [], todos = names.concat(extNames);
     for (let i = 0; i < todos.length && a.length < 8; i++) { if (todos[i].startsWith(q)) a.push(i); else if (b.length < 8 && todos[i].includes(q)) b.push(i); }
@@ -948,12 +948,10 @@ const ready = (async () => {
   function pick(i) {
     state.town = lugarDe(i);
     input.value = rot(state.town); hits.innerHTML = ""; ids = [];
-    $("ir").disabled = false; loadCidades(state.town.uf);
+    $("ir").disabled = false; afterAnswer();
   }
+  for (const id of ["zona", "secao"]) $(id).addEventListener("change", () => { if (state.town) afterAnswer(); });
   $("ir").addEventListener("click", async () => {
-    state.zona = $("zona").value.replace(/\D/g, "").padStart(4, "0").slice(-4);
-    state.secao = $("secao").value.replace(/\D/g, "").padStart(4, "0").slice(-4);
-    if (!$("zona").value.trim() || !$("secao").value.trim()) state.zona = state.secao = "";
     await afterAnswer();
     $("dia-no-mapa").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   });
@@ -977,14 +975,17 @@ function secao(z, n) {
   return s;
 }
 async function afterAnswer() {
+  const pad = v => v.replace(/\D/g, "").padStart(4, "0").slice(-4);
+  const z = $("zona").value.trim(), n = $("secao").value.trim();
+  state.zona = z && n ? pad(z) : ""; state.secao = z && n ? pad(n) : "";
   state.sec = null; state.cz = null;
   const t = state.town;
   if (t) state.cz = (await loadCidades(t.uf)).cidades[t.id] || null;
   if (t && state.zona && state.secao) {
     try { state.sec = secao(await get(`data/secoes/${t.uf}/${t.id}-${state.zona}.json`), state.secao); } catch { state.sec = null; }
   }
-  $("eco").textContent = !t ? "" : state.sec ? `${t.nome}, zona ${state.zona}, seção ${state.secao}.`
-    : state.zona ? `${t.nome}. Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : `${t.nome}.`;
+  $("eco").textContent = !t ? "" : state.sec ? `Zona ${state.zona}, seção ${state.secao}: a sua urna aparece no fim do dia.`
+    : state.zona ? `Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : "";
   $("encerramento").hidden = !minha();
   if (minha()) loadChegada();
   saveURL(); renderHoras(); drawCard(); tick();
@@ -998,9 +999,7 @@ async function afterAnswer() {
   if (i == null && k < 0) return;
   state.town = lugarDe(i ?? towns.id.length + k);
   $("cidade").value = `${rot(state.town)}`; $("ir").disabled = false;
-  const pad = v => v ? v.replace(/\D/g, "").padStart(4, "0").slice(-4) : "";
-  state.zona = pad(q.get("zona")); state.secao = pad(q.get("secao"));
-  $("zona").value = state.zona; $("secao").value = state.secao;
+  $("zona").value = q.get("zona") || ""; $("secao").value = q.get("secao") || "";
   state.hora = q.has("hora") ? +q.get("hora") : null;
   await afterAnswer();
 })();
@@ -1158,15 +1157,15 @@ async function afterAnswer() {
   }, saltos);
 }
 
-/* ---------- Hour tap ---------- */
+/* ---------- The hour ---------- */
 function renderHoras() {
-  const tw = state.town, box = $("horas");
-  $("horalead").textContent = tw ? `Que horas você votou em ${rot(tw)}${fora() ? ", na hora local" : ""}? Toque na hora e descubra quantos votaram com você.` : "Que horas você votou? Toque na hora e descubra quantos votaram com você.";
-  const bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote (ULT)
-  box.innerHTML = bands.map(h => `<button data-h="${h}" class="${state.hora === h ? "on" : ""}">${h}h</button>`).join("");
-  if (state.hora != null) comVoce(state.hora);
+  const box = $("hora"), bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote (ULT)
+  box.innerHTML = `<option value="">${fora() ? "Hora local" : "Que horas?"}</option>`
+    + bands.map(h => `<option value="${h}">${h === 18 ? "depois das 18h" : `${h}h às ${h + 1}h`}</option>`).join("");
+  box.value = state.hora ?? ""; box.classList.toggle("vazio", state.hora == null);
+  if (state.hora != null) comVoce(state.hora); else $("comvoce").textContent = "";
 }
-$("horas").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.hora = +b.dataset.h; saveURL(); renderHoras(); drawCard(); });
+$("hora").addEventListener("change", e => { state.hora = e.target.value === "" ? null : +e.target.value; saveURL(); renderHoras(); drawCard(); });
 async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
   if (tw) { const d = await loadCidades(tw.uf), cz = d.cidades[tw.id]; n = cz ? cz.horas[d.horas.indexOf(h)] : null; lugar = `em ${rot(tw)}${fora() ? ", na hora local" : ""}`; }
@@ -1177,8 +1176,10 @@ async function comVoce(h) {
     : rank >= 9 ? `${pct}% dos votos do dia, uma das horas mais calmas.` : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
   // Abroad the hour is local, so the Brazil comparison does not apply.
-  const pais = lugar === "no Brasil" || fora() ? "" : ` No Brasil, ${fmt(br)} votos.`;
-  $("comvoce").innerHTML = `Às ${h}h, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}.${pais} ${fora() ? "" : dia}<small>aproximado: todos os votos entre ${h}h e ${h === 18 && !fora() ? `o último voto, ${hfala(ULT)}` : `${h + 1}h`}</small>`;
+  const pais = lugar === "no Brasil" || fora() ? "" : ` No Brasil, ${fmt(br)} na mesma hora.`;
+  const quando = h < 18 ? `Entre ${h}h e ${h + 1}h` : fora() ? "Depois das 18h" : `Das 18h ao último voto, às ${hfala(ULT)}`;
+  if (state.hora !== h) return; // the reader picked another hour while the town loaded
+  $("comvoce").innerHTML = `${quando}, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}, com você.${pais} ${fora() ? "" : dia}<small>Contado no registro das urnas: cada voto tem a sua hora.</small>`;
 }
 renderHoras();
 
