@@ -299,7 +299,7 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     uf, mun, m, tot_c = f.q(sql)[0]
     l = f.lugar(uf, mun)
     f.add("metade_primeira", 4, f"{l['municipio']}, metade às {hfala(m.strftime('%H:%M'))}",
-          f"A primeira cidade com mais de mil eleitores a chegar à metade dos votos. {fmt(tot_c)} votos no dia.",
+          f"Das cidades com mil votos ou mais, a primeira a chegar à metade dos seus votos. Foram {fmt(tot_c)} no dia.",
           m.strftime("%H:%M"), l, tot_c, sql)
 
     sql = f"""SELECT sigla_uf, sum(votos) FILTER (WHERE hour(minuto_bsb) = 11) h11,
@@ -339,7 +339,7 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     f.add("solimoes", 4, f"Alto Solimões, 90% às {hfala(m.strftime('%H:%M'))}",
           f"Nos nove municípios do Alto Solimões, no Amazonas, nove em cada dez eleitores já tinham votado. "
           f"O Brasil só chegou lá às {hfala(m_br.strftime('%H:%M'))}. Na maioria deles, o relógio local marcava "
-          f"{hfala(local.strftime('%H:%M'))}: a urna abriu às {8 + fu // 60}h da manhã.",
+          f"{hfala(local.strftime('%H:%M'))}, e a urna tinha aberto às {8 + fu // 60}h da manhã.",
           m.strftime("%H:%M"), {"uf": "AM", "municipio": "Alto Solimões", "lat": -4.25, "lon": -69.94}, tot_s,
           sql + " ; " + sql_br + " ; " + sql_fu)
 
@@ -381,8 +381,8 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     uf, mun, z, s, mb = f.q(sql2)[0]
     l = f.lugar(uf, mun, z, s)
     horas_b = mb / 60
-    f.add("sem_luz", 5, "A luz caiu. A eleição não parou",
-          f"{fmt(n_q)} urnas passaram para a bateria em algum momento do dia. Toda urna tem bateria própria. "
+    f.add("sem_luz", 5, "A luz caiu. A urna seguiu na bateria",
+          f"{fmt(n_q)} urnas passaram para a bateria em algum momento do dia. "
           f"Em {f.onde(l)}, uma delas votou {int(horas_b)} horas e {round(mb % 60)} minutos na bateria."
           if horas_b >= 1 else f"{fmt(n_q)} urnas passaram para a bateria em algum momento do dia.",
           None, {"uf": "BR"}, n_q, sql + " ; " + sql2)
@@ -392,12 +392,12 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     uf, mun, h, n = f.q(sql)[0]
     l = f.lugar(uf, mun)
     f.add("bateria_cidade", 5, f"{l['municipio']}, {n} urnas na bateria",
-          f"Entre {h}h e {h + 1}h, {n} urnas de {l['municipio']} ficaram ao menos dez minutos na bateria. A votação seguiu.",
+          f"Entre {h}h e {h + 1}h, {n} urnas de {l['municipio']} ficaram ao menos dez minutos na bateria.",
           f"{h:02d}:00", l, n, sql)
 
     sql = f"""SELECT count(*) FILTER (WHERE n_logs > 1), count(*) FILTER (WHERE contingencia) FROM r2.secao_dia WHERE {BR}"""
     n2, nc = f.q(sql)[0]
-    f.add("trocadas", 5, "Urnas trocadas", f"Em {fmt(n2)} seções, uma urna substituiu outra durante o dia.",
+    f.add("trocadas", 5, "Urnas trocadas", f"Em {fmt(n2)} seções, uma urna de contingência substituiu outra durante o dia.",
           None, {"uf": "BR"}, n2, sql)
 
     f.add("fechamento", 8, "Os portões fecham", "Quem já estava na fila ainda vota.", "17:00", {"uf": "BR"}, None,
