@@ -3,7 +3,7 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: [docs/site/**, .github/workflows/pages.yml]
+    paths: [docs/site/**, scripts/site_v2_check.py, .github/workflows/pages.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,6 +20,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: every number on the v2 page has a source
+        run: python3 scripts/site_v2_check.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/site
