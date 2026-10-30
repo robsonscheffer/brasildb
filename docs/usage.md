@@ -72,7 +72,7 @@ uv run brasildb sql "SELECT status, count(*) FROM main.check_comparecimento WHER
 | `main.votos_hora`, `main.votos_hora_uf` | votes per hour, local and Brasilia time |
 | `main.check_comparecimento` | votes in the log vs official turnout, per section |
 
-To read a vote time in Brasilia time: `e.data_hora - to_hours(f.fuso)`, joining
+To read a vote time in Brasilia time: `e.data_hora - to_minutes(f.fuso_minutos)`, joining
 `main.fuso_municipio f USING (ano, turno, sigla_uf, id_municipio_tse)`.
 
 ## What to expect in the turnout check

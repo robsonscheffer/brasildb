@@ -90,6 +90,25 @@ def _log_files(aux: dict) -> list[tuple[str, str]]:
     return found
 
 
+def log_name(id_pleito: str, k: SectionKey) -> str:
+    """The TSE name of a section's urna log, e.g. o03221rr0308500080001-log.jez."""
+    return f"o{int(id_pleito):05d}{k.sigla_uf}{k.id_municipio_tse}{k.zona}{k.secao}-log.jez"
+
+
+async def _unlisted_logs(client, limiter, base, election, key, aux: dict) -> list[tuple[str, str]]:
+    """A log the index leaves out: the results site can omit it from aux.json while serving it
+    (SP 64777/0395/0298, round 2). Tried only for a hash that lists an urna boletim (tp bu)."""
+    nome = log_name(election.id_pleito, key)
+    found = []
+    for h in aux.get("hashes", []):
+        if not any(a.get("tp") == "bu" for a in h.get("arq", [])):
+            continue
+        r = await _get(client, limiter, file_url(base, election.id_pleito, key, h["hash"], nome))
+        if r.status_code == 200:
+            found.append((h["hash"], nome))
+    return found
+
+
 def _erro(entry: SectionEntry, mensagem: str) -> SectionResult:
     return SectionResult(entry, "erro", [], mensagem)
 
@@ -111,7 +130,10 @@ async def fetch_section(
             return SectionResult(entry, "sem_log")
         if aux.status_code != 200:
             return _erro(entry, f"aux.json HTTP {aux.status_code}")
-        arquivos = _log_files(aux.json())
+        aux_json = aux.json()
+        arquivos = _log_files(aux_json)
+        if not arquivos:
+            arquivos = await _unlisted_logs(client, limiter, base, election, key, aux_json)
         if not arquivos:
             return SectionResult(entry, "sem_log")
         logs = []

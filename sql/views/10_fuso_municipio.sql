@@ -1,4 +1,6 @@
--- UTC offset per municipality, from the urna clocks: fuso = local - Brasilia, in hours.
+-- UTC offset per municipality, from the urna clocks: fuso = local - Brasilia, in hours, and
+-- fuso_minutos in minutes (use it: some cities abroad are 30 or 45 minutes off). Abroad (ZZ)
+-- takes main.fuso_exterior; fuso there is fuso_minutos / 60 rounded, for votos_hora only.
 -- Median of each section's first vote time (election day only); polls open at 08:00 Brasilia
 -- everywhere. With fewer than 3 sections one late opening can skew the median, so the derived
 -- value is kept only if the state has that offset (western AM is -2, Noronha in PE is +1);
@@ -33,9 +35,16 @@ SELECT p.ano,
        p.turno,
        p.sigla_uf,
        p.id_municipio_tse,
-       CASE WHEN p.n_secoes >= 3 OR p.derivado = d.outro THEN p.derivado
+       CASE WHEN p.sigla_uf = 'ZZ' THEN CAST(round(x.fuso_minutos / 60.0) AS INTEGER)
+            WHEN p.n_secoes >= 3 OR p.derivado = d.outro THEN p.derivado
             ELSE coalesce(d.fuso, 0)
-       END AS fuso
+       END AS fuso,
+       CASE WHEN p.sigla_uf = 'ZZ' THEN x.fuso_minutos
+            WHEN p.n_secoes >= 3 OR p.derivado = d.outro THEN p.derivado * 60
+            ELSE coalesce(d.fuso, 0) * 60
+       END AS fuso_minutos
 FROM (SELECT *, CAST(round((mediana_minuto - 480) / 60.0) AS INTEGER) AS derivado
       FROM por_municipio) p
-LEFT JOIN padrao_uf d ON d.sigla_uf = p.sigla_uf;
+LEFT JOIN padrao_uf d ON d.sigla_uf = p.sigla_uf
+LEFT JOIN main.fuso_exterior x ON p.sigla_uf = 'ZZ' AND x.id_municipio_tse = p.id_municipio_tse
+WHERE p.sigla_uf <> 'ZZ' OR x.fuso_minutos IS NOT NULL;

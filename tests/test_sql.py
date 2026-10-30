@@ -17,7 +17,7 @@ EVENTOS_COLUNAS = (
     "ano INTEGER, turno INTEGER, sigla_uf VARCHAR, id_municipio_tse VARCHAR, zona VARCHAR, "
     "secao VARCHAR, arquivo_hash VARCHAR, linha INTEGER, data_hora TIMESTAMP, nivel VARCHAR, "
     "id_urna VARCHAR, componente VARCHAR, mensagem VARCHAR, "
-    "tipo_evento VARCHAR, valor VARCHAR"
+    "tipo_evento VARCHAR, valor VARCHAR, arquivo_membro VARCHAR"
 )
 DETALHE_COLUNAS = (
     "ano INTEGER, turno INTEGER, id_eleicao VARCHAR, tipo_eleicao VARCHAR, data_eleicao DATE, "
@@ -39,11 +39,11 @@ class Linhas:
     def __init__(self) -> None:
         self.rows: list[tuple] = []
 
-    def add(self, uf, mun, zona, secao, ts, tipo, valor=None) -> None:
+    def add(self, uf, mun, zona, secao, ts, tipo, valor=None, membro="logd.dat", mensagem="msg") -> None:
         linha = len(self.rows) + 1
         self.rows.append((
             2026, 2, uf, mun, zona, secao, "hash1", linha, ts, "INFO", "02299969",
-            "VOTA", "msg", tipo, valor,
+            "VOTA", mensagem, tipo, valor, membro,
         ))
 
     def votos(self, uf, mun, zona, secao, horas: list[str], dia: dt.date = DIA) -> None:
@@ -111,7 +111,7 @@ def con():
     c.execute("CREATE SCHEMA br_tse_eleicoes")
     c.execute(f"CREATE TABLE br_tse_urna_logs.eventos ({EVENTOS_COLUNAS})")
     c.execute(f"CREATE TABLE br_tse_eleicoes.detalhes_votacao_secao ({DETALHE_COLUNAS})")
-    c.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 15)})", _eventos())
+    c.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", _eventos())
     c.executemany(
         f"INSERT INTO br_tse_eleicoes.detalhes_votacao_secao VALUES ({','.join('?' * 21)})",
         _detalhe(),
@@ -224,3 +224,59 @@ def test_apply_skip_missing(tmp_path):
     with pytest.raises(duckdb.CatalogException):
         sqlrun.apply(con, tmp_path)
     sqlrun.apply(con, tmp_path, skip_missing=True)
+
+
+def test_abroad_takes_its_time_zone_in_minutes(con):
+    l = Linhas()
+    l.votos("ZZ", "30805", "0001", "0001", ["08:04"])  # Wellington, +16h
+    l.votos("ZZ", "29173", "0001", "0494", ["08:00"])  # Katmandu, +8h45
+    l.votos("ZZ", "99999", "0001", "0001", ["08:00"])  # a city not in fuso_exterior: left out
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    fuso = _q(con, "SELECT id_municipio_tse, fuso, fuso_minutos FROM main.fuso_municipio "
+                   "WHERE sigla_uf = 'ZZ' ORDER BY 1")
+    assert fuso == [("29173", 9, 525), ("30805", 16, 960)]
+    minutos = _q(con, "SELECT id_municipio_tse, minuto_bsb FROM main.votos_minuto "
+                      "WHERE sigla_uf = 'ZZ' ORDER BY 1")
+    assert minutos == [
+        ("29173", dt.datetime(2026, 10, 24, 23, 15)),  # Saturday night in Brasilia
+        ("30805", dt.datetime(2026, 10, 24, 16, 4)),
+    ]
+    sp = _q(con, "SELECT fuso, fuso_minutos FROM main.fuso_municipio WHERE id_municipio_tse = '50308'")
+    assert sp == [(-1, -60)]
+
+
+def test_battery_of_a_replaced_urna_ends_with_its_log(con):
+    l = Linhas()
+    # RS 88888: the first urna votes, goes on battery at 09:30 and its log ends at 10:00;
+    # a second urna (second log member) votes until 16:00.
+    l.votos("RS", "88888", "0001", "0001", ["08:00", "09:00"])
+    l.add("RS", "88888", "0001", "0001", _ts(DIA, "09:30"), "energia", "bateria")
+    l.add("RS", "88888", "0001", "0001", _ts(DIA, "10:00"), "encerramento")
+    for h in ["11:00", "16:00"]:
+        l.add("RS", "88888", "0001", "0001", _ts(DIA, h), "voto_computado", "Presidente", membro="logsub.dat")
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    rows = _q(con, "SELECT votos, quedas, min_bateria, n_logs FROM main.secao_dia WHERE id_municipio_tse = '88888'")
+    assert rows == [(4, 1, 30.0, 2)]  # 09:30 to 10:00, not to the last vote at 16:00
+
+
+def test_a_vote_counts_once_per_section(con):
+    l = Linhas()
+    sec = ("ES", "57932", "0009", "0085")
+    voto = dict(tipo="voto_computado", valor="Presidente")
+    # The section's own urna: three votes.
+    l.add(*sec, _ts(DIA_ANTES, "10:00"), None, mensagem="Seção Eleitoral: 0085", membro="a.jez/logd.dat")
+    for h in ["08:00", "08:01", "08:02"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="a.jez/logd.dat")
+    # A copy of it on the replacement card repeats two of those seconds.
+    for h in ["08:00", "08:01"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="b-ME.jez/logd.dat")
+    # Another section's log filed in this archive: its votes belong to 0112.
+    l.add(*sec, _ts(DIA_ANTES, "10:00"), None, mensagem="Seção Eleitoral: 0112", membro="c.jez/logd.dat")
+    for h in ["08:03", "08:04"]:
+        l.add(*sec, _ts(DIA, h), **voto, membro="c.jez/logd.dat")
+    # The contingency urna names section 0000 and votes once more.
+    l.add(*sec, _ts(DIA_ANTES, "09:00"), None, mensagem="Seção Eleitoral: 0000")
+    l.add(*sec, _ts(DIA, "09:00"), **voto)
+    con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
+    assert _q(con, "SELECT votos FROM main.secao_dia WHERE id_municipio_tse = '57932'") == [(4,)]
+    assert _q(con, "SELECT sum(votos) FROM main.votos_minuto WHERE id_municipio_tse = '57932'") == [(4,)]

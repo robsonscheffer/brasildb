@@ -22,8 +22,8 @@ ELECTIONS: dict[tuple[int, int], Election] = {
 
 UFS = [
     "ac", "al", "am", "ap", "ba", "ce", "df", "es", "go", "ma", "mg", "ms", "mt", "pa",
-    "pb", "pe", "pi", "pr", "rj", "rn", "ro", "rr", "rs", "sc", "se", "sp", "to",
-]  # "zz" (abroad) is left out until we need it
+    "pb", "pe", "pi", "pr", "rj", "rn", "ro", "rr", "rs", "sc", "se", "sp", "to", "zz",
+]  # "zz" is abroad: 186 cities, urna clocks on local time (sql/views/05_fuso_exterior.sql)
 
 
 @dataclass(frozen=True)

@@ -1,11 +1,13 @@
 -- One row per section and round: the day's shape from the log. Times are Brasilia (urna clock
 -- minus the town's fuso), election day only. A section whose urna was replaced has two logs
--- (arquivo_membro); counts sum both, times span both, modelo is the closing urna's.
+-- (arquivo_membro); votes come from main.votos (each vote once), times span both logs, modelo
+-- is the closing urna's.
 -- quedas and min_bateria count energia=bateria lines between the first and last vote; a line
--- lasts until the next energia line of the same log, so a flicker counts as a few seconds.
+-- lasts until the next energia line of the same log, else that log's last line (a replaced urna
+-- stops there), and never past the last vote. A flicker counts as a few seconds.
 CREATE OR REPLACE VIEW main.secao_dia AS
 WITH dia AS (
-    SELECT e.*, e.data_hora - to_hours(f.fuso) AS hora_bsb
+    SELECT e.*, e.data_hora - to_minutes(f.fuso_minutos) AS hora_bsb
     FROM br_tse_urna_logs.eventos e
     JOIN main.eleicoes el ON el.ano = e.ano AND el.turno = e.turno
     JOIN main.fuso_municipio f
@@ -14,23 +16,36 @@ WITH dia AS (
     WHERE CAST(e.data_hora AS DATE) = el.data
 ),
 votos AS (
-    SELECT ano, turno, sigla_uf, id_municipio_tse, zona, secao,
-           min(hora_bsb) AS primeiro_voto, max(hora_bsb) AS ultimo_voto, count(*) AS votos
-    FROM dia WHERE tipo_evento = 'voto_computado'
+    SELECT v.ano, v.turno, v.sigla_uf, v.id_municipio_tse, v.zona, v.secao,
+           min(v.data_hora - to_minutes(f.fuso_minutos)) AS primeiro_voto,
+           max(v.data_hora - to_minutes(f.fuso_minutos)) AS ultimo_voto,
+           count(*) AS votos
+    FROM main.votos v
+    JOIN main.fuso_municipio f
+      ON f.ano = v.ano AND f.turno = v.turno
+     AND f.sigla_uf = v.sigla_uf AND f.id_municipio_tse = v.id_municipio_tse
+    GROUP BY ALL
+),
+fim_log AS (
+    SELECT ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, arquivo_membro,
+           max(hora_bsb) AS fim
+    FROM dia
     GROUP BY ALL
 ),
 energia AS (
     SELECT d.ano, d.turno, d.sigla_uf, d.id_municipio_tse, d.zona, d.secao, d.hora_bsb, d.valor,
-           lead(d.hora_bsb) OVER (PARTITION BY d.ano, d.turno, d.sigla_uf, d.id_municipio_tse,
-                                   d.zona, d.secao, d.arquivo_hash, d.arquivo_membro
-                                   ORDER BY d.hora_bsb, d.linha) AS proxima
+           coalesce(lead(d.hora_bsb) OVER (PARTITION BY d.ano, d.turno, d.sigla_uf, d.id_municipio_tse,
+                                            d.zona, d.secao, d.arquivo_hash, d.arquivo_membro
+                                            ORDER BY d.hora_bsb, d.linha),
+                    fl.fim) AS proxima
     FROM dia d
+    JOIN fim_log fl USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, arquivo_membro)
     WHERE d.tipo_evento = 'energia'
 ),
 quedas AS (
     SELECT en.ano, en.turno, en.sigla_uf, en.id_municipio_tse, en.zona, en.secao,
            count(*) AS quedas,
-           sum(epoch(coalesce(en.proxima, v.ultimo_voto) - en.hora_bsb)) / 60.0 AS min_bateria,
+           sum(epoch(least(en.proxima, v.ultimo_voto) - en.hora_bsb)) / 60.0 AS min_bateria,
            min(en.hora_bsb) AS primeira_queda
     FROM energia en
     JOIN votos v USING (ano, turno, sigla_uf, id_municipio_tse, zona, secao)
