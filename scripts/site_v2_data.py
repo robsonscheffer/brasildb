@@ -817,8 +817,8 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
     town's votes that minute against the peak of its 3-minute mean (255 = the peak).
     Changes against v1: the votes are the corrected round 2 (c_votos_minuto); brightness is
     cut to the 16 levels the page draws, which is what gets the file under 1 MB; a minute with
-    votes is never 0 (FLOOR); and a minute with none, between a town's first vote and its last
-    section's last vote, is FLOOR too, so a slow town stays lit until its last vote."""
+    votes, or a vote in the minute before or after, is never 0 (FLOOR). A quiet minute inside a
+    town's voting span stays 0: lighting it put 123 towns on the map at 17:20, when 36 had a vote."""
     towns = json.loads((FRAMES / "towns.json").read_text())
     tot = json.loads((FRAMES / "totals.json").read_text())
     start, minutes, n = tot["start"], tot["minutes"], len(towns["id"])
@@ -836,18 +836,12 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
         counts[index[(uf, mun)]][m] += votos
         national[m] += votos
         por_uf.setdefault(uf, [0] * minutes)[m] += votos
-    last = {}  # the last minute any section of the town votes
-    for uf, mun, minuto in con.execute(f"""
-        SELECT sigla_uf, id_municipio_tse, max(hour(ultimo_voto) * 60 + minute(ultimo_voto))
-        FROM c_secao WHERE ano = {ANO} AND turno = {TURNO} AND sigla_uf <> 'ZZ' AND ultimo_voto IS NOT NULL
-        GROUP BY ALL""").fetchall():
-        last[(uf, mun)] = minuto - start
     pixels = bytearray(n * minutes)
     for k, c in enumerate(counts):
         mean3 = [(c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)]
         peak = max(mean3) or 1
         voting = [m for m in range(minutes) if c[m]]
-        end = max(voting[-1] if voting else -1, last.get((towns["uf"][k], towns["id"][k]), -1))
+        end = voting[-1] if voting else -1
         for m in range(minutes):
             level = 0
             if not voting or not voting[0] <= m <= end:
@@ -855,8 +849,6 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
             elif mean3[m]:
                 bucket = round(min(1.0, mean3[m] / peak) * LEVELS / STEP) * STEP
                 level = round(255 * (bucket / LEVELS) ** (1 / GAMMA)) if bucket else FLOOR
-            else:
-                level = FLOOR
             pixels[m * n + k] = level
     # The curves the pages draw (votes per minute, Brazil and per state) come from the same votes.
     tot.update(national=national, uf=dict(sorted(por_uf.items())))
