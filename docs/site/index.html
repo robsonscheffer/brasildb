@@ -750,7 +750,7 @@ function minha() {
       { h: "08:00 · exterior", titulo: ant.titulo + ".", texto: comTermos(ant) },
     ] : []),
     { h: `${first.hora} · ${s.municipio}, ${s.uf} · zona ${s.zona} · seção ${s.secao}`, titulo: "O primeiro voto do Brasil.", texto: `${segundos(first.hora) - segundos(pronta?.hora || "08:00:00")} segundos depois de a <a class="termo" href="como.html#urna">urna</a> abrir, alguém em ${s.municipio}, ${s.uf}, votou.` },
-    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Na lista, 1 em cada ${fmt(Math.round((pm.votos - 1) / pm.linhas.length))} linhas do <a class="termo" href="como.html#log">log</a>, na ordem em que entraram.` },
+    { h: "08:00 a 08:01 · Brasil", titulo: "O primeiro minuto.", texto: `${fmt(pm.votos)} votos computados antes das 8h01. Na lista, 1 voto em cada ${fmt(Math.round((pm.votos - 1) / pm.linhas.length))}, na ordem em que o <a class="termo" href="como.html#log">log</a> os registrou.` },
     { h: "08:01 · Brasil", titulo: "Esse foi só o primeiro minuto.", texto: "Faltavam onze horas de eleição." },
   ];
   $("pph").textContent = first.hora;
