@@ -393,7 +393,7 @@
 <section class="pergunta gx" id="onde-votou">
   <span class="k">03 · onde votou</span>
   <h2 class="big">Onde você votou?</h2>
-  <p class="mid" style="margin-top:14px;color:var(--muted)">Digite sua cidade e veja o seu dia.</p>
+  <p class="mid" style="margin-top:14px;color:var(--muted)">Digite sua cidade e veja o seu dia, das 8h ao último voto.</p>
   <div class="campo">
     <input id="cidade" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Sua cidade" aria-label="Sua cidade">
     <ul class="hits" id="hits" role="listbox"></ul>
@@ -483,7 +483,7 @@
 <!-- 9. The card -->
 <section class="cartao gx" id="compartilhamento">
   <span class="k">09 · para guardar</span>
-  <p class="mid">Você fez parte dessa história. Guarde o seu momento.</p>
+  <p class="mid">Guarde o seu 25 de outubro num cartão.</p>
   <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: você foi um dos 128.236.074 votos, com a sua cidade e hora."></canvas>
   <div class="info">
     <ul id="cartao-linhas"></ul>
@@ -1027,7 +1027,7 @@ async function afterAnswer() {
       ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora && i.id !== "cem_milhoes").map(fato),
       { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
       (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(TOTAL - 1e8)}.`, lugar: l }; })(),
-      { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", texto: "Em poucos minutos, quase nenhum eleitor votando.", lugar: { uf: "BR" } },
+      { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham. Quem está na fila ainda vota.", texto: "Às 17h10, quase nenhum eleitor ainda votava.", lugar: { uf: "BR" } },
       fato(cur("ultimo_voto")),
     ];
     const tw = state.town;
@@ -1151,8 +1151,8 @@ async function comVoce(h) {
   // The hour in the whole country: how many voted and where it ranks in the day.
   const fim = x => x === 18 ? ULTM + 1 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
   const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
-  const dia = h >= 17 ? "Depois dos portões fechados, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
-    : rank >= 9 ? "Uma das horas mais calmas do dia." : `${pct}% dos votos do dia.`;
+  const dia = h >= 17 ? "Depois das 17h, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
+    : rank >= 9 ? `${pct}% dos votos do dia, uma das horas mais calmas.` : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
   // Abroad the hour is local, so the Brazil comparison does not apply.
   const pais = lugar === "no Brasil" || fora() ? "" : ` No Brasil, ${fmt(br)} votos.`;
@@ -1174,8 +1174,8 @@ renderHoras();
     { t: 1020, h: "17:00 · Brasil", titulo: "Os portões fecham, a fila continua.", seg: [1019, 1021],
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
     { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
-      texto: `${fmt(fila)} votos entre 17h e 17h10. Depois disso, quase nada.` },
-    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
+      texto: `${fmt(fila)} votos entre 17h e 17h10. Depois das 17h10, quase nada.` },
+    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega às ${hfala(cur("stf").hora)}, com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
     // The last vote abroad is after the chart ends: a step at its edge, with its own clock.
@@ -1251,7 +1251,7 @@ renderHoras();
     const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
     const tipica = mi.exata ? "" : " Esta é a urna típica da cidade: digite zona e seção para ver a sua.";
     const its = [
-      { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `Ela já sabe o resultado: contou cada voto na hora em que entrou.${tipica}` },
+      { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `${state.sec ? `Os ${state.sec.votos} votos da seção` : "Os votos do dia"} já estão somados na urna, cada um na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
       { h: "transmissão", titulo: "O resultado é transmitido ao TSE.", texto: "O mesmo boletim, agora a caminho de Brasília." },
       { h: `${bsb(mi.chega)} · Brasília`, titulo: `${hfala(bsb(mi.chega))}. O resultado entra na soma do TSE.`, texto: `${durTxt} depois do encerramento.` },
@@ -1412,7 +1412,7 @@ $("share").addEventListener("click", async () => {
   const blob = await new Promise(r => $("card").toBlob(r, "image/png"));
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
   const onde = state.town ? `, em ${rot(state.town)}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
-  const texto = `Eu fiz parte dessa história. Um dos ${fmt(TOTAL)} votos do segundo turno${onde}${hora}. Veja o seu momento. ${location.href}`;
+  const texto = `Eu fui um dos ${fmt(TOTAL)} votos do segundo turno de 2026${onde}${hora}. Veja o seu: ${location.href}`;
   if (PODE_PARTILHAR && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); } catch {}
     return;
