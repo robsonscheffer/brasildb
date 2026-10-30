@@ -578,6 +578,11 @@ def hm_(ts) -> str | None:
     return ts.strftime("%H:%M") if ts is not None else None
 
 
+def min_(ts) -> int | None:
+    """Minutes after 00:00 of a timestamp's clock (what hm_ prints, as an integer)."""
+    return ts.hour * 60 + ts.minute if ts is not None else None
+
+
 def cs_minuto(r) -> int:
     """Minutes after 00:00 of election day of a section's `ha` (a later day adds 1440)."""
     h, m, _ = r["ha"].split(":")
@@ -614,7 +619,9 @@ def cidades(con: duckdb.DuckDBPyConnection) -> None:
     official turnout and electorate; pico, metade and horas come from the log's votes per
     minute; fechamento is the median close, chegada the median `ha`. Times are Brasília, and
     abroad the urna's local time (the one a voter there remembers) with the city's `fuso`.
-    No name: the page has it from towns.json and exterior.json. MG is 37 KB gzip."""
+    No name, aptos or secoes: the page has them from towns.json and exterior.json. Each town
+    is one array: the `campos` scalars (times as minutes after 00:00) then the hour bands,
+    to fit 33 KB gzip per state (MG was 37 KB)."""
     fuso = fusos(con)
     base = con.execute("""
         SELECT a.sigla_uf, a.id_municipio_tse, sum(a.comparecimento), sum(a.aptos), count(*),
@@ -640,18 +647,17 @@ def cidades(con: duckdb.DuckDBPyConnection) -> None:
         for minuto, v in c:
             acc += v
             if acc * 2 >= total:
-                metade = hm_(minuto)
+                metade = min_(minuto)
                 break
-        pico = hm_(max(c, key=lambda x: x[1])[0]) if c else None
-        por_uf.setdefault(uf, {})[mun] = {
-            "votos": int(votos), "aptos": int(aptos), "secoes": secoes,
-            "pico": pico, "metade": metade, "ultimo_voto": hm_(ultimo), "horas": horas,
-            "fechamento": hm_(fecha), "chegada": hhmm_(mediana(cheg.get((uf, mun), []))),
-            **({"fuso": f} if uf == "ZZ" else {}),
-        }
+        pico = min_(max(c, key=lambda x: x[1])[0]) if c else None
+        mc = mediana(cheg.get((uf, mun), []))
+        por_uf.setdefault(uf, {})[mun] = [
+            int(votos), pico, metade, min_(ultimo), min_(fecha), mc,
+            *([f] if uf == "ZZ" else []), *horas]
     for uf, cs in sorted(por_uf.items()):
+        campos = ["votos", "pico", "metade", "ultimo_voto", "fechamento", "chegada"] + (["fuso"] if uf == "ZZ" else [])
         dump(OUT / f"cidades/{uf}.json", {"mock": False, "uf": uf, "hora": "local" if uf == "ZZ" else "Brasília",
-                                          "horas": HORAS, "cidades": cs})
+                                          "horas": HORAS, "campos": campos, "cidades": cs})
 
 
 def exterior(con: duckdb.DuckDBPyConnection) -> dict:

@@ -29,7 +29,7 @@ checks each line; a line is closed when its evidence is written next to it.
       which one the page shows.
 - [ ] F3 The STF minute: a source for the decision's time, or the page stops naming 17h15.
 - [ ] F4 The time-zone country list (`PAIS`) checked against a source.
-- [ ] F5 The MG towns file is 37 KB gzip, over the 33 KB budget.
+- [x] F5 The MG towns file is 37 KB gzip, over the 33 KB budget. Towns are now one array each, times in minutes, no aptos or secoes: MG 37.2 -> 27.6 KB gzip, SP 29.6 -> 22.1, largest 27.6.
 
 ## Public
 
