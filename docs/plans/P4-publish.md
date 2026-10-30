@@ -48,18 +48,29 @@ checks each line; a line is closed when its evidence is written next to it.
 
 ## Public
 
-- [ ] P1 A new OG image (one static image), replacing v1's `og.jpg`.
-- [ ] P2 Share text and card checked on WhatsApp and Instagram, on a phone.
-- [ ] P3 Meta description, page title and `robots`.
+- [x] P1 A new OG image (one static image), replacing v1's `og.jpg`.
+      Evidence: 1200x630, the whole map lit with the total, drawn with the walk's own map code (2026-10-30).
+- [x] P2 Share text and card checked on WhatsApp and Instagram, on a phone.
+      Evidence: Robson's phone test after #43: card, text and bare link look right (2026-10-30).
+- [x] P3 Meta description, page title and `robots`.
+      Evidence: og and canonical tags on the walk, `/explorar/` and `como.html`; `/v2/` noindex;
+      `robots.txt` and `sitemap.xml`; the explorer no longer says 127 milhões (2026-10-30).
 - [x] P4 A line naming the source (TSE open data) and the repo on the card or the footer.
       Evidence: footer of the walk and `/explorar/`, plus the note at the top of `como.html` (2026-10-30).
-- [ ] P5 Old share links: `?t=` to `/explorar/`, `/v2/` to `/`, town links keep working.
+- [x] P5 Old share links: `?t=` to `/explorar/`, `/v2/` to `/`, town links keep working.
+      Evidence: 8 links walked, all land on the right page and town (2026-10-30).
 
 ## Access
 
-- [ ] A1 Reduced motion: the calm page has every number.
-- [ ] A2 Screen-reader tables behind each chart.
-- [ ] A3 A keyboard walk from the first fold to the card.
-- [ ] A4 390x844, 1440x900 and 1366x650 (short laptop): no clipped text, 0 console errors.
+- [x] A1 Reduced motion: the calm page has every number.
+      Evidence: all 45 steps visible; every fact's number on the page (2026-10-30).
+- [x] A2 Screen-reader tables behind each chart.
+      Evidence: tables behind the 8h, 16h and apuração charts (61, 19, 27 rows); the map points to its
+      list of 15 facts; the card has its own label (2026-10-30).
+- [x] A3 A keyboard walk from the first fold to the card.
+      Evidence: 46 Tab stops from the top to "Copiar link", each with a focus ring and scrolled into view (2026-10-30).
+- [x] A4 390x844, 1440x900 and 1366x650 (short laptop): no clipped text, 0 console errors.
+      Evidence: the vote ticker was cut on phones, now shorter there; no other clipping, no
+      horizontal scroll; the only error is the analytics beacon on localhost (2026-10-30).
 
 Done when no line is open and Robson says publish.

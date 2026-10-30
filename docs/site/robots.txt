@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://votando.brasildb.org/sitemap.xml
