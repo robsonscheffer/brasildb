@@ -3,6 +3,8 @@
   uv run python scripts/site_v2_data.py cache          # once: lake views -> $BRASILDB_DATA/site_v2.duckdb
   uv run python scripts/site_v2_data.py curiosidades   # docs/site/v2/data/curiosidades.json
   uv run python scripts/site_v2_data.py chegada        # docs/site/v2/data/chegada.json
+  uv run python scripts/site_v2_data.py cidades        # docs/site/v2/data/cidades/<UF>.json
+  uv run python scripts/site_v2_data.py secoes         # docs/site/v2/data/secoes/<UF>/<municipio>-<zona>.json
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
 """
@@ -55,6 +57,7 @@ def build_cache(only: list[str] | None = None) -> None:
                      WHERE ano = {ANO} AND turno = {TURNO} AND cargo ILIKE 'presidente'""",
         "coleta": f"""SELECT sigla_uf, id_municipio_tse, zona, secao, status
                       FROM br_tse_urna_logs.secoes_coleta WHERE ano = {ANO} AND turno = {TURNO}""",
+        "fim_log": FIM_LOG_SQL,
     }
     for name, sql in steps.items():
         if only and name not in only:
@@ -382,9 +385,41 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
     return {"mock": False, "itens": f.itens}
 
 
+# W3: the closing urna's steps from the close to the log file, one line per step (FIM_PASSOS).
+# Only these fixed messages leave the lake: other closing lines carry título numbers.
+FIM_PASSOS = [
+    "Operador selecionou: Encerrar votação",
+    "Procedimento de encerramento confirmado",
+    "Gerando relatório [BU] [INÍCIO]",
+    "Imprimindo relatório [BU] via nº [1]",
+    "Fim de impressão",
+    "Gerando arquivo de resultado [bu.dat] + [Início]",
+    "Gerando arquivo de resultado [log.jez] + [Início]",
+]
+_fim_in = ", ".join("'" + m.replace("'", "''") + "'" for m in FIM_PASSOS)
+FIM_LOG_SQL = f"""
+WITH d AS (
+    SELECT sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, linha, data_hora, mensagem
+    FROM br_tse_urna_logs.eventos
+    WHERE ano = {ANO} AND turno = {TURNO} AND arquivo_membro = 'logd.dat'
+      AND CAST(data_hora AS DATE) = DATE '{DIA}' AND mensagem IN ({_fim_in})
+),
+enc AS (
+    SELECT sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, max(linha) AS l0
+    FROM d WHERE mensagem = '{FIM_PASSOS[0]}' GROUP BY ALL
+)
+SELECT d.sigla_uf, d.id_municipio_tse, d.zona, d.secao, d.arquivo_hash, d.linha, d.mensagem,
+       d.data_hora - to_minutes(f.fuso_minutos) AS hora_bsb
+FROM d
+JOIN enc USING (sigla_uf, id_municipio_tse, zona, secao, arquivo_hash)
+JOIN main.fuso_municipio f
+  ON f.ano = {ANO} AND f.turno = {TURNO} AND f.sigla_uf = d.sigla_uf AND f.id_municipio_tse = d.id_municipio_tse
+WHERE d.linha >= enc.l0"""
+
+
 def r2_views(con: duckdb.DuckDBPyConnection) -> None:
     names = {"fuso": "fuso_municipio", "votos_minuto": "votos_minuto", "secao": "secao_dia",
-             "aptos": "aptos", "coleta": "secoes_coleta"}
+             "aptos": "aptos", "coleta": "secoes_coleta", "fim_log": "fim_log"}
     con.execute("CREATE SCHEMA IF NOT EXISTS r2")
     for c, v in names.items():
         con.execute(f"CREATE OR REPLACE VIEW r2.{v} AS SELECT * FROM c_{c}")
@@ -435,6 +470,133 @@ def chegada() -> dict:
             **br, "exterior": {k: zz[k] for k in ("inicio", "fim", "total", "nacional")}}
 
 
+HORAS = list(range(8, 20))  # the page's hour bands, Brasília
+
+
+def hm_(ts) -> str | None:
+    return ts.strftime("%H:%M") if ts is not None else None
+
+
+def cs_minuto(r) -> int:
+    """Minutes after 00:00 of election day of a section's `ha` (a later day adds 1440)."""
+    h, m, _ = r["ha"].split(":")
+    return (int(r["da"].split("/")[0]) - 25) * 1440 + int(h) * 60 + int(m)
+
+
+def mediana(xs: list[int]) -> int | None:
+    xs = sorted(xs)
+    return xs[(len(xs) - 1) // 2] if xs else None
+
+
+def chegadas() -> dict[tuple, int]:
+    """(UF, municipio, zona, secao) -> minute its result was first counted (`ha`)."""
+    return {(r["uf"].upper(), r["mun"].zfill(5), r["zona"].zfill(4), r["secao"].zfill(4)): cs_minuto(r)
+            for r in cs_sections() if r["ha"] and r["da"]}
+
+
+def hhmm_(m: int | None) -> str | None:
+    return None if m is None else f"{m // 60:02d}:{m % 60:02d}"
+
+
+def cidades(con: duckdb.DuckDBPyConnection) -> None:
+    """W3: cidades/<UF>.json, Brazil only (the town search has no city abroad yet). votos and
+    aptos are the TSE's official turnout and electorate; pico, metade and horas come from the
+    log's votes per minute; fechamento is the median close, chegada the median `ha`. No name:
+    the page has it from towns.json, and MG stays near the 33 KB gzip budget (37 KB)."""
+    base = con.execute("""
+        SELECT a.sigla_uf, a.id_municipio_tse, sum(a.comparecimento), sum(a.aptos), count(*),
+               max(s.ultimo_voto), quantile_disc(s.encerramento, 0.5)
+        FROM r2.aptos a LEFT JOIN r2.secao_dia s USING (sigla_uf, id_municipio_tse, zona, secao)
+        WHERE a.sigla_uf <> 'ZZ' GROUP BY 1, 2""").fetchall()
+    curva: dict[tuple, list] = {}
+    for uf, mun, minuto, v in con.execute("""SELECT sigla_uf, id_municipio_tse, minuto_bsb, votos
+            FROM r2.votos_minuto WHERE sigla_uf <> 'ZZ' ORDER BY 1, 2, 3""").fetchall():
+        curva.setdefault((uf, mun), []).append((minuto, v))
+    cheg: dict[tuple, list] = {}
+    for (uf, mun, _, _), m in chegadas().items():
+        cheg.setdefault((uf, mun), []).append(m)
+    por_uf: dict[str, dict] = {}
+    for uf, mun, votos, aptos, secoes, ultimo, fecha in base:
+        c = curva.get((uf, mun), [])
+        horas = [0] * len(HORAS)
+        for minuto, v in c:
+            horas[min(max(minuto.hour, HORAS[0]), HORAS[-1]) - HORAS[0]] += v
+        total, acc, metade = sum(v for _, v in c), 0, None
+        for minuto, v in c:
+            acc += v
+            if acc * 2 >= total:
+                metade = hm_(minuto)
+                break
+        pico = hm_(max(c, key=lambda x: x[1])[0]) if c else None
+        por_uf.setdefault(uf, {})[mun] = {
+            "votos": int(votos), "aptos": int(aptos), "secoes": secoes,
+            "pico": pico, "metade": metade, "ultimo_voto": hm_(ultimo), "horas": horas,
+            "fechamento": hm_(fecha), "chegada": hhmm_(mediana(cheg.get((uf, mun), []))),
+        }
+    for uf, cs in sorted(por_uf.items()):
+        dump(OUT / f"cidades/{uf}.json", {"mock": False, "uf": uf, "horas": HORAS, "cidades": cs})
+
+
+SECAO_CAMPOS = ["abertura", "primeiro_voto", "ultimo_voto", "encerramento", "votos", "aptos", "chegada", "fim_log"]
+
+
+def secoes(con: duckdb.DuckDBPyConnection) -> None:
+    """W3: secoes/<UF>/<municipio>-<zona>.json, one file per town and zona (São Paulo alone has
+    26.683 sections). Compact: `campos` names the fields once and each section is one row.
+    Times are Brasília HH:MM; votos and aptos are official. fim_log holds FIM_PASSOS as
+    seconds: the first step's second of the day, then each step's gap to the one before; the
+    page holds the step texts. A section aggregated into another (cs `nsp`) is the principal's
+    number as a string. Brazil only, like the town search."""
+    cheg = chegadas()
+    passos: dict[tuple, dict] = {}
+    for uf, mun, z, sec, h, linha, msg, t in con.execute(
+            "SELECT sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, linha, mensagem, hora_bsb "
+            "FROM r2.fim_log WHERE sigla_uf <> 'ZZ' ORDER BY 1, 2, 3, 4, 5, 6").fetchall():
+        passos.setdefault((uf, mun, z, sec), {}).setdefault(h, []).append((msg, t))
+    def fim_log(k):
+        logs = passos.get(k)
+        if not logs:
+            return None
+        linhas = max(logs.values(), key=lambda ls: ls[0][1])  # the hash closed last
+        out, i = [], 0
+        for passo in FIM_PASSOS:  # the first line of each step, in order
+            while i < len(linhas) and linhas[i][0] != passo:
+                i += 1
+            if i == len(linhas):
+                break
+            t = linhas[i][1]
+            out.append(t.hour * 3600 + t.minute * 60 + t.second)
+        return [x - (out[k - 1] if k else 0) for k, x in enumerate(out)]
+    dia = {}
+    for uf, mun, z, sec, ab, pv, uv, enc, votos, aptos in con.execute("""
+            SELECT a.sigla_uf, a.id_municipio_tse, a.zona, a.secao, s.abertura, s.primeiro_voto,
+                   s.ultimo_voto, s.encerramento, a.comparecimento, a.aptos
+            FROM r2.aptos a JOIN r2.secao_dia s USING (sigla_uf, id_municipio_tse, zona, secao)
+            WHERE a.sigla_uf <> 'ZZ' AND s.encerramento IS NOT NULL""").fetchall():
+        k = (uf, mun, z, sec)
+        if k not in cheg:
+            continue
+        dia[k] = [hm_(ab), hm_(pv), hm_(uv), hm_(enc), votos, aptos, hhmm_(cheg[k]), fim_log(k)]
+    for r in cs_sections():
+        if r["uf"] == "zz" or r["nsp"] is None:
+            continue
+        uf, mun, z = r["uf"].upper(), r["mun"].zfill(5), r["zona"].zfill(4)
+        if (uf, mun, z, str(r["nsp"]).zfill(4)) in dia:
+            dia[(uf, mun, z, r["secao"].zfill(4))] = str(r["nsp"]).zfill(4)
+    arquivos: dict[tuple, dict] = {}
+    for (uf, mun, z, sec), d in sorted(dia.items()):
+        arquivos.setdefault((uf, mun, z), {})[sec] = d
+    maior = (0, None)
+    for (uf, mun, z), ss in arquivos.items():
+        path = OUT / f"secoes/{uf}/{mun}-{z}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"mock": False, "uf": uf, "municipio": mun, "zona": z,
+                                    "campos": SECAO_CAMPOS, "secoes": ss},
+                                   ensure_ascii=False, separators=(",", ":")))
+        maior = max(maior, (path.stat().st_size, str(path.relative_to(ROOT))))
+    print(f"secoes: {len(arquivos)} files, {len(dia)} sections; largest {maior[1]} {maior[0]} bytes")
+
+
 def sample_aux(fraction: float, seed: int, rps: float) -> None:
     """W4 check: fetch aux.json for a random sample of sections and keep each hash's `hr`
     next to the section's `ha` from cs.json. One JSON line per section in
@@ -477,11 +639,11 @@ def sample_aux(fraction: float, seed: int, rps: float) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada"])
+    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes"])
     ap.add_argument("--fraction", type=float, default=0.01)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--rps", type=float, default=10)
-    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (fuso votos_minuto secao aptos coleta)")
+    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (fuso votos_minuto secao aptos coleta fim_log)")
     a = ap.parse_args()
     if a.step == "cache":
         build_cache(a.only)
@@ -493,6 +655,12 @@ def main() -> None:
         dump(OUT / "curiosidades.json", curiosidades(con))
     elif a.step == "chegada":
         dump(OUT / "chegada.json", chegada())
+    elif a.step == "cidades":
+        con = duckdb.connect(str(cache_path()), read_only=True)
+        cidades(con)
+    elif a.step == "secoes":
+        con = duckdb.connect(str(cache_path()), read_only=True)
+        secoes(con)
 
 
 if __name__ == "__main__":
