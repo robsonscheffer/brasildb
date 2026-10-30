@@ -485,7 +485,7 @@
 <section class="cartao gx" id="compartilhamento">
   <span class="k">09 · para guardar</span>
   <p class="mid">Guarde o seu 25 de outubro num cartão.</p>
-  <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: você foi um dos 128.236.074 votos, com a sua cidade e hora."></canvas>
+  <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: o seu voto foi um dos 128.236.074, com a sua cidade e hora."></canvas>
   <div class="info">
     <ul id="cartao-linhas"></ul>
     <p id="cartao-vazio">Escolha sua cidade para pôr o seu ponto no cartão. <a href="#onde-votou">Escolher cidade</a></p>
@@ -549,7 +549,7 @@ const [urna, curios, TOT] = await Promise.all([get("data/urna.json"), get("data/
 // All votes, Brazil and abroad (VOTOS is Brazil only: the map and the hours are Brazil).
 const TOTAL = curios.itens.find(i => i.id === "total")?.valor || VOTOS;
 $("total").textContent = `Um domingo. ${fmt(TOTAL)} votos.`;
-$("card").setAttribute("aria-label", `Seu cartão: você foi um dos ${fmt(TOTAL)} votos, com a sua cidade e hora.`);
+$("card").setAttribute("aria-label", `Seu cartão: o seu voto foi um dos ${fmt(TOTAL)}, com a sua cidade e hora.`);
 const CUM = []; { let a = 0; for (const v of TOT.national) { a += v; CUM.push(a); } }
 const votosAte = t => CUM[clamp(Math.floor(t) - TOT.start, 0, CUM.length - 1)];
 // Brazil's votes in the logs (the map and the hours count these), its last vote and the STF minute.
@@ -1409,7 +1409,7 @@ async function drawCard() {
     ctx.fillStyle = "rgba(255,180,60,.3)"; ctx.beginPath(); ctx.arc(x, y, 1.5 + Math.sqrt(e.votos) / 40, 0, 6.283); ctx.fill();
     if (fora() && e.id === state.town.id) luz(x, y);
   });
-  ctx.fillStyle = "#ece8dc"; ctx.font = "italic 400 72px \"Instrument Serif\""; ctx.fillText("Você foi um dos", 80, 905);
+  ctx.fillStyle = "#ece8dc"; ctx.font = "italic 400 72px \"Instrument Serif\""; ctx.fillText("Meu voto foi um dos", 80, 905);
   ctx.fillStyle = "#ffb43c"; ctx.font = "400 176px \"Instrument Serif\""; ctx.fillText(fmt(TOTAL), 74, 1060);
   ctx.fillStyle = "#ece8dc"; ctx.font = "400 42px \"Inter Tight\"";
   linhas.forEach(([, l], i) => ctx.fillText(l, 80, 1130 + i * 54));
@@ -1423,7 +1423,7 @@ $("share").addEventListener("click", async () => {
   const blob = await new Promise(r => $("card").toBlob(r, "image/png"));
   const file = new File([blob], "eu-votei.png", { type: "image/png" });
   const onde = state.town ? `, em ${rot(state.town)}` : "", hora = state.hora != null ? `, às ${state.hora}h` : "";
-  const texto = `Eu fui um dos ${fmt(TOTAL)} votos do segundo turno de 2026${onde}${hora}. Veja o seu: ${location.href}`;
+  const texto = `Meu voto foi um dos ${fmt(TOTAL)} do segundo turno de 2026${onde}${hora}. Veja o seu: ${location.href}`;
   if (PODE_PARTILHAR && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "O Brasil votando", text: texto }); } catch {}
     return;
