@@ -37,7 +37,9 @@ checks each line; a line is closed when its evidence is written next to it.
       Evidence: nine facts corrected in #39 (2026-10-30).
 - [x] F2 The "pico" fact (421.314) includes abroad; the Brazil curve peaks at 420.848. Say
       which one the page shows. Evidence: the fact is Brazil only now, 420.848, as the page (#39).
-- [ ] F3 The STF minute: a source for the decision's time, or the page stops naming 17h15.
+- [x] F3 The STF minute: a source for the decision's time, or the page stops naming 17h15.
+      Evidence: 17h03 (first report, Estadão Conteúdo), decision text and TSE statement cited in
+      como.html#fontes-lista; the signing minute stays in #limites (2026-10-30).
 - [x] F4 The time-zone country list (`PAIS`) checked against a source.
       Evidence: all zones in zone.tab; city names and República do Congo fixed in #40 (2026-10-30).
 - [x] F5 The MG towns file is 37 KB gzip, over the 33 KB budget.
