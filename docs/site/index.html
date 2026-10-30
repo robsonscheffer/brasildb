@@ -1175,7 +1175,7 @@ renderHoras();
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
     { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
       texto: `${fmt(fila)} votos entre 17h e 17h10. Depois das 17h10, quase nada.` },
-    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega às ${hfala(cur("stf").hora)}, com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
+    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
     // The last vote abroad is after the chart ends: a step at its edge, with its own clock.
