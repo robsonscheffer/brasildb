@@ -426,13 +426,18 @@ def curiosidades(con: duckdb.DuckDBPyConnection) -> dict:
           f"Em {f.onde(l)}, {'a única seção' if n == 1 else f'as {n} seções'} já tinha{'' if n == 1 else 'm'} encerrado às {hora(fim)}.",
           hora(fim)[:5], l, n, sql)
 
-    sql = f"""SELECT sigla_uf, sum(votos) FROM r2.votos_minuto WHERE {BR}
-              AND minuto_bsb >= TIMESTAMP '{DIA} 17:15:00' GROUP BY 1 ORDER BY 2 DESC"""
-    rows = f.q(sql)
-    f.add("stf", 8, "O STF estende a votação até as 19h",
-          f"A partir das 17h15, {fmt(sum(r[1] for r in rows))} votos: "
-          + ", ".join(f"{fmt(n)} {em(u)}" for u, n in rows[:3]) + ".",
-          "17:15", {"uf": rows[0][0]}, sum(r[1] for r in rows), sql, certo=False)
+    # The extension to 19h: Reclamação 101.673, a single-judge injunction. 17:03 is the first report
+    # (Estadão Conteúdo); 17:49 is the TSE memo to the regional courts. Neither time is in the logs.
+    sql = f"""SELECT count(*) n, count(*) FILTER (WHERE encerramento < TIMESTAMP '{DIA} 17:03:00') a,
+              count(*) FILTER (WHERE encerramento < TIMESTAMP '{DIA} 17:49:00') b
+              FROM r2.secao_dia WHERE {BR}"""
+    n, a, b = f.q(sql)[0]
+    pct = lambda x: f"{100 * x / n:.1f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
+    f.add("stf", 8, "Um ministro do STF estende a votação até as 19h",
+          f"Quem estava na fila às 17h votaria de qualquer jeito. A ordem chegou tarde: às 17h03, "
+          f"{pct(a)} das seções já tinham encerrado. Às 17h49, quando o TSE avisou os tribunais regionais, "
+          f"{pct(b)} já estavam fechadas. À noite, o presidente do TSE disse que a decisão não alterou nada.",
+          "17:03", {"uf": "BR"}, a, sql)
 
     (uf, mun, z, s, _, t), sql = voto_extremo(f, "id_municipio_tse = (SELECT id_municipio_tse FROM br_bd_diretorios_brasil.municipio WHERE id_municipio = '2605459')", True)
     l = f.lugar(uf, mun, z, s)

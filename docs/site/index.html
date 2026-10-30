@@ -1177,8 +1177,7 @@ renderHoras();
   const nat = TOT.national, S = TOT.start, A = 960, B = 1150;
   const max = Math.max(...nat.slice(A - S, B - S));
   const cur = id => curios.itens.find(i => i.id === id);
-  const fila = somaMin(nat, 1020, 1030), depois = somaMin(nat, STFM, ULTM + 1);
-  const porUF = Object.entries(TOT.uf).map(([u, v]) => [u, somaMin(v, STFM, ULTM + 1)]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const fila = somaMin(nat, 1020, 1030);
   const fato = (i, seg) => ({ t: hm(i.hora), h: `${i.hora.slice(0, 5)} · ${onde(i.lugar)}`, titulo: `${i.titulo}.`, texto: i.texto, seg });
   const passos_ = [
     fato(cur("primeira_fim")),
@@ -1186,7 +1185,7 @@ renderHoras();
       texto: `Às 16h59, ${fmt(nat[1019 - S])} votos por minuto; às 17h05 cai para ${fmt(nat[1025 - S])}.` },
     { t: 1027, h: "17:00 a 17:10 · Brasil", titulo: "Em dez minutos a fila acabou.", seg: [1020, 1030],
       texto: `${fmt(fila)} votos entre 17h e 17h10. Depois das 17h10, quase nada.` },
-    { ...fato(cur("stf"), [STFM, ULTM + 1]), texto: `A decisão chega com a maioria das urnas já fechada. Até as ${hfala(ULT)}, mais ${fmt(depois)} votos: ${porUF.map(([u, n]) => `${fmt(n)} ${UFNOME[u] || u}`).join(", ")}.` },
+    fato(cur("stf"), [STFM, STFM + 1]),
     fato(cur("noronha")),
     fato(cur("ultimo_voto")),
     // The last vote abroad is after the chart ends: a step at its edge, with its own clock.
