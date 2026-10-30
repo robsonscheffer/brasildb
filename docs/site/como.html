@@ -35,6 +35,7 @@
   th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
   td.n, th.n { text-align: right; }
+  td.causa { white-space: normal; min-width: 14em; color: var(--muted); }
   nav.indice { margin: 28px 0 0; font-size: 16px; }
   nav.indice a { margin-right: 14px; white-space: nowrap; }
   .volta { margin-top: 64px; }
@@ -52,7 +53,7 @@
 <p>Todos os números são do segundo turno, domingo, 25 de outubro de 2026.</p>
 
 <h3 id="urna">Urna</h3>
-<p>A urna eletrônica é o computador em que o eleitor vota. Cada seção tem uma. Os logs mostram quatro modelos em uso: UE2020 em 199.889 seções, UE2022 em 198.327, UE2015 em 87.248 e UE2013 em 12.377. Em 1.337 seções o log não diz o modelo.</p>
+<p>A urna eletrônica é o computador em que o eleitor vota. Cada seção tem uma. Os logs mostram quatro modelos em uso: UE2020 em 200.504 seções, UE2022 em 198.746, UE2015 em 87.473 e UE2013 em 12.455.</p>
 
 <h3 id="log">Log da urna</h3>
 <p>Cada urna grava um arquivo de registro, o log: uma linha por evento, com a data e a hora do relógio da urna. A urna liga, imprime a zerésima, habilita um eleitor, computa um voto, passa para a bateria, encerra. O log não guarda em quem o eleitor votou. O TSE publica o log de cada seção, e este site é feito dessas linhas.</p>
@@ -111,31 +112,42 @@
 </ul>
 
 <h3 id="diferencas">Onde os números não batem</h3>
-<p>No Brasil, toda seção com eleitores tem log. Em 6 seções, o log tem menos votos que o comparecimento oficial, 54 votos ao todo. Em três delas a urna foi trocada.</p>
+<p>No Brasil, toda seção com eleitores tem log. Em 6 seções, o log tem menos votos que o comparecimento oficial, 54 votos ao todo. Lemos o log de cada uma, e há duas causas.</p>
 <div class="tab"><table>
-  <thead><tr><th>Município</th><th>Zona</th><th>Seção</th><th class="n">No log</th><th class="n">TSE</th><th class="n">Logs</th></tr></thead>
+  <thead><tr><th>Município</th><th>Zona</th><th>Seção</th><th class="n">No log</th><th class="n">TSE</th><th>Causa</th></tr></thead>
   <tbody>
-    <tr><td>São José de Ribamar, MA</td><td>0047</td><td>0609</td><td class="n">188</td><td class="n">224</td><td class="n">2</td></tr>
-    <tr><td>Ibotirama, BA</td><td>0173</td><td>0235</td><td class="n">204</td><td class="n">217</td><td class="n">3</td></tr>
-    <tr><td>Boa Vista do Incra, RS</td><td>0017</td><td>0191</td><td class="n">90</td><td class="n">92</td><td class="n">2</td></tr>
-    <tr><td>Santa Rita, PB</td><td>0002</td><td>0254</td><td class="n">303</td><td class="n">304</td><td class="n">1</td></tr>
-    <tr><td>Conde, BA</td><td>0021</td><td>0178</td><td class="n">233</td><td class="n">234</td><td class="n">1</td></tr>
-    <tr><td>Parnaíba, PI</td><td>0003</td><td>0216</td><td class="n">258</td><td class="n">259</td><td class="n">1</td></tr>
+    <tr><td>São José de Ribamar, MA</td><td>0047</td><td>0609</td><td class="n">188</td><td class="n">224</td><td class="causa">urna trocada às 10h47; falta o log da primeira</td></tr>
+    <tr><td>Ibotirama, BA</td><td>0173</td><td>0235</td><td class="n">204</td><td class="n">217</td><td class="causa">urna trocada às 10h01; falta o log da primeira</td></tr>
+    <tr><td>Boa Vista do Incra, RS</td><td>0017</td><td>0191</td><td class="n">90</td><td class="n">92</td><td class="causa">urna desligou após um voto; 1 voto fora dos logs</td></tr>
+    <tr><td>Santa Rita, PB</td><td>0002</td><td>0254</td><td class="n">303</td><td class="n">304</td><td class="causa">urna desligou após um voto</td></tr>
+    <tr><td>Conde, BA</td><td>0021</td><td>0178</td><td class="n">233</td><td class="n">234</td><td class="causa">urna desligou após um voto</td></tr>
+    <tr><td>Parnaíba, PI</td><td>0003</td><td>0216</td><td class="n">258</td><td class="n">259</td><td class="causa">urna desligou após um voto</td></tr>
   </tbody>
 </table></div>
+<ul>
+  <li><b>A urna desligou logo depois de um voto.</b> O log registra "Voto confirmado" e, em seguida, a urna sendo ligada de novo, sem a linha "voto computado". Em Conde, a linha anterior avisa bateria crítica. O voto entrou no resultado: em Santa Rita, Conde e Parnaíba, o número de "Voto confirmado" no log é igual ao do TSE. Como só contamos "voto computado", esse voto fica sem hora no site.</li>
+  <li><b>Falta o log da urna que falhou.</b> Nas duas seções, o arquivo publicado traz o log da urna de contingência desde a troca, mas não o da primeira urna na manhã. Os votos dados antes da troca (36 e 13) estão no resultado do TSE e não em nenhum log publicado. Em Boa Vista do Incra, também falta 1 voto entre os dois logs.</li>
+</ul>
 <p>No exterior, 70 seções não têm log de urna nem no site de resultados nem nos dados abertos. Em 43 delas ninguém votou; as outras 27 somam 831 votos. Esses votos estão no total, mas não nas horas.</p>
 <p>Nenhuma seção tem mais votos no log que no comparecimento oficial. Por isso nenhuma seção sem log poderia ter um voto depois do último que mostramos.</p>
 
 <h3 id="trocadas">Urnas trocadas</h3>
-<p>Contamos uma urna trocada quando a seção tem dois logs ou mais: 1.842 seções no Brasil. Outra contagem possível é a mensagem "Urna de contingência" no log, que aparece em 1.971 seções; em 133 delas há um log só. Ficamos com os logs, porque cada log é uma urna que de fato votou.</p>
+<p>Contamos uma urna trocada quando a seção tem dois logs ou mais: 1.842 seções no Brasil. A mensagem "Urna de contingência" aparece em 1.971 seções. A diferença são 133 seções com um log só: nelas, a urna foi trocada antes do primeiro voto, então a primeira urna não registrou nenhum voto, e os votos batem com o TSE.</p>
 
 <h3 id="chegada">A apuração: o que a hora de chegada mede</h3>
 <p>A curva da noite usa o campo <code>ha</code> do <code>cs.json</code>: 497.897 seções, a primeira às 16h59 e a última às 23h21. Para saber se <code>ha</code> é a primeira ou a última vez que a seção entrou na soma, comparamos uma amostra de 4.948 seções com o arquivo de cada uma.</p>
 <ul>
-  <li><code>ha</code> é a primeira vez que a seção foi totalizada. Ela fica, na mediana, 2 minutos depois da hora de recebimento do arquivo; em 90% das seções, até 1h30 depois.</li>
+  <li><code>ha</code> é a primeira vez que a seção foi totalizada. Ela fica, na mediana, 2 minutos depois da hora gravada no arquivo da seção (<code>aux.json</code>, campo <code>hr</code>); em 90% das seções, até 1h30 depois.</li>
   <li>Em 39 seções, um arquivo foi reenviado num dia seguinte. A hora do arquivo mudou para esse dia; <code>ha</code> manteve a noite da eleição.</li>
-  <li>Nenhuma seção entrou na soma entre 18h e 19h.</li>
+  <li>Nenhuma seção entrou na soma entre 18h e 19h. A votação foi estendida até as 19h nesse dia; ainda não confirmamos numa fonte oficial que a soma parou por isso.</li>
 </ul>
+
+<h3 id="limites">O que ainda não sabemos</h3>
+<ul>
+  <li>Quantos eleitores votaram pela digital. O log tem linhas de habilitação biométrica, mas ainda não conferimos se contá-las dá o número de eleitores.</li>
+  <li>O minuto exato da decisão que estendeu a votação até as 19h. O site usa 17h15 até termos a fonte.</li>
+</ul>
+<p>Achou um número errado? Abra uma issue no <a href="https://github.com/robsonscheffer/brasildb/issues">repositório</a>, com o link da página.</p>
 
 <h3 id="fora">O que o site não mostra</h3>
 <p>O site não mostra em quem as pessoas votaram, nem resultados por candidato. Ele mostra quando o Brasil votou.</p>
