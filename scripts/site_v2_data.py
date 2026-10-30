@@ -6,6 +6,7 @@
   uv run python scripts/site_v2_data.py cidades        # docs/site/v2/data/cidades/<UF>.json
   uv run python scripts/site_v2_data.py secoes         # docs/site/v2/data/secoes/<UF>/<municipio>-<zona>.json
   uv run python scripts/site_v2_data.py urna           # docs/site/v2/data/urna.json
+  uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels)
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
 """
@@ -15,8 +16,10 @@ import argparse
 import json
 import os
 import random
+import struct
 import sys
 import time
+import zlib
 from datetime import timedelta
 from pathlib import Path
 
@@ -686,9 +689,81 @@ def sample_aux(fraction: float, seed: int, rps: float) -> None:
             time.sleep(max(0.0, gap - (time.time() - t)))
 
 
+FRAMES = ROOT / "docs/site/data"
+LEVELS = 16  # the page draws 16 brightness buckets: round(((pixel / 255) ** 1.4) * 16)
+GAMMA = 1.4  # v1 reads pixels the same way
+STEP = 2  # every second bucket: 8 grey levels, the file falls from 1.27 MB to 0.87 MB
+FLOOR = 1  # pixel of a town that still has votes to give: above 0, but dark (bucket 0)
+
+
+def png_gray_up(width: int, height: int, pixels: bytes) -> bytes:
+    """Grayscale PNG, every row stored as the difference to the row above (filter 2). A town
+    is a column and a minute is a row, so a row differs little from the one before."""
+    rows, prev = [], bytes(width)
+    for y in range(height):
+        row = pixels[y * width:(y + 1) * width]
+        rows.append(b"\x00" + row)
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(b"".join(rows), 9)) + chunk(b"IEND", b""))
+
+
+def frames(con: duckdb.DuckDBPyConnection) -> None:
+    """Rebuild frames.png with the layout site_data.py wrote and both maps decode: one column
+    per town (towns.json order), one row per minute from totals.json `start`, a pixel is the
+    town's votes that minute against the peak of its 3-minute mean (255 = the peak).
+    Changes against v1: the votes are the corrected round 2 (c_votos_minuto); brightness is
+    cut to the 16 levels the page draws, which is what gets the file under 1 MB; a minute with
+    votes is never 0 (FLOOR); and a minute with none, between a town's first vote and its last
+    section's last vote, is FLOOR too, so a slow town stays lit until its last vote."""
+    towns = json.loads((FRAMES / "towns.json").read_text())
+    tot = json.loads((FRAMES / "totals.json").read_text())
+    start, minutes, n = tot["start"], tot["minutes"], len(towns["id"])
+    index = {(u, i): k for k, (u, i) in enumerate(zip(towns["uf"], towns["id"]))}
+    counts = [[0] * minutes for _ in range(n)]
+    for uf, mun, minuto, votos in con.execute(f"""
+        SELECT sigla_uf, id_municipio_tse, hour(minuto_bsb) * 60 + minute(minuto_bsb), votos
+        FROM c_votos_minuto WHERE ano = {ANO} AND turno = {TURNO} AND sigla_uf <> 'ZZ'""").fetchall():
+        m = minuto - start
+        if (uf, mun) not in index:
+            raise SystemExit(f"town {uf} {mun} is not in towns.json")
+        if not 0 <= m < minutes:
+            raise SystemExit(f"minute {minuto} is outside the frame range")
+        counts[index[(uf, mun)]][m] += votos
+    last = {}  # the last minute any section of the town votes
+    for uf, mun, minuto in con.execute(f"""
+        SELECT sigla_uf, id_municipio_tse, max(hour(ultimo_voto) * 60 + minute(ultimo_voto))
+        FROM c_secao WHERE ano = {ANO} AND turno = {TURNO} AND sigla_uf <> 'ZZ' AND ultimo_voto IS NOT NULL
+        GROUP BY ALL""").fetchall():
+        last[(uf, mun)] = minuto - start
+    pixels = bytearray(n * minutes)
+    for k, c in enumerate(counts):
+        mean3 = [(c[max(0, m - 1)] + c[m] + c[min(minutes - 1, m + 1)]) / 3 for m in range(minutes)]
+        peak = max(mean3) or 1
+        voting = [m for m in range(minutes) if c[m]]
+        end = max(voting[-1] if voting else -1, last.get((towns["uf"][k], towns["id"][k]), -1))
+        for m in range(minutes):
+            level = 0
+            if mean3[m]:
+                bucket = round(min(1.0, mean3[m] / peak) * LEVELS / STEP) * STEP
+                level = round(255 * (bucket / LEVELS) ** (1 / GAMMA)) if bucket else FLOOR
+            elif voting and voting[0] <= m <= end:
+                level = FLOOR
+            pixels[m * n + k] = level
+    png = png_gray_up(n, minutes, bytes(pixels))
+    (FRAMES / "frames.png").write_bytes(png)
+    row = (17 * 60 + 36 - start) * n
+    print(f"docs/site/data/frames.png: {len(png)} bytes, {n} towns x {minutes} minutes; "
+          f"{sum(1 for k in range(n) if pixels[row + k])} towns lit at 17:36")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna"])
+    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames"])
     ap.add_argument("--fraction", type=float, default=0.01)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--rps", type=float, default=10)
@@ -713,6 +788,8 @@ def main() -> None:
     elif a.step == "urna":
         con = duckdb.connect(str(cache_path()), read_only=True)
         dump(OUT / "urna.json", urna(con))
+    elif a.step == "frames":
+        frames(duckdb.connect(str(cache_path()), read_only=True))
 
 
 if __name__ == "__main__":
