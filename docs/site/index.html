@@ -161,6 +161,30 @@
   .passos li h3 { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(24px, 2.4vw, 36px); line-height: 1.08; font-weight: 400; text-wrap: balance; }
   .passos li p { margin: 8px 0 0; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.4; color: #cfccc3; max-width: 44ch; }
   .passos li.seu h3 { color: var(--accent); }
+  /* Between phone and desktop. The first-vote time fits the chart column, not the whole width. */
+  @media (min-width: 641px) { .primeiro .ph { font-size: clamp(64px, 12.5vw, 176px); } }
+  /* Tablets and small laptops: the rail keeps its ticks but not its labels, so the steps column
+     gets back the room the labels took. */
+  @media (min-width: 641px) and (max-width: 1100px) {
+    .trilha a span { display: none; }
+    .passos ol { right: 60px; }
+    .palco .pq { padding-right: 60px; }
+  }
+  /* A phone on its side: little height, so a smaller clock and bar leave room for the chart. */
+  @media (min-width: 641px) and (max-height: 520px) {
+    :root { --nav: 62px; }
+    .relogio .rd { display: none; }
+    .relogio.grande { top: 12px; }
+    .relogio.grande .rt { font-size: clamp(34px, 11vh, 52px); }
+    .relogio.grande .rs { font-size: 14px; margin-top: 4px; }
+    body .barra { bottom: 8px; padding: 4px; }
+    body .barra .b-ant, body .barra .b-prox { height: 40px; }
+    body .barra .b-meio { height: 38px; }
+    .dobra h1 { font-size: clamp(40px, 14vh, 72px); }
+    .passos li h3 { font-size: 22px; }
+    .primeiro .ph { font-size: clamp(44px, 17vh, 88px); }
+    .primeiro .pt { font-size: 24px; }
+  }
   @media (max-width: 640px) {
     .palco.duplo { grid-template-columns: 100%; grid-template-rows: 62% 38%; }
     .palco.duplo canvas.fio { width: 100%; height: 62%; }
