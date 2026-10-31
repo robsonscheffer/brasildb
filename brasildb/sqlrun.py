@@ -10,14 +10,16 @@ import duckdb
 def apply(con: duckdb.DuckDBPyConnection, folder: str | Path, skip_missing: bool = False) -> None:
     """Run every .sql file in `folder`, in file name order. Files are re-runnable (CREATE OR REPLACE).
 
-    skip_missing: a file whose tables are not in the lake yet is skipped with a note on stderr."""
+    skip_missing: a file whose tables are not in the lake yet is skipped with a note on stderr.
+    A file whose first line starts with "-- optional:" is always skipped that way."""
     folder = Path(folder)
     if not folder.is_dir():
         raise NotADirectoryError(f"SQL folder not found: {folder}")
     for path in sorted(folder.glob("*.sql")):
+        text = path.read_text(encoding="utf-8")
         try:
-            con.execute(path.read_text(encoding="utf-8"))
+            con.execute(text)
         except duckdb.CatalogException as exc:
-            if not skip_missing:
+            if not (skip_missing or text.startswith("-- optional:")):
                 raise
             print(f"skipped {path.name}: {str(exc).splitlines()[0]}", file=sys.stderr)

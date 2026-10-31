@@ -32,6 +32,23 @@ br_tse_urna_logs:
       tipo_evento: VARCHAR    # see brasildb/tse/logparse.py EVENT_TYPES; NULL if none matches
       valor: VARCHAR          # bracket content for typed events, e.g. "biométrica", "Presidente"
 
+  votos:
+    source: derived from eventos by `brasildb derive-votos` (the main.votos_eventos view)
+    grain: one row per vote counted on election day; main.votos reads this table when present
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, data_hora]
+    columns:
+      ano: INTEGER
+      turno: INTEGER
+      sigla_uf: VARCHAR
+      id_municipio_tse: VARCHAR
+      zona: VARCHAR
+      secao: VARCHAR
+      data_hora: TIMESTAMP    # urna local clock, no time zone
+      arquivo_hash: VARCHAR
+      arquivo_membro: VARCHAR
+      linha: INTEGER
+
   secoes_coleta:
     source: collector state, one row per section listed in cs.json
     grain: one row per section per round

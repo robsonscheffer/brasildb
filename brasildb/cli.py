@@ -250,6 +250,22 @@ def cmd_load_votes(a) -> None:
         print(f"loaded {name}")
 
 
+def cmd_derive_votos(a) -> None:
+    """Write main.votos_eventos to br_tse_urna_logs.votos, one state at a time."""
+    s = config.load()
+    con = open_db(s)
+    ufs = [u.upper() for u in a.ufs if re.fullmatch(r"[A-Za-z]{2}", u)] or [u for (u,) in con.execute(
+        "SELECT DISTINCT sigla_uf FROM br_tse_urna_logs.eventos WHERE ano = ? AND turno = ? ORDER BY 1",
+        [a.ano, a.turno]).fetchall()]
+    for uf in ufs:
+        t0 = time.time()
+        data = con.sql(f"SELECT * FROM main.votos_eventos WHERE ano = {int(a.ano)} "
+                       f"AND turno = {int(a.turno)} AND sigla_uf = '{uf}'").to_arrow_table()
+        data = data.cast(arrow_schema("br_tse_urna_logs", "votos"))
+        lake.write_table(s.lake, "br_tse_urna_logs", "votos", data, f"votos-{a.turno}-{uf}")
+        print(f"{uf}: {data.num_rows} votes, {time.time() - t0:.0f}s", flush=True)
+
+
 def cmd_load_municipios(a) -> None:
     s = config.load()
     path = csv_tables.fetch_zip_member(f"{CKAN_CDN}/municipio_tse_ibge/municipio_tse_ibge.zip",
@@ -312,6 +328,12 @@ def main(argv=None) -> None:
     v.add_argument("--ano", type=int, default=2026)
     v.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
     v.set_defaults(fn=cmd_load_votes)
+
+    d = sub.add_parser("derive-votos", help="write the votes view to br_tse_urna_logs.votos")
+    d.add_argument("--ano", type=int, default=2026)
+    d.add_argument("--turno", type=int, required=True)
+    d.add_argument("--ufs", nargs="*", default=[], help="states to derive; default all")
+    d.set_defaults(fn=cmd_derive_votos)
 
     m = sub.add_parser("load-municipios", help="load the TSE to IBGE municipality codes")
     m.set_defaults(fn=cmd_load_municipios)
