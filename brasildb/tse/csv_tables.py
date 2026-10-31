@@ -5,6 +5,7 @@ every column as text, then the SQL casts each one to its catalog type.
 """
 from __future__ import annotations
 
+import hashlib
 import shutil
 import zipfile
 from pathlib import Path
@@ -23,6 +24,7 @@ _ARROW = {
     "BIGINT": pa.int64(),
     "DATE": pa.date32(),
     "BOOLEAN": pa.bool_(),
+    "TIMESTAMP": pa.timestamp("us"),
 }
 
 
@@ -66,6 +68,31 @@ _DETALHE = [
     ("modelo_urna", _clean("DS_MODELO_URNA"), "VARCHAR"),
 ]
 
+def _ts(src: str) -> str:
+    """'2026-10-25 19:42:19' as TIMESTAMP."""
+    return f"CAST({_clean(src)} AS TIMESTAMP)"
+
+
+_BOLETIM = [
+    ("ano", f"CAST({_clean('ANO_ELEICAO')} AS INTEGER)", "INTEGER"),
+    ("turno", f"CAST({_clean('NR_TURNO')} AS INTEGER)", "INTEGER"),
+    ("sigla_uf", f"upper({_clean('SG_UF')})", "VARCHAR"),
+    ("id_municipio_tse", f"lpad({_clean('CD_MUNICIPIO')}, 5, '0')", "VARCHAR"),
+    ("zona", f"lpad({_clean('NR_ZONA')}, 4, '0')", "VARCHAR"),
+    ("secao", f"lpad({_clean('NR_SECAO')}, 4, '0')", "VARCHAR"),
+    ("id_local_votacao", _clean("NR_LOCAL_VOTACAO"), "VARCHAR"),
+    ("secoes_agregadas", _clean("DS_SECOES_AGREGADAS"), "VARCHAR"),
+    ("tipo_urna", _clean("DS_TIPO_URNA"), "VARCHAR"),
+    ("id_urna", _clean("NR_URNA_EFETIVADA"), "VARCHAR"),
+    ("data_hora_recebimento", _ts("DT_BU_RECEBIDO"), "TIMESTAMP"),
+    ("data_hora_carga", _ts("DT_CARGA_URNA_EFETIVADA"), "TIMESTAMP"),
+    ("data_hora_abertura", _ts("DT_ABERTURA"), "TIMESTAMP"),
+    ("data_hora_encerramento", _ts("DT_ENCERRAMENTO"), "TIMESTAMP"),
+    ("data_hora_emissao", _ts("DT_EMISSAO_BU"), "TIMESTAMP"),
+    ("data_hora_geracao",
+     f"strptime({_clean('DT_GERACAO')} || ' ' || {_clean('HH_GERACAO')}, '%d/%m/%Y %H:%M:%S')", "TIMESTAMP"),
+]
+
 _MUNICIPIO = [
     ("id_municipio", f"lpad({_q('CD_MUNICIPIO_IBGE')}, 7, '0')", "VARCHAR"),
     ("id_municipio_tse", f"lpad({_q('CD_MUNICIPIO_TSE')}, 5, '0')", "VARCHAR"),
@@ -74,12 +101,12 @@ _MUNICIPIO = [
 ]
 
 
-def _read(path: str, columns: list[tuple[str, str, str]]) -> pa.Table:
+def _read(path: str, columns: list[tuple[str, str, str]], distinct: bool = False) -> pa.Table:
     select = ", ".join(f"{expr} AS {_q(name)}" for name, expr, _ in columns)
     source = str(path).replace("'", "''")
     sql = (
-        f"SELECT {select} FROM read_csv('{source}', encoding='latin-1', delim=';', "
-        "header=true, all_varchar=true)"
+        f"SELECT {'DISTINCT ' if distinct else ''}{select} FROM read_csv('{source}', "
+        "encoding='latin-1', delim=';', header=true, all_varchar=true)"
     )
     con = duckdb.connect()
     try:
@@ -95,16 +122,29 @@ def read_detalhe_votacao_secao(path: str) -> pa.Table:
     return _read(path, _DETALHE)
 
 
+def read_boletim_urna_secao(path: str) -> pa.Table:
+    """bweb_<turno>t_<UF>_<stamp>.csv as br_tse_eleicoes.boletim_urna_secao: one row per
+    section. Raises if a section's times or urna differ between its rows, since then one row
+    per section would hide data."""
+    table = _read(path, _BOLETIM, distinct=True)
+    keys = ["ano", "turno", "sigla_uf", "id_municipio_tse", "zona", "secao"]
+    n_keys = table.group_by(keys).aggregate([]).num_rows
+    if n_keys != table.num_rows:
+        raise ValueError(f"{path}: {table.num_rows - n_keys} sections have more than one distinct row")
+    return table
+
+
 def read_municipio(path: str) -> pa.Table:
     """municipio_tse_ibge.csv as br_bd_diretorios_brasil.municipio."""
     return _read(path, _MUNICIPIO)
 
 
-def fetch_zip_member(url: str, member: str, dest_dir: str) -> Path:
+def fetch_zip_member(url: str, member: str, dest_dir: str, sha512: str | None = None) -> Path:
     """Stream the ZIP at url, extract only `member` into dest_dir, return its path.
 
     The ZIP is held in dest_dir only while it is read and is removed afterwards. If the member
-    is already in dest_dir, nothing is downloaded.
+    is already in dest_dir, nothing is downloaded. With sha512, a ZIP whose hash differs raises
+    before anything is extracted.
     """
     dest = Path(dest_dir)
     dest.mkdir(parents=True, exist_ok=True)
@@ -116,9 +156,13 @@ def fetch_zip_member(url: str, member: str, dest_dir: str) -> Path:
     try:
         with httpx.stream("GET", url, timeout=httpx.Timeout(60.0, read=300.0)) as response:
             response.raise_for_status()
+            digest = hashlib.sha512()
             with zip_path.open("wb") as out:
                 for chunk in response.iter_bytes():
                     out.write(chunk)
+                    digest.update(chunk)
+        if sha512 and digest.hexdigest() != sha512.lower():
+            raise ValueError(f"{url}: SHA-512 does not match its .sha512 file")
         part = target.with_name(target.name + ".part")
         with zipfile.ZipFile(zip_path) as zf, zf.open(member) as src, part.open("wb") as dst:
             shutil.copyfileobj(src, dst)

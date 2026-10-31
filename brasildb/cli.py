@@ -239,6 +239,42 @@ def cmd_load_turnout(a) -> None:
         print(f"loaded {name}")
 
 
+CKAN_API = "https://dadosabertos.tse.jus.br/api/3/action"
+BWEB = re.compile(r"/(?P<nome>bweb_(?P<turno>\d)t_(?P<uf>[A-Z]{2})_(?P<stamp>\d+))\.zip\.sha512$")
+
+
+def boletim_files(package: dict, turno: int) -> dict[str, tuple[str, str]]:
+    """UF -> (zip URL, CSV member) of the newest BU file of a round in a CKAN package.
+
+    Read from the .sha512 resources: the RR round 2 entry of 2026 lists the hash file twice
+    and no zip, while every hash file sits next to its zip."""
+    found: dict[str, tuple[str, str, str]] = {}
+    for r in package["resources"]:
+        m = BWEB.search(r.get("url", ""))
+        if not m or int(m["turno"]) != turno:
+            continue
+        if m["uf"] not in found or m["stamp"] > found[m["uf"]][0]:
+            found[m["uf"]] = (m["stamp"], r["url"].removesuffix(".sha512"), f"{m['nome']}.csv")
+    return {uf: (url, csv) for uf, (_, url, csv) in sorted(found.items())}
+
+
+def cmd_load_bu(a) -> None:
+    """Load the section times of the TSE's BU files (boletim de urna), one zip per state."""
+    s = config.load()
+    package = httpx.get(f"{CKAN_API}/package_show", params={"id": f"resultados-{a.ano}-boletim-de-urna"},
+                        timeout=60).raise_for_status().json()["result"]
+    files = boletim_files(package, a.turno)
+    wanted = {u.upper() for u in a.ufs}
+    for uf, (url, member) in files.items():
+        if wanted and uf not in wanted:
+            continue
+        sha = httpx.get(f"{url}.sha512", timeout=60).raise_for_status().text.split()[0]
+        path = csv_tables.fetch_zip_member(url, member, f"{s.raw}/ckan/bweb", sha512=sha)
+        table = csv_tables.read_boletim_urna_secao(str(path))
+        lake.write_table(s.lake, "br_tse_eleicoes", "boletim_urna_secao", table, f"bweb-{a.turno}t-{uf}")
+        print(f"{uf}: {table.num_rows} sections from {member}", flush=True)
+
+
 def cmd_load_municipios(a) -> None:
     s = config.load()
     path = csv_tables.fetch_zip_member(f"{CKAN_CDN}/municipio_tse_ibge/municipio_tse_ibge.zip",
@@ -284,7 +320,7 @@ def main(argv=None) -> None:
                    help="collect again the sections whose latest status is sem_log")
     c.set_defaults(fn=cmd_collect_logs)
 
-    r = sub.add_parser("reparse", help="rebuild eventos from the raw archives into another lake")
+    r = sub.add_parser("reparse",help="rebuild eventos from the raw archives into another lake")
     r.add_argument("--ano", type=int, default=2026)
     r.add_argument("--turno", type=int, required=True)
     r.add_argument("--ufs", nargs="*", default=[], help="states to reparse; default all")
@@ -297,7 +333,13 @@ def main(argv=None) -> None:
     t.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
     t.set_defaults(fn=cmd_load_turnout)
 
-    m = sub.add_parser("load-municipios", help="load the TSE to IBGE municipality codes")
+    b = sub.add_parser("load-bu", help="load each section's times from the TSE BU files (CKAN)")
+    b.add_argument("--ano", type=int, default=2026)
+    b.add_argument("--turno", type=int, required=True)
+    b.add_argument("--ufs", nargs="*", default=[], help="states to load, e.g. AC ZZ; default all")
+    b.set_defaults(fn=cmd_load_bu)
+
+    m = sub.add_parser("load-municipios",help="load the TSE to IBGE municipality codes")
     m.set_defaults(fn=cmd_load_municipios)
 
     q = sub.add_parser("sql", help="run SQL over the lake (views and checks loaded)")
