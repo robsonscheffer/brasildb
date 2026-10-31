@@ -106,32 +106,6 @@ br_tse_eleicoes:
       data_hora_emissao: TIMESTAMP     # DT_EMISSAO_BU, urna local clock
       data_hora_geracao: TIMESTAMP     # DT_GERACAO + HH_GERACAO: when the TSE built the file
 
-  totalizacao_secao:
-    source: aux.json per section (the index of its files), results site
-    grain: one row per section x hash; a section with no hash (aux.json 404 or empty) has one
-      row with arquivo_hash NULL
-    partition: [ano, turno, sigla_uf]
-    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash]
-    columns:
-      ano: INTEGER
-      turno: INTEGER
-      sigla_uf: VARCHAR
-      id_municipio_tse: VARCHAR
-      zona: VARCHAR
-      secao: VARCHAR
-      http_status: INTEGER           # of aux.json: 200, or 404 when the site has none
-      situacao_secao: VARCHAR        # top-level "st", e.g. "Totalizada"
-      data_hora_geracao: TIMESTAMP   # top-level "dg" + "hg": when aux.json was generated
-      arquivo_hash: VARCHAR          # hashes[].hash, the folder of the section's files
-      situacao: VARCHAR              # hashes[].st, e.g. "Totalizado"
-      data_hora: TIMESTAMP           # hashes[].dr + hr, Brasília time: the latest receipt of
-                                     # the hash. Equals boletim_urna_secao.data_hora_recebimento,
-                                     # except for sections received again later (situacao
-                                     # "Recebido", days after the vote); for the count time
-                                     # use boletim_urna_secao.
-                                     # cs.json "ha" is a different time: when files were rewritten
-      coletado_em: TIMESTAMP
-
 br_bd_diretorios_brasil:
   municipio:
     source: CKAN codigos-oficiais-de-uf-e-municipios-segundo-o-tse-e-o-ibge, municipio_tse_ibge.csv

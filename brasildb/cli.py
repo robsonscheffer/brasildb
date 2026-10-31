@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import functools
-import gzip
 import json
 import os
 import re
@@ -18,7 +17,7 @@ import httpx
 import pyarrow as pa
 
 from brasildb import config, lake, sqlrun
-from brasildb.tse import aux, csv_tables, fetch, logparse, paths, sections
+from brasildb.tse import csv_tables, fetch, logparse, paths, sections
 
 ROOT = Path(__file__).resolve().parent.parent
 CKAN_CDN = "https://cdn.tse.jus.br/estatistica/sead/odsele"
@@ -171,88 +170,6 @@ def cmd_collect_logs(a) -> None:
                       "sections_per_s": round(len(todo) / dt, 2) if dt else None}))
 
 
-# ---------------------------------------------------------------------------- collect-aux
-
-def _aux_in_lake(settings, election) -> set[paths.SectionKey]:
-    """Sections already in totalizacao_secao for this round: the record used to resume."""
-    con = lake.connect(settings.lake)
-    try:
-        rows = con.execute(
-            "SELECT DISTINCT lower(sigla_uf), id_municipio_tse, zona, secao "
-            "FROM br_tse_eleicoes.totalizacao_secao WHERE ano = ? AND turno = ?",
-            [election.ano, election.turno]).fetchall()
-    except Exception:  # noqa: BLE001  no table yet
-        return set()
-    return {paths.SectionKey(*r) for r in rows}
-
-
-class AuxWriter:
-    """Buffers aux.json results and writes totalizacao_secao every `size` sections. A failed
-    section is not written, so the next run fetches it again. With keep_raw, each batch's
-    aux.json files also go to raw/<ano>/<turno>/aux/<run>-<batch>.jsonl.gz."""
-
-    def __init__(self, settings, election, run_id: str, size: int = 1000):
-        self.s, self.e, self.run_id, self.size = settings, election, run_id, size
-        self.rows, self.raw, self.pending, self.n_batch = [], [], 0, 0
-        self.erros: list[str] = []
-        self.raw_dir = Path(settings.raw) / f"{election.ano}" / f"{election.turno}" / "aux" if settings.keep_raw else None
-
-    def on_result(self, res: aux.AuxResult) -> None:
-        if res.http_status is None:
-            self.erros.append(f"{res.key}: {res.erro}")
-            return
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        self.rows.extend({"ano": self.e.ano, "turno": self.e.turno, **r, "coletado_em": now}
-                         for r in aux.aux_rows(res))
-        k = res.key
-        self.raw.append({"key": [k.sigla_uf, k.id_municipio_tse, k.zona, k.secao],"http_status": res.http_status, "aux": res.aux})
-        self.pending += 1
-        if self.pending >= self.size:
-            self.flush()
-
-    def flush(self) -> None:
-        if not self.pending:
-            return
-        basename = f"{self.run_id}-{self.n_batch:05d}"
-        lake.write_table(self.s.lake, "br_tse_eleicoes", "totalizacao_secao",
-                         pa.Table.from_pylist(self.rows, arrow_schema("br_tse_eleicoes", "totalizacao_secao")),
-                         basename)
-        if self.raw_dir:
-            self.raw_dir.mkdir(parents=True, exist_ok=True)
-            with gzip.open(self.raw_dir / f"{basename}.jsonl.gz", "wt", encoding="utf-8") as f:
-                f.writelines(json.dumps(x, ensure_ascii=False) + "\n" for x in self.raw)
-        self.rows, self.raw, self.pending = [], [], 0
-        self.n_batch += 1
-
-
-def cmd_collect_aux(a) -> None:
-    s = config.load()
-    e = config.ELECTIONS[(a.ano, a.turno)]
-    ufs = sorted({u.lower() for u in a.ufs} or set(config.UFS))
-    t0 = time.time()
-    by_uf = asyncio.run(_section_lists(s, e, ufs))
-    # An aggregated section (cs.json "nsp") has no aux.json of its own; its principal has it.
-    keys = sorted(x.key for uf in ufs for x in by_uf[uf] if x.principal is None)
-    done = _aux_in_lake(s, e)
-    todo = [k for k in keys if k not in done]
-    print(f"{len(keys)} sections in scope, {len(todo)} to fetch", flush=True)
-    w = AuxWriter(s, e, run_id=f"a{int(time.time())}", size=a.batch)
-
-    def on_result(res: aux.AuxResult) -> None:
-        w.on_result(res)
-        n = w.n_batch * w.size + w.pending + len(w.erros)
-        if n % 10_000 == 0:
-            print(f"{n}/{len(todo)} at {n / (time.time() - t0):.1f}/s", flush=True)
-
-    counts = asyncio.run(aux.collect_aux(s, e, todo, on_result))
-    w.flush()
-    for erro in w.erros[:20]:
-        print("erro", erro)
-    dt = time.time() - t0
-    print(json.dumps({"counts": counts, "seconds": round(dt, 1),
-                      "sections_per_s": round(len(todo) / dt, 2) if dt else None}))
-
-
 # ---------------------------------------------------------------------------- reparse
 
 # A raw file name: the first 12 hex of its aux.json hash, then the TSE name
@@ -402,13 +319,6 @@ def main(argv=None) -> None:
     c.add_argument("--retry-sem-log", action="store_true",
                    help="collect again the sections whose latest status is sem_log")
     c.set_defaults(fn=cmd_collect_logs)
-
-    x = sub.add_parser("collect-aux", help="download each section's aux.json into totalizacao_secao")
-    x.add_argument("--ano", type=int, default=2026)
-    x.add_argument("--turno", type=int, required=True)
-    x.add_argument("--ufs", nargs="*", default=[], help="states to fetch; default all")
-    x.add_argument("--batch", type=int, default=1000, help="sections per Parquet write")
-    x.set_defaults(fn=cmd_collect_aux)
 
     r = sub.add_parser("reparse",help="rebuild eventos from the raw archives into another lake")
     r.add_argument("--ano", type=int, default=2026)
