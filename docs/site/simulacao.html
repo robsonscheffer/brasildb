@@ -78,6 +78,12 @@
   .mapa { position: relative; }
   .mapcont { position: absolute; top: 4px; left: 0; font: 12px var(--mono); color: var(--muted); pointer-events: none; }
   .mapcont b { color: var(--fg); font-weight: 500; }
+  #mapa { cursor: crosshair; touch-action: manipulation; }
+  .dica-c { position: absolute; z-index: 4; min-width: 190px; max-width: 260px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font: 13px var(--mono); color: var(--muted); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .dica-c.fixa { pointer-events: auto; }
+  .dica-c strong { display: block; font: 600 15px var(--sans); color: var(--fg); margin: 0 0 4px; }
+  .dica-c .ca { color: var(--a); } .dica-c .cb { color: var(--b); }
+  .dica-c button { margin: 8px 0 0; font: 600 13px var(--sans); color: var(--bg); background: var(--fg); border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
   .leg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
   .escalac { display: inline-grid; grid-template-columns: auto minmax(120px, 220px) auto; align-items: center; gap: 8px; }
   .escalac .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--a), var(--mid) 50%, var(--b)); position: relative; }
@@ -184,6 +190,7 @@
 
     <div class="mapa" id="mapawrap" hidden>
       <p class="mapcont" id="mapcont"></p>
+      <div class="dica-c" id="dicac" hidden></div>
       <canvas id="mapa" role="img" aria-label="Mapa do Brasil: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
       <p class="leg"><span class="escalac" aria-label="Cor da cidade: quem está à frente e por quanto"><span class="ta"><span id="lega">Lula</span> 75%</span><span class="bar"></span><span class="tb"><span id="legb">Bolsonaro</span> 75%</span></span><span><i></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
     </div>
@@ -546,7 +553,7 @@
 
   // ---- map. A city appears when its first section enters the sum and grows with the votes
   // counted so far; its tone is who leads there at that moment. The amber ring: it just came in.
-  const MP = {on: false, q: 0, pAnt: 0, dados: null, borders: [], cid: [], raf: 0, last: 0};
+  const MP = {on: false, q: 0, pAnt: 0, dados: null, borders: [], cid: [], raf: 0, last: 0, sel: null, fixa: false};
   const cv = $("mapa"), PULSO = 900;
   // A city's tone: the leader's hue, full at 75% of the valid votes, grey at an even split.
   const CA = [226, 103, 107], CB = [95, 147, 227], MID = [120, 124, 138], BR = [236, 232, 220];
@@ -571,10 +578,10 @@
     d.id.forEach((id, j) => {
       const i = onde.get(id); if (i == null || (uf && towns.uf[i] !== uf)) return;
       const e = d.c[j]; let tot = 0; for (let k = 0; k < e.length; k += 3) tot += e[k + 1] + e[k + 2];
-      MP.cid.push({lat: towns.lat[i], lon: towns.lon[i], e, tot, first: e[0], r: 0, born: -1e9});
+      MP.cid.push({i, lat: towns.lat[i], lon: towns.lon[i], e, tot, first: e[0], r: 0, born: -1e9, a: 0, b: 0});
     });
     MP.cid.sort((a, b) => b.tot - a.tot);  // big dots first, small ones stay visible on top
-    MP.pAnt = 0;
+    MP.pAnt = 0; MP.sel = null; $("dicac").hidden = true;
     layout();
   }
 
@@ -619,6 +626,7 @@
       }
       if (vem && c.first >= pa && c.first < p && !CALMO) c.born = now;
       if (a + b > 0) dentro++;
+      c.a = a; c.b = b;
       const alvo = a + b > 0 ? rmin + (MP.rmax - rmin) * Math.sqrt(a + b) / MP.tmax : 0;
       c.r += (alvo - c.r) * k; if (Math.abs(alvo - c.r) > .05) ocupado = true; else c.r = alvo;
       if (c.r < .2) {  // not counted yet: a faint grain that keeps the shape of the country
@@ -630,6 +638,11 @@
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
       if (e < 1) { aneis.push([c, e]); ocupado = true; }
     }
+    if (MP.sel) {  // the city under the pointer, or the one tapped
+      ctx.strokeStyle = "rgba(236,232,220,.95)"; ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath(); ctx.arc(MP.sel.x, MP.sel.y, Math.max(3 * dpr, MP.sel.r) + 3 * dpr, 0, 6.283); ctx.stroke();
+      dicaCidade();
+    }
     ctx.lineWidth = 1.2 * dpr;
     for (const [c, e] of aneis) {
       const f = 1 - Math.pow(1 - e, 3);
@@ -639,6 +652,43 @@
     $("mapcont").innerHTML = `<b>${fmt(dentro)}</b> de ${fmt(MP.cid.length)} cidades com seções somadas`;
     if (ocupado) MP.raf = requestAnimationFrame(quadro);
   }
+
+  // Hover or tap a city: its name, the share of its votes already in, and each candidate's share.
+  function dicaCidade() {
+    const c = MP.sel, d = $("dicac"), i = c.i, v = c.a + c.b;
+    const corpo = v > 0
+      ? `<span class="ca">${NOMES["13"]} ${pct(c.a / v)}</span><br><span class="cb">${NOMES["22"]} ${pct(c.b / v)}</span><br>${Math.min(100, Math.round(100 * v / c.tot))}% dos votos da cidade já somados`
+      : "Nenhuma seção somada ainda.";
+    d.innerHTML = `<strong>${towns.nome[i]} · ${towns.uf[i]}</strong>${corpo}${MP.fixa ? '<br><button type="button" id="vercid">Ver a apuração da cidade</button>' : ""}`;
+    d.classList.toggle("fixa", MP.fixa); d.hidden = false;
+    const W0 = cv.parentNode.clientWidth, x = c.x / MP.dpr, y = cv.offsetTop + c.y / MP.dpr, w = d.offsetWidth, h = d.offsetHeight;
+    d.style.left = Math.max(0, Math.min(W0 - w, x - w / 2)) + "px";
+    d.style.top = (y - h - 14 < cv.offsetTop ? y + 16 : y - h - 14) + "px";
+    const b = $("vercid");
+    if (b) b.onclick = () => {
+      estado = {uf: towns.uf[i], mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
+      ufSel.value = estado.uf; $("cidade").disabled = false; $("cidade").value = towns.nome[i];
+      montar().catch(falha);
+    };
+  }
+  function cidadeEm(e) {
+    const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * MP.dpr, y = (e.clientY - r.top) * MP.dpr;
+    let best = null, bd = 14 * MP.dpr;
+    for (const c of MP.cid) { const d = Math.hypot(c.x - x, c.y - y) - Math.max(0, c.r); if (d < bd) { bd = d; best = c; } }
+    return best;
+  }
+  cv.addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse" || MP.fixa) return;
+    const c = cidadeEm(e);
+    if (c !== MP.sel) { MP.sel = c; if (!c) $("dicac").hidden = true; kick(); }
+  });
+  cv.addEventListener("pointerleave", () => { if (!MP.fixa && MP.sel) { MP.sel = null; $("dicac").hidden = true; kick(); } });
+  cv.addEventListener("click", e => {
+    const c = cidadeEm(e);
+    MP.fixa = !!c && !(MP.fixa && c === MP.sel); MP.sel = MP.fixa ? c : null;
+    if (!MP.sel) $("dicac").hidden = true;
+    kick();
+  });
 
   // ---- pickers
   const ufSel = $("uf");
