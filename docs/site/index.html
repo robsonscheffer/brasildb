@@ -181,7 +181,7 @@
   @media (max-width: 640px) {
     .campo input, .campo select { font-size: 17px; padding: 15px 14px; }
     .mais .par input { font-size: 16px; padding: 12px 14px; }
-    .campo select { padding-right: 36px; background-position: right 14px center; }
+    .campo select { padding-left: 12px; padding-right: 30px; background-position: right 12px center; }
   }
   .hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px 0; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; z-index: 5; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
   .hits:empty { display: none; }
@@ -411,7 +411,7 @@
 <section class="pergunta gx" id="onde-votou">
   <span class="k">03 · seu dia</span>
   <h2 class="big">Onde e quando você votou?</h2>
-  <p class="mid" style="margin-top:14px;color:var(--muted)">Escolha a cidade e a hora. Descubra quantas pessoas votaram com você.</p>
+  <p class="mid" id="pede" style="margin-top:14px;color:var(--muted)">Escolha a cidade e a hora, no horário de Brasília. Descubra quantas pessoas votaram com você.</p>
   <div class="linha">
     <div class="campo">
       <input id="cidade" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Sua cidade" aria-label="Sua cidade">
@@ -747,6 +747,8 @@ const state = { town: null, zona: "", secao: "", sec: null, cz: null, hora: null
 // section files hold the urna's local time; fuso is local minus Brasília, in minutes.
 const rot = t => `${t.nome}, ${t.uf === "ZZ" ? t.pais : t.uf}`;
 const fora = () => state.town?.uf === "ZZ";
+// States behind Brasília: their urnas kept Brasília hours, so the hour is named as Brasília's.
+const atras = () => ["AC", "AM", "MS", "MT", "RO", "RR"].includes(state.town?.uf);
 const fuso = () => (fora() && state.cz?.fuso) || 0;
 const bsb = s => hhmm(hm(s) - fuso()); // a local HH:MM as Brasília HH:MM
 function saveURL() {
@@ -1061,7 +1063,7 @@ let naHora = () => null;
     if (h == null) return null;
     const t = Math.min(h * 60 + 30, ULTM) - fuso();
     if (t < 480 || t > ULTM) return null;
-    const banda = h < 18 ? `${h}h às ${h + 1}h` : "depois das 18h", local = fora() ? ", hora local" : "";
+    const banda = h < 18 ? `${h}h às ${h + 1}h` : "depois das 18h", local = fora() ? ", hora local" : atras() ? ", hora de Brasília" : "";
     const k = state.czHoras?.indexOf(h), n = tw && state.cz && k >= 0 ? state.cz.horas[k] : null;
     const br = somaMin(TOT.national, h * 60, h === 18 ? ULTM + 1 : (h + 1) * 60);
     const quem = n === 0 ? `O registro das urnas não tem votos de ${rot(tw)} nessa hora.` : n != null ? `${fmt(n)} pessoas votaram em ${rot(tw)}, nessa hora, com você.` : `${fmt(br)} pessoas votaram no Brasil nessa hora, com você.`;
@@ -1193,9 +1195,10 @@ let naHora = () => null;
 /* ---------- The hour ---------- */
 function renderHoras() {
   const box = $("hora"), bands = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 18h runs to the last vote (ULT)
-  box.innerHTML = `<option value="">${fora() ? "Hora local" : "Que horas?"}</option>`
-    + bands.map(h => `<option value="${h}">${h === 18 ? "depois das 18h" : `${h}h às ${h + 1}h`}</option>`).join("");
+  box.innerHTML = `<option value="">${fora() ? "Hora local" : "Hora"}</option>`
+    + bands.map(h => `<option value="${h}">${h === 18 ? "após 18h" : `${h}h às ${h + 1}h`}</option>`).join("");
   box.value = state.hora ?? ""; box.classList.toggle("vazio", state.hora == null);
+  $("pede").textContent = `Escolha a cidade e a hora${fora() ? " local" : ", no horário de Brasília"}. Descubra quantas pessoas votaram com você.`;
   if (state.hora != null) comVoce(state.hora); else $("comvoce").textContent = "";
 }
 $("hora").addEventListener("change", e => { state.hora = e.target.value === "" ? null : +e.target.value; saveURL(); renderHoras(); drawCard(); });
@@ -1212,7 +1215,7 @@ async function comVoce(h) {
   const pais = lugar === "no Brasil" || fora() ? "" : ` No Brasil, ${fmt(br)} na mesma hora.`;
   const quando = h < 18 ? `Entre ${h}h e ${h + 1}h` : fora() ? "Depois das 18h" : `Das 18h ao último voto, às ${hfala(ULT)}`;
   if (state.hora !== h) return; // the reader picked another hour while the town loaded
-  $("comvoce").innerHTML = `${quando}, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}, com você.${pais} ${fora() ? "" : dia}<small>Contado no registro das urnas: cada voto tem a sua hora.</small>`;
+  $("comvoce").innerHTML = `${quando}${atras() ? " (hora de Brasília)" : ""}, <span class="acc num">${fmt(n)}</span> pessoas votaram ${lugar}, com você.${pais} ${fora() ? "" : dia}<small>Contado no registro das urnas: cada voto tem a sua hora.</small>`;
 }
 renderHoras();
 
