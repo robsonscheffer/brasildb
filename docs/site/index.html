@@ -261,31 +261,41 @@
   .abre .esc { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
   .abre .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
   .abre .seta { width: 1px; height: 32px; margin: 24px auto 0; background: linear-gradient(var(--accent), transparent); animation: cai 1.6s ease-in-out infinite; }
-  /* The step button (U8): the next note, or the next fold after the last one. The arrow keys do the same. */
-  .prox { position: absolute; z-index: 2; right: 150px; bottom: 28px; display: flex; gap: 10px; align-items: center; background: rgba(7,10,18,.7); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer; transition: border-color .15s, color .15s; }
-  .prox:hover { border-color: var(--accent); color: var(--accent); }
-  .prox kbd { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
-  @media (max-width: 640px) { .prox { right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); } .prox kbd { display: none; } }
-  /* The phone bar (W8 N1-N3): back, the fold's name and number, next; the name opens the list. */
-  .barra, .indice { display: none; }
+  /* The bar (U10), on every screen: Voltar, where the reader is (the fold, the step inside it and
+     a line that fills through the fold), Avançar. The name opens the list of folds. The arrow keys,
+     Page Up/Down and Space do the same as the buttons. */
+  .barra { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; position: fixed; z-index: 12; right: 24px; bottom: 20px; width: min(440px, calc(100% - 48px)); padding: 5px; background: rgba(15,19,32,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
+  .barra button { background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .barra .b-ant { height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; font-size: 15px; }
+  .barra .b-ant:hover { border-color: var(--muted); }
+  .barra .b-ant:disabled { color: var(--line); border-color: transparent; cursor: default; }
+  .barra .b-prox { height: 44px; padding: 0 20px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: 15px; font-weight: 600; }
+  .barra .b-prox:hover { filter: brightness(1.08); }
+  .barra .b-prox:disabled { opacity: .35; cursor: default; }
+  .barra .b-prox.pulsa { animation: pulsa 1.6s ease-in-out infinite; }
+  @keyframes pulsa { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,180,60,.6); } 50% { box-shadow: 0 0 0 10px rgba(255,180,60,0); } }
+  .barra .b-meio { position: relative; height: 44px; min-width: 0; display: grid; align-content: center; justify-items: center; gap: 1px; padding: 0 6px 4px; line-height: 1.2; }
+  #barrafold { max-width: 100%; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #barrapasso { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  #barrapasso:empty { display: none; }
+  #barrafio { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), var(--line) 0); }
+  .barra.dica #barrafold { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 13px; white-space: normal; text-align: center; }
+  .barra.dica #barrafio { display: none; }
+  .indice { display: none; position: fixed; z-index: 13; right: 24px; bottom: 84px; width: min(440px, calc(100% - 48px)); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .indice.aberto { display: block; }
+  .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
+  .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
+  footer { padding-bottom: 110px; }
   @media (max-width: 640px) {
-    .prox { display: none; }
-    .barra { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; position: fixed; z-index: 12; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); height: 52px; background: rgba(15,19,32,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
-    .barra button { height: 52px; background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .barra .seta2 { font-size: 22px; line-height: 1; }
-    .barra .seta2:disabled { color: var(--line); }
-    .barra #barranome { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .barra #barranome small { color: var(--muted); font-size: 11px; margin-left: 6px; }
-    .barra.dica #barranome { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 14px; }
-    .indice { position: fixed; z-index: 13; left: 12px; right: 12px; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 62px); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
-    .indice.aberto { display: block; }
-    .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
-    .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-    .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
+    .barra { left: 12px; right: 12px; width: auto; bottom: max(10px, env(safe-area-inset-bottom)); padding: 4px; }
+    .barra .b-ant { width: 44px; padding: 0; font-size: 22px; }
+    .barra .b-ant .t { display: none; }
+    .barra .b-prox { padding: 0 16px; }
+    .indice { left: 12px; right: 12px; width: auto; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 62px); }
     .trilha .nome { display: none; }
     body:has(input:focus) .barra, body:has(input:focus) .indice { display: none; }
     .cartao { padding-bottom: calc(10vh + 64px); }
-    footer { padding-bottom: 96px; }
   }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
@@ -379,7 +389,7 @@
   .calmo .palco.duplo canvas { grid-area: auto; height: 70vh; }
   .calmo .abre { order: -1; position: relative; inset: auto; grid-column: 1 / -1; background: none; padding: 12vh var(--gx) 4vh; opacity: 1 !important; pointer-events: auto !important; }
   .calmo .pq { order: -1; position: relative; inset: auto; grid-column: 1 / -1; max-height: none; margin: 0 var(--gx); padding: 0 0 6vh; border: 0; background: none; opacity: 1 !important; pointer-events: auto !important; }
-  .calmo .abre .seta, .calmo .prox, .calmo .rew, .calmo .hint { display: none; }
+  .calmo .abre .seta, .calmo .rew, .calmo .hint { display: none; }
   .calmo .passos { grid-area: auto; border: 0; padding: 24px var(--gx) 48px; }
   .calmo .passos ol { position: static; transform: none; }
   .calmo .passos li, .calmo .passos li.feita { opacity: 1; }
@@ -414,9 +424,9 @@
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
 <div class="barra dica" id="barra">
-  <button class="seta2" id="barraant" type="button" aria-label="Voltar">‹</button>
-  <button id="barranome" type="button" aria-expanded="false" aria-controls="indice">Role para começar, ou toque em ›</button>
-  <button class="seta2" id="barraprox" type="button" aria-label="Próximo">›</button>
+  <button class="b-ant" id="barraant" type="button" aria-label="Voltar"><span aria-hidden="true">‹</span><span class="t" aria-hidden="true"> Voltar</span></button>
+  <button class="b-meio" id="barranome" type="button" aria-expanded="false" aria-controls="indice"><span id="barrafold">Role a tela ou use Avançar</span><small id="barrapasso"></small><i id="barrafio"></i></button>
+  <button class="b-prox pulsa" id="barraprox" type="button">Avançar <span aria-hidden="true">›</span></button>
 </div>
 <ol class="indice" id="indice" aria-label="Partes da história"></ol>
 
@@ -441,7 +451,7 @@
     </div>
     <div class="enx" id="enx"></div>
     <canvas class="fio" id="c1" aria-hidden="true"></canvas>
-    <div class="passos" id="c1passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="passos" id="c1passos"></div>
     <div class="hint k" id="hint">role para baixo</div>
   </div>
 </section>
@@ -450,8 +460,8 @@
 <section class="cena" id="abertura" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c3" role="img" aria-label="Gráfico de barras: votos por minuto das 8h às 9h. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c3passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. <b>Role</b> para avançar o relógio, ou use as setas do teclado.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c3passos"></div>
+    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. Use <b>Avançar</b> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -460,8 +470,8 @@
   <div class="palco duplo">
     <canvas id="c7" role="img" aria-label="Mapa do Brasil: cada cidade é um ponto, maior quanto mais eleitores e mais forte no minuto em que mais eleitores votaram ali. Os fatos do dia estão na lista a seguir."></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
-    <div class="passos" id="c7passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-mapa"><div><span class="k">03 · o dia no mapa</span><h2>O Brasil inteiro votando, minuto a minuto.</h2><p>Cada ponto no mapa é uma cidade. Ponto grande, cidade com muitos eleitores. Ponto forte, muitos eleitores votando naquele minuto. <b>Role</b> e conte onde e quando você votou.</p><div class="esc"><span>poucos eleitores</span><i></i><span>muitos</span></div><div class="seta"></div></div></div>
+    <div class="passos" id="c7passos"></div>
+    <div class="abre" id="abre-mapa"><div><span class="k">03 · o dia no mapa</span><h2>O Brasil inteiro votando, minuto a minuto.</h2><p>Cada ponto no mapa é uma cidade. Ponto grande, cidade com muitos eleitores. Ponto forte, muitos eleitores votando naquele minuto. Use <b>Avançar</b> e conte onde e quando você votou.</p><div class="esc"><span>poucos eleitores</span><i></i><span>muitos</span></div><div class="seta"></div></div></div>
     <div class="pq" id="onde-votou" data-passo="1" inert>
       <span class="k">seu dia</span>
       <div class="pq-escolhas">
@@ -499,8 +509,8 @@
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c8passos"></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. Use <b>Avançar</b> ou role até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -531,8 +541,8 @@
       </div>
     </div>
     <canvas class="fio" id="c10" aria-hidden="true"></canvas>
-    <div class="passos" id="c10passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. <b>Role</b> para acompanhar.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c10passos"></div>
+    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. Use <b>Avançar</b> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -540,8 +550,8 @@
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções somadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. <b>Role</b> para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c9passos"></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. Use <b>Avançar</b> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -648,6 +658,7 @@ function scene(el, render, salto) { scenes.push({ el, render, salto }); }
 const ABRE = 0.06, apos = p => clamp((p - ABRE) / (1 - ABRE - 0.05)), antes = q => ABRE + q * (1 - ABRE - 0.05);
 function abrir(id, p) { const a = $(id); a.style.opacity = p < ABRE ? 1 : 0; a.style.pointerEvents = p < ABRE ? "auto" : "none"; }
 function pular(d) {
+  $("barraprox").classList.remove("pulsa");
   const vh = innerHeight, y = scrollY;
   for (const s of scenes) {
     if (s.el.hidden || !s.salto || CALMO) continue;
@@ -667,10 +678,10 @@ const ir = y => scrollTo({ top: Math.round(y), behavior: "smooth" });
 addEventListener("keydown", e => {
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
   const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  const d = ["ArrowDown", "ArrowRight", "PageDown"].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
+  if (e.key === " " && t?.closest?.("button, a")) return; // Space presses the focused control
+  const d = ["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
   if (!d) return; e.preventDefault(); pular(d);
 });
-for (const b of document.querySelectorAll(".prox")) b.addEventListener("click", () => pular(1));
 $("barraant").addEventListener("click", () => pular(-1));
 $("barraprox").addEventListener("click", () => pular(1));
 $("barranome").addEventListener("click", () => {
@@ -681,7 +692,10 @@ addEventListener("click", e => {
   if ($("indice").classList.contains("aberto") && !e.target.closest("#indice, #barranome")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); }
 });
 $("indice").addEventListener("click", e => { if (e.target.closest("a")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); } });
-addEventListener("scroll", () => { if (scrollY > 40) $("barra").classList.remove("dica"); }, { passive: true });
+addEventListener("scroll", () => {
+  if (scrollY > 40) $("barra").classList.remove("dica");
+  if (scrollY > 2 * innerHeight) $("barraprox").classList.remove("pulsa"); // the reader found the scroll
+}, { passive: true });
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
   for (const s of scenes) {
@@ -717,6 +731,17 @@ function rebobina(clock) {
   }
   ultimoT = t;
 }
+// The step the reader is on inside the scene that fills the screen, as [n, of], or null.
+function passoAgora(vh) {
+  for (const s of scenes) {
+    if (s.el.hidden || !s.salto || CALMO) continue;
+    const r = s.el.getBoundingClientRect();
+    if (!(r.top <= 1 && r.bottom >= vh - 1)) continue;
+    const p = clamp(-r.top / Math.max(1, r.height - vh)), st = s.salto();
+    return [Math.max(1, st.filter(q => q <= p + 0.004).length), st.length];
+  }
+  return null;
+}
 // The rail: the fold under the middle of the screen is "on", the ones above it are done.
 const dobras = [...document.querySelectorAll("body > section")], ticks = [...$("trilha").querySelectorAll("a")];
 function trilha(vh) {
@@ -732,10 +757,16 @@ function trilha(vh) {
   });
   ticks.forEach((a, i) => { a.classList.toggle("on", i === on); a.classList.toggle("feita", on >= 0 && i < on); if (i === on) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
   $("trilhanome").textContent = on >= 0 ? ticks[on].querySelector("span").textContent : "";
-  // The phone bar names the fold and its place among the visible ones.
+  // The bar names the fold, the step inside it (or the fold's place, without steps) and fills its line.
   const vis = ticks.filter(a => !a.hidden), k = vis.indexOf(ticks[on]);
-  if (!$("barra").classList.contains("dica") && k >= 0) $("barranome").innerHTML = `${vis[k].querySelector("span").textContent}<small>${k + 1} de ${vis.length}</small>`;
+  if (!$("barra").classList.contains("dica") && k >= 0) {
+    const ps = passoAgora(vh);
+    $("barrafold").textContent = vis[k].querySelector("span").textContent;
+    $("barrapasso").textContent = ps ? `passo ${ps[0]} de ${ps[1]}` : `parte ${k + 1} de ${vis.length}`;
+    $("barrafio").style.setProperty("--p", ticks[on].style.getPropertyValue("--p") || 0);
+  }
   $("barraant").disabled = scrollY < 2;
+  $("barraprox").disabled = scrollY + vh >= document.documentElement.scrollHeight - 2;
   const lista = vis.map((a, i) => `<li><a href="${a.getAttribute("href")}" class="${a === ticks[on] ? "on" : ""}">${a.querySelector("span").textContent}<span>${i + 1}</span></a></li>`).join("");
   if ($("indice").dataset.l !== lista) { $("indice").innerHTML = lista; $("indice").dataset.l = lista; }
 }
@@ -1139,7 +1170,7 @@ function irMapa(q) {
     const lugar = !tw ? { uf: "BR" } : fora() ? { uf: "ZZ", municipio: tw.nome, pais: tw.pais }
       : { uf: tw.uf, municipio: tw.nome, lat: towns?.lat[tw.i], lon: towns?.lon[tw.i] };
     return { t, h: `${banda}${local} · ${tw ? rot(tw) : "Brasil"}`, seu: !!tw, voto: true, titulo: `Você votou${tw ? " aqui" : ""}, ${h < 18 ? `entre ${h}h e ${h + 1}h` : "depois das 18h"}${local}.`,
-      texto: `${quem} Role para ver o resto do dia.`, lugar };
+      texto: `${quem} Avance para ver o resto do dia.`, lugar };
   }
   function planejar() {
     const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0) + "h" + state.hora;
