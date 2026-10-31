@@ -5,6 +5,7 @@ import importlib.util
 from pathlib import Path
 
 import duckdb
+import pytest
 
 spec = importlib.util.spec_from_file_location(
     "simulacao_data", Path(__file__).parents[1] / "scripts" / "simulacao_data.py")
@@ -57,11 +58,21 @@ def test_the_sum_moves_when_places_vote_at_different_hours():
     assert share[8] > share[10]
 
 
-def test_the_count_orders_sections_by_urna_close_and_fills_a_missing_one():
+def test_the_count_orders_sections_by_bu_received_time():
     con = _con()
     con.execute("""CREATE TABLE c_apuracao AS SELECT * FROM (VALUES
-        ('RR', '03085', '0008', '0001', 1030.0), ('RR', '03085', '0008', '0002', 1021.5))
+        ('RR', '03085', '0008', '0001', 1230.0), ('RR', '03085', '0008', '0002', 1201.5),
+        ('RR', '03085', '0008', '0003', 1215.0))
         AS t(sigla_uf, id_municipio_tse, zona, secao, minuto)""")
-    assert sim.ordem(con) == 1  # 0003 has no log: it takes the city's median, 1025.75
-    rows = con.execute("SELECT secao, ordem_br, estimado FROM c_ordem ORDER BY ordem_br").fetchall()
-    assert rows == [("0002", 1, False), ("0003", 2, True), ("0001", 3, False)]
+    assert sim.ordem(con) == 0
+    rows = con.execute("SELECT secao, ordem_br FROM c_ordem ORDER BY ordem_br").fetchall()
+    assert rows == [("0002", 1), ("0003", 2), ("0001", 3)]
+
+
+def test_the_count_stops_when_a_section_with_votes_has_no_bu_time():
+    con = _con()
+    con.execute("""CREATE TABLE c_apuracao AS SELECT * FROM (VALUES
+        ('RR', '03085', '0008', '0001', 1230.0), ('RR', '03085', '0008', '0002', 1201.5))
+        AS t(sigla_uf, id_municipio_tse, zona, secao, minuto)""")
+    with pytest.raises(SystemExit, match="1 sections with votes have no BU received time"):
+        sim.ordem(con)

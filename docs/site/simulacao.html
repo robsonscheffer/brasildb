@@ -212,8 +212,8 @@
   <section class="metodo">
     <div>
       <h2>A apuração</h2>
-      <p>O TSE não publica a hora em que cada seção entrou na soma. O que existe é a hora em que cada urna terminou de gravar o boletim de urna, no registro da própria urna. A curva da apuração soma as seções nessa ordem, cada uma de uma vez, com todos os seus votos. O eixo é a parcela das seções já somadas, não a hora.</p>
-      <p>É uma estimativa da ordem: o tempo de transmissão de cada boletim até o TSE não está nos arquivos. Conferimos a estimativa com o que a imprensa relatou nos dois turnos. No 1º turno, Flávio Bolsonaro à frente do começo ao fim. No 2º, Lula começa à frente, Bolsonaro passa à frente e Lula retoma a liderança depois da metade. Nas primeiras seções, a estimativa diverge do relatado: no 2º turno, Bolsonaro passa à frente com cerca de 2% das seções, e a imprensa relatou cerca de 13%.</p>
+      <p>A curva da apuração soma as seções na ordem em que o TSE recebeu cada boletim de urna, cada uma de uma vez, com todos os seus votos. A hora de recebimento está nos <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">arquivos de boletim de urna do TSE</a>. O eixo é a parcela das seções já somadas, não a hora.</p>
+      <p>Conferimos essa ordem com o <a href="https://evolucao-totalizacao.tse.jus.br/painel/index.html">painel de evolução da totalização do TSE</a>, que mostra a cada 5 minutos quantas seções de cada cidade já estavam somadas. Em todas as cidades, cada contagem do painel bate com as seções que o TSE recebeu até 8 minutos antes. Lula começa à frente, Bolsonaro passa à frente com 14% das seções e Lula retoma a liderança com 47,5%, como no painel.</p>
     </div>
     <div>
       <h2>O dia simulado</h2>
@@ -235,8 +235,8 @@
   const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
   const TEXTO = {
     apuracao: {sobre: "Apuração · 2º turno · 25 out 2026 · Presidente", titulo: "A noite da apuração",
-      lead: "Cada seção entra na soma de uma vez, com todos os seus votos, na ordem em que as urnas fecharam. Escolha a sua escala e veja a contagem, das primeiras seções às últimas.",
-      aria: "Votos válidos de cada candidato na apuração, pela parcela das seções somadas, na ordem em que as urnas fecharam", play: "Repetir a apuração"},
+      lead: "Cada seção entra na soma de uma vez, com todos os seus votos, na ordem em que o TSE recebeu os boletins de urna. Escolha a sua escala e veja a contagem, das primeiras seções às últimas.",
+      aria: "Votos válidos de cada candidato na apuração, pela parcela das seções somadas, na ordem em que o TSE recebeu os boletins de urna", play: "Repetir a apuração"},
     dia: {sobre: "Simulação · 2º turno · 25 out 2026 · Presidente", titulo: "O dia simulado",
       lead: "A urna registra a hora de cada voto, nunca em quem foi. Aqui, o resultado de cada seção é distribuído pelas horas em que ela votou. Escolha a sua escala e veja como o dia teria corrido.",
       aria: "Votos válidos de cada candidato, hora a hora, simulados", play: "Repetir o dia"},
@@ -485,13 +485,13 @@
     if (serie.marca) {
       const [a, b] = serie.marca.votos;
       const ven = a === b ? "empate" : `${NOMES[a > b ? "13" : "22"]} venceu`;
-      return `Sua seção foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a fechar a urna e entrou na soma com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona, na ordem em que as urnas fecharam.</span>`;
+      return `Sua seção foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a entrar na soma, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona, na ordem em que o TSE recebeu os boletins de urna.</span>`;
     }
     if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
     const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb), tr = trocas();
     if (modo === "apuracao") {
       const lid = tr ? ` Na apuração, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"}.` : " Liderou a apuração do começo ao fim.";
-      return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O resultado é o oficial do TSE. A ordem é estimada pela hora em que cada urna fechou.</span>`;
+      return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O resultado é o oficial do TSE. A ordem é a do TSE: a hora em que recebeu cada boletim de urna.</span>`;
     }
     if (estado.secao) return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.<span class="of">Numa seção, a simulação divide igual em todas as horas: é o pressuposto.</span>`;
     const lid = tr ? ` Na simulação, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";

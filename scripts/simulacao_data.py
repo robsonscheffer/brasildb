@@ -3,10 +3,10 @@
   uv run python scripts/simulacao_data.py cache    # lake -> $BRASILDB_DATA/simulacao.duckdb (full eventos scan, minutes)
   uv run python scripts/simulacao_data.py dados    # docs/site/data/simulacao/{brasil.json, mapa.json, uf/<UF>.json, mun/<id>.json}
 
-The count (apuracao) is an estimate of order, not of time: the TSE publishes no time at which
-each section entered its sum (cs.json `ha` is the time of the section's public files). Sections
-enter in the order their urnas finished the bulletin (bu.dat, urna log, Brasilia time), each with
-its whole official result; the x axis is the share of sections counted.
+The count (apuracao) follows the official order: each section enters when the TSE received its
+bulletin (boletim_urna_secao, from the TSE BU files), with its whole official result; the x axis
+is the share of sections counted. (cs.json `ha` is not that time: in 8 states it is one rewrite
+time for every section.)
 
 The vote is secret: an urna logs when each vote was cast, never for whom. The model spreads each
 section's official result (votacao_secao) over the hours in which that section voted (its urna
@@ -86,23 +86,16 @@ def build_cache(only: list[str] | None = None) -> None:
 
 
 def apuracao(con: duckdb.DuckDBPyConnection) -> None:
-    """c_apuracao: when each section's urna finished writing its bulletin (bu.dat), Brasilia time,
-    in minutes from election day 00:00. A section without its own log has no row."""
+    """c_apuracao: when the TSE received each section's bulletin (boletim_urna_secao
+    data_hora_recebimento, Brasilia time), in minutes from election day 00:00. That is the
+    count time: scripts/check_count_time.py checks it against the TSE totalization panel."""
     dia = config.ELECTIONS[(ANO, TURNO)].data
     t = time.time()
     con.execute(f"""
         CREATE OR REPLACE TABLE c_apuracao AS
-        SELECT e.sigla_uf, e.id_municipio_tse, e.zona, e.secao,
-               min(hour(e.data_hora) * 60 + minute(e.data_hora) + second(e.data_hora) / 60.0)
-                   - any_value(f.fuso_minutos) AS minuto
-        FROM br_tse_urna_logs.eventos e
-        JOIN main.fuso_municipio f
-          ON f.ano = e.ano AND f.turno = e.turno
-         AND f.sigla_uf = e.sigla_uf AND f.id_municipio_tse = e.id_municipio_tse
-        WHERE e.ano = {ANO} AND e.turno = {TURNO}
-          AND e.mensagem = 'Gerando arquivo de resultado [bu.dat] + [Término]'
-          AND CAST(e.data_hora AS DATE) = DATE '{dia}'
-        GROUP BY ALL""")
+        SELECT {KEYS}, epoch(data_hora_recebimento - TIMESTAMP '{dia} 00:00:00') / 60 AS minuto
+        FROM br_tse_eleicoes.boletim_urna_secao
+        WHERE ano = {ANO} AND turno = {TURNO} AND data_hora_recebimento IS NOT NULL""")
     n = con.execute("SELECT count(*) FROM c_apuracao").fetchone()[0]
     print(f"c_apuracao: {n} rows, {time.time() - t:.0f}s", flush=True)
 
@@ -111,28 +104,24 @@ PONTOS = 200  # points on the count curve of Brasil and of each state
 
 
 def ordem(con: duckdb.DuckDBPyConnection) -> int:
-    """c_ordem: each section with votes, ranked by when its urna closed (Brasil and in its state).
-    A section without its own close time takes its city's median, then its state's. Returns how
-    many sections took one."""
+    """c_ordem: each section with votes, ranked by when the TSE received its bulletin (Brasil and
+    in its state). Every section with votes must have that time; returns 0, the sections whose
+    place is estimated."""
+    sem = con.execute(f"""
+        SELECT count(*) FROM (SELECT DISTINCT {KEYS} FROM c_votacao) s
+        ANTI JOIN c_apuracao a USING ({KEYS})""").fetchone()[0]
+    if sem:
+        sys.exit(f"check failed: {sem} sections with votes have no BU received time")
     con.execute(f"""
         CREATE OR REPLACE TABLE c_ordem AS
-        WITH s AS (SELECT DISTINCT {KEYS} FROM c_votacao),
-        m AS (
-            SELECT s.*, a.minuto,
-                   coalesce(a.minuto,
-                            median(a.minuto) OVER (PARTITION BY s.sigla_uf, s.id_municipio_tse),
-                            median(a.minuto) OVER (PARTITION BY s.sigla_uf)) AS fim
-            FROM s LEFT JOIN c_apuracao a USING ({KEYS}))
-        SELECT {KEYS}, minuto IS NULL AS estimado,
-               row_number() OVER (ORDER BY fim, hash({KEYS})) AS ordem_br,
-               row_number() OVER (PARTITION BY sigla_uf ORDER BY fim, hash({KEYS})) AS ordem_uf,
+        WITH s AS (SELECT DISTINCT {KEYS} FROM c_votacao)
+        SELECT {KEYS}, FALSE AS estimado,
+               row_number() OVER (ORDER BY a.minuto, hash({KEYS})) AS ordem_br,
+               row_number() OVER (PARTITION BY sigla_uf ORDER BY a.minuto, hash({KEYS})) AS ordem_uf,
                count(*) OVER () AS n_br,
                count(*) OVER (PARTITION BY sigla_uf) AS n_uf
-        FROM m""")
-    sem = con.execute("SELECT count(*) FROM c_ordem WHERE ordem_br IS NULL").fetchone()[0]
-    if sem:
-        sys.exit(f"check failed: {sem} sections with votes have no place in the count")
-    return con.execute("SELECT count(*) FILTER (WHERE estimado) FROM c_ordem").fetchone()[0]
+        FROM s JOIN c_apuracao a USING ({KEYS})""")
+    return 0
 
 
 
