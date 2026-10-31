@@ -16,7 +16,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import random
 import struct
 import sys
 import time
@@ -31,7 +30,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from brasildb import config, lake, sqlrun  # noqa: E402
-from brasildb.tse.paths import SectionKey, aux_url  # noqa: E402
 
 ANO, TURNO = 2026, 2
 OUT = ROOT / "docs/site/data"
@@ -550,7 +548,7 @@ def r2_views(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def cs_sections() -> list[dict]:
-    """Every section of round 2 in the results-site lists (data/raw/cs), with its `ha` time."""
+    """Every section of round 2 in the results-site lists (data/raw/cs), for the aggregations (nsp)."""
     rows = []
     raw = Path(config.load().raw) / "cs"
     for f in sorted(raw.glob(f"*-p{int(config.ELECTIONS[(ANO, TURNO)].id_pleito):06d}-cs.json")):
@@ -565,22 +563,12 @@ def cs_sections() -> list[dict]:
 
 
 def chegada() -> dict:
-    """W4: sections published per minute, from the `ha` of each section in cs.json (Brasilia time).
-    The TSE spec defines `ha` as the time of the section's auxiliary file, so it is when the
-    section's files were first published, not when it was counted; the sample check put it about
-    2 minutes after the aux.json `hr`.
-    `nacional` and `uf` are Brazil, the shape the page reads; `exterior` is abroad, on its own
-    clock (Asia counts from 01:51). An aggregated section (nsp) has no own `ha`."""
-    def minuto(r):
-        d = int(r["da"].split("/")[0]) - 25  # days from the vote
-        h, m, _ = r["ha"].split(":")
-        return d * 1440 + int(h) * 60 + int(m)
-
+    """W4: sections received per minute, from chegadas() (Brasília time). `nacional` and `uf`
+    are Brazil, the shape the page reads; `exterior` is abroad, on the same clock."""
     def hhmm(m):
         return f"{m // 60:02d}:{m % 60:02d}"
 
-    def curva(rows):
-        mins = [(r["uf"].upper(), minuto(r)) for r in rows]
+    def curva(mins):
         start, end = min(m for _, m in mins), max(m for _, m in mins)
         nac, uf = [0] * (end - start + 1), {}
         for u, m in mins:
@@ -589,10 +577,11 @@ def chegada() -> dict:
         return {"inicio": hhmm(start), "fim": hhmm(end), "total": len(mins), "nacional": nac,
                 "uf": dict(sorted(uf.items()))}
 
-    rows = [r for r in cs_sections() if r["ha"] and r["da"]]
-    br = curva([r for r in rows if r["uf"] != "zz"])
-    zz = curva([r for r in rows if r["uf"] == "zz"])
-    return {"mock": False, "fonte": "resultados.tse.jus.br, cs.json, campo ha (hora de Brasília)",
+    mins = [(k[0], m) for k, m in chegadas().items()]
+    br = curva([x for x in mins if x[0] != "ZZ"])
+    zz = curva([x for x in mins if x[0] == "ZZ"])
+    return {"mock": False, "fonte": "boletins de urna do TSE (dados abertos), hora de recebimento "
+                                    "(hora de Brasília)",
             **br, "exterior": {k: zz[k] for k in ("inicio", "fim", "total", "nacional")}}
 
 
@@ -608,21 +597,25 @@ def min_(ts) -> int | None:
     return ts.hour * 60 + ts.minute if ts is not None else None
 
 
-def cs_minuto(r) -> int:
-    """Minutes after 00:00 of election day of a section's `ha` (a later day adds 1440)."""
-    h, m, _ = r["ha"].split(":")
-    return (int(r["da"].split("/")[0]) - 25) * 1440 + int(h) * 60 + int(m)
-
-
 def mediana(xs: list[int]) -> int | None:
     xs = sorted(xs)
     return xs[(len(xs) - 1) // 2] if xs else None
 
 
 def chegadas() -> dict[tuple, int]:
-    """(UF, municipio, zona, secao) -> minute its result was first counted (`ha`)."""
-    return {(r["uf"].upper(), r["mun"].zfill(5), r["zona"].zfill(4), r["secao"].zfill(4)): cs_minuto(r)
-            for r in cs_sections() if r["ha"] and r["da"]}
+    """(UF, municipio, zona, secao) -> minute after 00:00 of election day (Brasília) when the
+    TSE received the section's bulletin: boletim_urna_secao.data_hora_recebimento, the count
+    time (scripts/check_count_time.py checks it against the TSE panel). cs.json `ha` is not:
+    in 8 states it is one batch time per state, written after the count."""
+    con = lake.connect(config.load().lake)
+    try:
+        return {(uf, mun, z, sec): int(m) for uf, mun, z, sec, m in con.execute(
+            "SELECT sigla_uf, id_municipio_tse, zona, secao, "
+            "  epoch(data_hora_recebimento - CAST(? AS TIMESTAMP)) // 60 "
+            "FROM br_tse_eleicoes.boletim_urna_secao WHERE ano = ? AND turno = ?",
+            [config.ELECTIONS[(ANO, TURNO)].data, ANO, TURNO]).fetchall()}
+    finally:
+        con.close()
 
 
 def hhmm_(m: int | None) -> str | None:
@@ -642,7 +635,7 @@ def local(ts, fuso: int):
 def cidades(con: duckdb.DuckDBPyConnection) -> None:
     """W3: cidades/<UF>.json, and ZZ for the cities abroad. votos and aptos are the TSE's
     official turnout and electorate; pico, metade and horas come from the log's votes per
-    minute; fechamento is the median close, chegada the median `ha`. Times are Brasília, and
+    minute; fechamento is the median close, chegada the median BU receipt (chegadas). Times are Brasília, and
     abroad the urna's local time (the one a voter there remembers) with the city's `fuso`.
     No name, aptos or secoes: the page has them from towns.json and exterior.json. Each town
     is one array: the `campos` scalars (times as minutes after 00:00) then the hour bands,
@@ -779,46 +772,6 @@ def secoes(con: duckdb.DuckDBPyConnection) -> None:
     print(f"secoes: {len(arquivos)} files, {len(dia)} sections; largest {maior[1]} {maior[0]} bytes")
 
 
-def sample_aux(fraction: float, seed: int, rps: float) -> None:
-    """W4 check: fetch aux.json for a random sample of sections and keep each hash's `hr`
-    next to the section's `ha` from cs.json. One JSON line per section in
-    $BRASILDB_DATA/site_v2_aux_sample.jsonl; a rerun skips sections already there."""
-    import httpx
-
-    settings = config.load()
-    pleito = config.ELECTIONS[(ANO, TURNO)].id_pleito
-    out = Path(os.environ.get("BRASILDB_DATA", "data")) / "site_v2_aux_sample.jsonl"
-    done = set()
-    if out.exists():
-        done = {tuple(json.loads(x)["key"]) for x in out.read_text().splitlines() if x.strip()}
-    rows = [r for r in cs_sections() if r["ha"]]
-    rng = random.Random(seed)
-    sample = [r for r in rows if rng.random() < fraction]
-    todo = [r for r in sample if (r["uf"], r["mun"], r["zona"], r["secao"]) not in done]
-    print(f"sample {len(sample)} sections, {len(todo)} to fetch", flush=True)
-    gap = 1.0 / rps
-    with httpx.Client(timeout=30) as client, out.open("a", encoding="utf-8") as fh:
-        for i, r in enumerate(todo):
-            k = SectionKey(r["uf"], r["mun"], r["zona"], r["secao"])
-            t = time.time()
-            for attempt in range(3):
-                try:
-                    resp = client.get(aux_url(settings.results_base, pleito, k))
-                    break
-                except httpx.HTTPError:
-                    time.sleep(2 * (attempt + 1))
-            else:
-                continue
-            rec = {"key": [r["uf"], r["mun"], r["zona"], r["secao"]], "ha": r["ha"], "status": resp.status_code}
-            if resp.status_code == 200:
-                rec["hashes"] = [{"dr": h.get("dr"), "hr": h.get("hr"), "st": h.get("st")}
-                                 for h in resp.json().get("hashes", [])]
-            fh.write(json.dumps(rec) + "\n")
-            if i % 500 == 0:
-                print(f"{i}/{len(todo)}", flush=True)
-            time.sleep(max(0.0, gap - (time.time() - t)))
-
-
 FRAMES = ROOT / "docs/site/data"
 LEVELS = 16  # the page draws 16 brightness buckets: round(((pixel / 255) ** 1.4) * 16)
 GAMMA = 1.4  # v1 reads pixels the same way
@@ -893,16 +846,11 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "amostra-aux", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames", "exterior"])
-    ap.add_argument("--fraction", type=float, default=0.01)
-    ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--rps", type=float, default=10)
+    ap.add_argument("step", choices=["cache", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames", "exterior"])
     ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (fuso votos_minuto secao aptos coleta fim_log)")
     a = ap.parse_args()
     if a.step == "cache":
         build_cache(a.only)
-    elif a.step == "amostra-aux":
-        sample_aux(a.fraction, a.seed, a.rps)
     elif a.step == "curiosidades":
         con = duckdb.connect(str(cache_path()))
         r2_views(con)

@@ -1,1 +1,1 @@
-{"mock":false,"uf":"ZZ","municipio":"29637","zona":"0001","campos":["abertura","primeiro_voto","ultimo_voto","encerramento","votos","aptos","chegada","fim_log"],"secoes":{"0727":["08:00","08:15","16:25","17:00",119,775,"17:18",[61220,22,86,13,22,17,16]],"3490":"0727"}}
+{"mock":false,"uf":"ZZ","municipio":"29637","zona":"0001","campos":["abertura","primeiro_voto","ultimo_voto","encerramento","votos","aptos","chegada","fim_log"],"secoes":{"0727":["08:00","08:15","16:25","17:00",119,775,"23:05",[61220,22,86,13,22,17,16]],"3490":"0727"}}
