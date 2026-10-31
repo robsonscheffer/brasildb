@@ -265,8 +265,8 @@
   /* The bar (U10), on every screen: Voltar, where the reader is (the fold, the step inside it and
      a line that fills through the fold), Avançar. The name opens the list of folds. The arrow keys,
      Page Up/Down and Space do the same as the buttons. */
-  body::after { content: ""; position: fixed; z-index: 11; left: 0; right: 0; bottom: 0; height: var(--nav); background: var(--bg); border-top: 1px solid var(--line); pointer-events: none; }
-  .calmo body::after { display: none; }
+  .faixa { position: fixed; z-index: 11; left: 0; right: 0; bottom: 0; height: var(--nav); background: var(--bg); border-top: 1px solid var(--line); pointer-events: none; }
+  .calmo .faixa { display: none; }
   .barra { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; position: fixed; z-index: 12; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(600px, calc(100% - 48px)); padding: 5px; background: var(--bg2); border: 1px solid rgba(255,180,60,.5); border-radius: 999px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
   .barra button { background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .barra .b-ant { height: 46px; padding: 0 18px; border: 1px solid rgba(236,232,220,.35); border-radius: 999px; font-size: 16px; }
@@ -431,6 +431,7 @@
   <a href="#compartilhamento"><i></i><span>seu cartão</span></a>
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
+<div class="faixa" aria-hidden="true"></div>
 <div class="barra dica" id="barra">
   <button class="b-ant" id="barraant" type="button" aria-label="Voltar"><span aria-hidden="true">‹</span><span class="t" aria-hidden="true"> Voltar</span><kbd class="tecla" aria-hidden="true">←</kbd></button>
   <button class="b-meio" id="barranome" type="button" aria-expanded="false" aria-controls="indice"><span id="barrafold">Role a tela ou use Avançar<span class="tecla"> ou as setas do teclado</span></span><small id="barrapasso"></small><i id="barrafio"></i></button>
