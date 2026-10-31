@@ -36,6 +36,7 @@
     --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     --gx: max(20px, env(safe-area-inset-left));
+    --nav: 84px; /* the band at the bottom that holds the bar; the stages end above it */
     --topo: 64px;           /* the clock's measured bottom; tick() keeps it fresh */
     color-scheme: dark;
   }
@@ -103,7 +104,7 @@
 
   /* A scene is a tall section whose stage sticks while the reader scrolls through it. */
   .cena { position: relative; height: var(--len, 300vh); }
-  .palco { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; background: var(--bg); }
+  .palco { position: sticky; top: 0; height: calc(100vh - var(--nav)); height: calc(100svh - var(--nav)); overflow: hidden; display: grid; background: var(--bg); }
   .palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .flow { padding-top: 18vh; padding-bottom: 18vh; max-width: 760px; margin: 0 auto; }
   .flow > .k { display: block; margin-bottom: 16px; }
@@ -220,7 +221,7 @@
   /* Phone: typing the town sits under the clock, above the keyboard; the hour and the answer
      are a sheet over the bar, so the map above shows the town and the hour. */
   @media (max-width: 640px) {
-    .pq { left: 10px; right: 10px; top: auto; bottom: calc(72px + env(safe-area-inset-bottom)); max-height: calc(100% - var(--topo, 64px) - 90px); justify-content: flex-start; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 20px; background: rgba(18,22,34,.96); }
+    .pq { left: 10px; right: 10px; top: auto; bottom: 10px; max-height: calc(100% - var(--topo, 64px) - 24px); justify-content: flex-start; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 20px; background: rgba(18,22,34,.96); }
     .pq[data-passo="1"] { top: calc(var(--topo, 64px) + 6px); bottom: auto; }
     .pq .k { display: none; }
     .pq-escolhas { margin-top: 0; gap: 6px; }
@@ -264,38 +265,42 @@
   /* The bar (U10), on every screen: Voltar, where the reader is (the fold, the step inside it and
      a line that fills through the fold), Avançar. The name opens the list of folds. The arrow keys,
      Page Up/Down and Space do the same as the buttons. */
-  .barra { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; position: fixed; z-index: 12; right: 24px; bottom: 20px; width: min(440px, calc(100% - 48px)); padding: 5px; background: rgba(15,19,32,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
+  body::after { content: ""; position: fixed; z-index: 11; left: 0; right: 0; bottom: 0; height: var(--nav); background: var(--bg); border-top: 1px solid var(--line); pointer-events: none; }
+  .calmo body::after { display: none; }
+  .barra { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; position: fixed; z-index: 12; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(600px, calc(100% - 48px)); padding: 5px; background: var(--bg2); border: 1px solid rgba(255,180,60,.5); border-radius: 999px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
   .barra button { background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .barra .b-ant { height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; font-size: 15px; }
+  .barra .b-ant { height: 46px; padding: 0 18px; border: 1px solid rgba(236,232,220,.35); border-radius: 999px; font-size: 16px; }
   .barra .b-ant:hover { border-color: var(--muted); }
   .barra .b-ant:disabled { color: var(--line); border-color: transparent; cursor: default; }
-  .barra .b-prox { height: 44px; padding: 0 20px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: 15px; font-weight: 600; }
+  .barra .b-prox { height: 46px; padding: 0 24px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: 16px; font-weight: 700; }
   .barra .b-prox:hover { filter: brightness(1.08); }
   .barra .b-prox:disabled { opacity: .35; cursor: default; }
   .barra .b-prox.pulsa { animation: pulsa 1.6s ease-in-out infinite; }
-  @keyframes pulsa { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,180,60,.6); } 50% { box-shadow: 0 0 0 10px rgba(255,180,60,0); } }
+  @keyframes pulsa { 0% { box-shadow: 0 0 0 0 rgba(255,180,60,.75); transform: scale(1); } 50% { transform: scale(1.06); } 70% { box-shadow: 0 0 0 16px rgba(255,180,60,0); } 100% { box-shadow: 0 0 0 0 rgba(255,180,60,0); transform: scale(1); } }
   .barra .b-meio { position: relative; height: 44px; min-width: 0; display: grid; align-content: center; justify-items: center; gap: 1px; padding: 0 6px 4px; line-height: 1.2; }
-  #barrafold { max-width: 100%; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #barrapasso { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  #barrafold { max-width: 100%; font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #barrapasso { font-family: var(--mono); font-size: 12px; color: var(--fg); }
   #barrapasso:empty { display: none; }
   #barrafio { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), var(--line) 0); }
-  .barra.dica #barrafold { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 13px; white-space: normal; text-align: center; }
+  .barra.dica #barrafold { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); white-space: normal; text-align: center; padding: 0 14px; font-size: 13px; }
   .barra.dica #barrafio { display: none; }
   .barra kbd { margin-left: 8px; font-family: var(--mono); font-size: 11px; font-weight: 400; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: .6; }
   /* Key hints only where there is a keyboard: a fine pointer that can hover. */
   @media (hover: none), (pointer: coarse) { .tecla { display: none; } }
-  .indice { display: none; position: fixed; z-index: 13; right: 24px; bottom: 84px; width: min(440px, calc(100% - 48px)); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .indice { display: none; position: fixed; z-index: 13; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav) + 8px); width: min(600px, calc(100% - 48px)); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
   .indice.aberto { display: block; }
   .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
   .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
   .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
   footer { padding-bottom: 110px; }
   @media (max-width: 640px) {
-    .barra { left: 12px; right: 12px; width: auto; bottom: max(10px, env(safe-area-inset-bottom)); padding: 4px; }
-    .barra .b-ant { width: 44px; padding: 0; font-size: 22px; }
+    :root { --nav: calc(68px + env(safe-area-inset-bottom)); }
+    .barra { left: 10px; right: 10px; width: auto; transform: none; bottom: max(8px, env(safe-area-inset-bottom)); padding: 4px; }
+    .barra .b-ant, .barra .b-prox { height: 48px; }
+    .barra .b-ant { width: 48px; padding: 0; font-size: 22px; }
     .barra .b-ant .t { display: none; }
     .barra .b-prox { padding: 0 16px; }
-    .indice { left: 12px; right: 12px; width: auto; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 62px); }
+    .indice { left: 10px; right: 10px; width: auto; transform: none; }
     .trilha .nome { display: none; }
     body:has(input:focus) .barra, body:has(input:focus) .indice { display: none; }
     .cartao { padding-bottom: calc(10vh + 64px); }
@@ -697,7 +702,6 @@ addEventListener("click", e => {
 $("indice").addEventListener("click", e => { if (e.target.closest("a")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); } });
 addEventListener("scroll", () => {
   if (scrollY > 40) $("barra").classList.remove("dica");
-  if (scrollY > 2 * innerHeight) $("barraprox").classList.remove("pulsa"); // the reader found the scroll
 }, { passive: true });
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
@@ -762,6 +766,7 @@ function trilha(vh) {
   $("trilhanome").textContent = on >= 0 ? ticks[on].querySelector("span").textContent : "";
   // The bar names the fold, the step inside it (or the fold's place, without steps) and fills its line.
   const vis = ticks.filter(a => !a.hidden), k = vis.indexOf(ticks[on]);
+  if (scrollY > 40) $("barra").classList.remove("dica");
   if (!$("barra").classList.contains("dica") && k >= 0) {
     const ps = passoAgora(vh);
     $("barrafold").textContent = vis[k].querySelector("span").textContent;
