@@ -70,6 +70,13 @@
   .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .grafico { position: relative; margin: 10px 0 0; }
+  /* The map: each city a dot that lights up when its first section enters the sum. */
+  .mapa { margin: 14px 0 0; }
+  .mapa canvas { display: block; width: 100%; height: clamp(320px, 58vw, 560px); }
+  .leg { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0 0; font: 12px var(--mono); color: var(--muted); }
+  .leg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--fg); }
+  .leg i.b { background: var(--b); }
+  .leg i.n { background: transparent; border: 1.5px solid var(--accent); }
   svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
   .eixo text { font: 12px var(--mono); fill: var(--muted); }
   .eixo line { stroke: var(--line); }
@@ -167,6 +174,11 @@
       <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
     </div>
 
+    <div class="mapa" id="mapawrap" hidden>
+      <canvas id="mapa" role="img" aria-label="Mapa do Brasil: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
+      <p class="leg"><span><i></i><span id="lega">Lula</span> à frente na cidade</span><span><i class="b"></i><span id="legb">Bolsonaro</span> à frente</span><span><i class="n"></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
+    </div>
+
     <div class="grafico">
       <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
     </div>
@@ -257,6 +269,7 @@
     const br = await get("brasil.json");
     NOMES = br.nomes || NOMES;
     $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
+    $("lega").textContent = NOMES["13"]; $("legb").textContent = NOMES["22"];
     const m = estado.mun ? await get(`mun/${estado.mun}.json`) : null;
     if (m) preencherZonas(m);
     let s, x, passo, marca = null;
@@ -300,6 +313,7 @@
     serie.barras = modo === "dia" || !!m;
     $("onde").textContent = estado.secao ? `Seção ${estado.secao} · zona ${estado.zona}` : estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
       : estado.mun ? cidadeNome() : estado.uf ? UFNOME[estado.uf] : "Brasil";  // in the count, equal shares of sections give equal bars
+    await mapaEscala(modo === "apuracao" && !m).catch(() => mapaEscala(false));
     document.body.classList.remove("carregando");
     desenhar();
     tocar();
@@ -425,6 +439,7 @@
     $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
     $("va").textContent = fmt(va) + " votos";
     $("vb").textContent = fmt(vb) + " votos";
+    if (MP.on) { MP.q = lerp(serie.x); kick(); }
     if (modo === "apuracao") {
       $("hora").textContent = Math.round(lerp(serie.x) * 100) + "%";
       $("horadia").textContent = "Seções somadas";
@@ -479,11 +494,13 @@
   function tocar(de = 0) {
     cancelAnimationFrame(anim);
     if (CALMO) { pintar(1); tocando = false; botao(); return; }
-    const dur = 6000 * (1 - de), t0 = performance.now();
+    // With the map, start slow: most cities light up within the first tenth of the sections.
+    const dur = (MP.on ? 16000 : 6000) * (1 - de), t0 = performance.now();
+    const curva = MP.on ? f => Math.pow(f, 1.5) : f => 1 - Math.pow(1 - f, 1.6);
     tocando = true; botao();
     const passo = now => {
       const f = Math.max(0, Math.min(1, (now - t0) / dur));
-      pintar(de + (1 - de) * (f < 1 ? 1 - Math.pow(1 - f, 1.6) : 1));
+      pintar(de + (1 - de) * (f < 1 ? curva(f) : 1));
       if (f < 1) anim = requestAnimationFrame(passo); else { tocando = false; botao(); }
     };
     anim = requestAnimationFrame(passo);
@@ -516,7 +533,98 @@
       else { await navigator.clipboard.writeText(url); b.textContent = "Link copiado"; setTimeout(() => { b.textContent = "Compartilhar"; }, 1800); }
     } catch (_) { /* closed the share sheet */ }
   };
-  addEventListener("resize", () => { if (serie) { desenhar(); pintar(t); } });
+  addEventListener("resize", () => { if (serie) { if (MP.on) layout(); desenhar(); pintar(t); } });
+
+  // ---- map. A city appears when its first section enters the sum and grows with the votes
+  // counted so far; its tone is who leads there at that moment. The amber ring: it just came in.
+  const MP = {on: false, q: 0, pAnt: 0, dados: null, borders: [], cid: [], raf: 0, last: 0};
+  const cv = $("mapa"), PULSO = 900;
+  const FG = [236, 232, 220], CB = [127, 133, 151], AM = [255, 180, 60];
+  const mix = (u, v, k) => u.map((c, i) => Math.round(c + (v[i] - c) * k));
+
+  async function mapaEscala(on) {
+    MP.on = on && !!towns; $("mapawrap").hidden = !MP.on;
+    if (!MP.on) return;
+    if (!MP.dados) [MP.dados, MP.borders] = await Promise.all([get("mapa.json"),
+      fetch("data/borders.json").then(r => r.json()).catch(() => [])]);
+    const d = MP.dados, P = d.pontos, uf = estado.uf, onde = new Map(towns.id.map((id, i) => [id, i]));
+    // A state's count is the Brasil order within the state: turn its share into a Brasil point.
+    MP.ponto = q => q * P;
+    if (uf) {
+      const cum = [0]; d.secoes[uf].forEach(v => cum.push(cum[cum.length - 1] + v));
+      const tot = cum[cum.length - 1];
+      MP.ponto = q => { const alvo = q * tot; let k = 1; while (k < cum.length - 1 && cum[k] < alvo) k++;
+        return k - 1 + Math.min(1, (alvo - cum[k - 1]) / Math.max(1, cum[k] - cum[k - 1])); };
+    }
+    MP.cid = [];
+    d.id.forEach((id, j) => {
+      const i = onde.get(id); if (i == null || (uf && towns.uf[i] !== uf)) return;
+      const e = d.c[j]; let tot = 0; for (let k = 0; k < e.length; k += 3) tot += e[k + 1] + e[k + 2];
+      MP.cid.push({lat: towns.lat[i], lon: towns.lon[i], e, tot, first: e[0], r: 0, born: -1e9});
+    });
+    MP.cid.sort((a, b) => b.tot - a.tot);  // big dots first, small ones stay visible on top
+    MP.pAnt = 0;
+    layout();
+  }
+
+  function layout() {
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
+    const KX = Math.cos(15 * Math.PI / 180), pad = 10 * dpr;
+    let [lo0, lo1, la0, la1] = [-74.2, -34.6, 5.6, -34.0];
+    if (estado.uf && MP.cid.length) {
+      lo0 = Math.min(...MP.cid.map(c => c.lon)) - .3; lo1 = Math.max(...MP.cid.map(c => c.lon)) + .3;
+      la0 = Math.max(...MP.cid.map(c => c.lat)) + .3; la1 = Math.min(...MP.cid.map(c => c.lat)) - .3;
+    }
+    const w = cv.width - 2 * pad, h = cv.height - 2 * pad, mw = (lo1 - lo0) * KX, mh = la0 - la1, s = Math.min(w / mw, h / mh);
+    const ox = pad + (w - mw * s) / 2, oy = pad + (h - mh * s) / 2;
+    MP.X = lon => ox + (lon - lo0) * KX * s; MP.Y = lat => oy + (la0 - lat) * s;
+    for (const c of MP.cid) { c.x = MP.X(c.lon); c.y = MP.Y(c.lat); }
+    MP.dpr = dpr; MP.rmax = Math.min(cv.width, cv.height) * (estado.uf ? .06 : .045);
+    MP.tmax = Math.sqrt(Math.max(1, ...MP.cid.map(c => c.tot)));
+    kick();
+  }
+
+  function kick() { if (!MP.raf && MP.on) { MP.last = performance.now(); MP.raf = requestAnimationFrame(quadro); } }
+
+  function quadro(now) {
+    MP.raf = 0;
+    const ctx = cv.getContext("2d"), dpr = MP.dpr, dt = now - MP.last; MP.last = now;
+    const p = MP.ponto(MP.q), pa = MP.pAnt, vem = p > pa && p - pa < MP.dados.pontos * .04;
+    MP.pAnt = p;
+    const k = CALMO ? 1 : 1 - Math.exp(-dt / 140);
+    let ocupado = false;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.strokeStyle = "rgba(236,232,220,.10)"; ctx.lineWidth = dpr; ctx.beginPath();
+    for (const ring of MP.borders) { ring.forEach(([lo, la], j) => j ? ctx.lineTo(MP.X(lo), MP.Y(la)) : ctx.moveTo(MP.X(lo), MP.Y(la))); ctx.closePath(); }
+    ctx.stroke();
+    const rmin = .9 * dpr, aneis = [];
+    for (const c of MP.cid) {
+      let a = 0, b = 0;
+      for (let j = 0; j < c.e.length; j += 3) {
+        const w = Math.min(1, p - c.e[j]); if (w <= 0) break;
+        a += c.e[j + 1] * w; b += c.e[j + 2] * w;
+      }
+      if (vem && c.first >= pa && c.first < p && !CALMO) c.born = now;
+      const alvo = a + b > 0 ? rmin + (MP.rmax - rmin) * Math.sqrt(a + b) / MP.tmax : 0;
+      c.r += (alvo - c.r) * k; if (Math.abs(alvo - c.r) > .05) ocupado = true; else c.r = alvo;
+      if (c.r < .2) {  // not counted yet: a faint grain that keeps the shape of the country
+        ctx.fillStyle = "rgba(236,232,220,.07)"; ctx.fillRect(c.x - .5 * dpr, c.y - .5 * dpr, dpr, dpr); continue;
+      }
+      const e = (now - c.born) / PULSO, tom = a >= b ? FG : CB;
+      const cor = e < 1 ? mix(AM, tom, e) : tom;
+      ctx.fillStyle = `rgba(${cor},${a >= b ? .82 : .78})`;
+      ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
+      if (e < 1) { aneis.push([c, e]); ocupado = true; }
+    }
+    ctx.lineWidth = 1.2 * dpr;
+    for (const [c, e] of aneis) {
+      const f = 1 - Math.pow(1 - e, 3);
+      ctx.strokeStyle = `rgba(255,180,60,${(.85 * Math.pow(1 - e, 1.4)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r) + (3 + 14 * f) * dpr, 0, 6.283); ctx.stroke();
+    }
+    if (ocupado) MP.raf = requestAnimationFrame(quadro);
+  }
 
   // ---- pickers
   const ufSel = $("uf");
