@@ -97,6 +97,8 @@
   .modo button[aria-selected="true"] { color: var(--bg); background: var(--fg); }
   .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
   .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
+  .portao { stroke: var(--muted); stroke-dasharray: 2 4; }
+  .portao-t { font: 12px var(--mono); fill: var(--muted); }
 </style>
 </head>
 <body>
@@ -311,6 +313,12 @@
       const maxT = Math.max(3, Math.floor(W / 70));
       let st = step; while (span / st > maxT) st *= 2;
       for (let m = Math.ceil(x0 / st) * st; m <= x1; m += st) el("text", {x: xm(m), y: H - 8, "text-anchor": "middle"}, eixo).textContent = hhmm(m);
+      // 17h: the gates close; after it only people already in the queue vote
+      const F = 17 * 60;
+      if (F > x0 && F < x1) {
+        el("line", {class: "portao", x1: xm(F), x2: xm(F), y1: T, y2: H - B}, svg);
+        el("text", {class: "portao-t", x: xm(F) + (xm(F) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(F) > W - 150 ? "end" : "start"}, svg).textContent = "17h, portões fecham";
+      }
     }
     const mx = Math.max(...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
     const barras = el("g", {class: "barras"}, svg);
