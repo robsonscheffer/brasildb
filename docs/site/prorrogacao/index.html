@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>A votação foi prorrogada. O que ainda acontecia? | O Brasil votando</title>
+<meta name="description" content="Siga a prorrogação da votação pelos registros das urnas. Uma investigação interativa do segundo turno de 2026, com fontes abertas e limites explícitos.">
+<meta name="theme-color" content="#101512">
+<link rel="canonical" href="https://votando.brasildb.org/prorrogacao/">
+<meta property="og:title" content="A votação foi prorrogada. O que ainda acontecia?">
+<meta property="og:description" content="A notícia, as seções que já tinham encerrado e os registros que você pode conferir.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://votando.brasildb.org/og.jpg">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="story.js"></script>
+</head>
+<body>
+<a class="skip" href="#investigacao">Pular para a investigação</a>
+<header><a class="brand" href="../">O BRASIL VOTANDO<span>um dia, milhões de registros</span></a><a href="#fontes">Fontes e limites ↗</a></header>
+<main id="investigacao">
+<section class="experience" aria-label="Investigação da prorrogação">
+  <div class="editorial">
+    <p class="eyebrow">25 OUT 2026 · SEGUNDO TURNO</p>
+    <div class="chapter-label"><span id="chapter-number">01 / 04</span><span id="chapter-name">A NOTÍCIA</span></div>
+    <h1 id="headline">A votação foi prorrogada.<br><em>O que ainda acontecia?</em></h1>
+    <p class="lede" id="description">Uma notícia não conta o que cada urna estava fazendo. Os registros ajudam a reconstruir esse momento.</p>
+    <div id="question" class="question">
+      <p>Quando saiu a primeira notícia, a maioria das seções ainda estava aberta?</p>
+      <div class="choices"><button data-answer="sim" disabled>Acho que sim</button><button data-answer="nao" disabled>Acho que não</button></div>
+      <p class="small">Faça uma hipótese. Depois, confira os registros.</p>
+    </div>
+    <div id="finding" class="finding" hidden>
+      <p class="eyebrow" id="finding-label">NOS REGISTROS DAS URNAS</p>
+      <p class="stat" id="stat"></p>
+      <p id="finding-text"></p>
+      <p class="small" id="feedback"></p>
+    </div>
+    <div class="chapter-actions"><button id="back" class="text-button" disabled>← Voltar</button><button id="next" hidden>Seguir os registros →</button></div>
+    <p id="loading" class="small" role="status">Carregando os registros publicados…</p>
+  </div>
+  <div class="world">
+    <div class="world-top"><span class="eyebrow">BRASIL · HORA DE BRASÍLIA</span><span class="live-tag">RECONSTITUIÇÃO</span></div>
+    <div id="map" role="img" aria-label="Mapa tridimensional das cidades brasileiras. Use também a busca de cidade abaixo para consultar os mesmos dados."></div>
+    <div class="map-overlay"><div class="clock" id="clock">17:03</div><p id="clock-caption">A primeira notícia da prorrogação</p></div>
+    <div class="legend"><i></i> seções sem encerramento registrado antes da hora escolhida <span>·</span> um ponto por cidade</div>
+    <div class="map-bottom"><span id="map-status">O mapa aparece ao conferir sua hipótese.</span><button id="reset-view" class="text-button" hidden>Ver o Brasil ↗</button></div>
+    <p id="map-fallback" class="small" hidden>O mapa 3D não está disponível neste dispositivo. A investigação, os números e a busca de cidades continuam funcionando.</p>
+  </div>
+</section>
+<section class="desk" aria-label="Controles da investigação">
+  <div class="timeline">
+    <div class="timeline-heading"><label for="time">MOVA O RELÓGIO. CONFIRA O QUE RESTAVA.</label><output id="time-output" for="time">17:03</output></div>
+    <input id="time" type="range" min="1020" max="1150" value="1023" step="1" disabled aria-describedby="time-help">
+    <div class="ticks"><button data-minute="1020" disabled>17h<span>portões</span></button><button data-minute="1023" disabled>17h03<span>notícia</span></button><button data-minute="1069" disabled>17h49<span>ofício</span></button><button data-minute="1146" disabled>19h06<span>último voto</span></button></div>
+    <p id="time-help" class="small">Encerramento e último voto são eventos diferentes. Uma seção pode parar de receber votos antes de registrar o encerramento.</p>
+  </div>
+  <div class="city-desk"><label for="city">OU INVESTIGUE UMA CIDADE</label><select id="city" disabled><option value="">Escolha uma cidade…</option></select><p id="city-result" class="small" aria-live="polite">Clique num ponto do mapa ou escolha pela lista. Não é necessário usar o mapa 3D.</p></div>
+</section>
+<section id="evidence" class="evidence" hidden aria-labelledby="evidence-title">
+  <div><p class="eyebrow">04 · ABRA O REGISTRO</p><h2 id="evidence-title">O último voto.<br><em>E o que veio depois.</em></h2><p id="section-place"></p><p>Não é uma animação de uma sala real. Esta é a sequência publicada para uma seção, reconstruída a partir dos horários registrados.</p><a id="section-source" href="../data/curiosidades.json">Abrir o arquivo de origem ↗</a></div>
+  <ol id="records"></ol>
+</section>
+<section id="fontes" class="sources">
+  <div><p class="eyebrow">CONFIANÇA NÃO É UM EFEITO VISUAL</p><h2>Você não precisa<br><em>ficar só com a animação.</em></h2><p>Abra as fontes, confira os horários e separe o que foi registrado do que não podemos concluir.</p></div>
+  <div class="source-list">
+    <details open><summary>O que esta investigação mostra</summary><p>A prorrogação não significou que o país inteiro continuou votando por mais duas horas. Os registros mostram quando cada seção encerrou. Quem já estava na fila às 17h votaria mesmo sem prorrogação.</p><p>O anúncio, a comunicação aos tribunais e o encerramento de cada urna são acontecimentos distintos.</p></details>
+    <details><summary>O que os registros não provam</summary><p>Os horários não identificam quem votou, em quem votou, quem já estava na fila nem quem votou por causa da prorrogação. Esta página não calcula efeito sobre o resultado da eleição.</p><p>17h03 é a hora da primeira notícia, não um horário confirmado de assinatura da decisão. O site não é do TSE.</p></details>
+    <details><summary>Como ler o mapa e sua cobertura</summary><p id="coverage">O mapa usa os arquivos de seção já publicados no Brasil votando.</p><p>O brilho indica a proporção de seções sem encerramento registrado antes do minuto escolhido. O tamanho indica a quantidade dessas seções na cidade. Não representa pessoas numa fila. Os horários têm resolução de um minuto; não interpolamos fechamentos entre os registros.</p><p>As porcentagens da narrativa vêm da análise nacional dos logs. O mapa usa apenas as seções com encerramento e totalização presentes nos arquivos publicados. Seções agregadas não são contadas novamente. Exterior excluído.</p></details>
+    <details><summary>Fontes e arquivos abertos</summary><ul><li><a href="../como.html#fontes">Fontes primárias, decisão e reportagens citadas</a></li><li><a href="../como.html#diferencas">Método e diferenças em relação ao TSE</a></li><li><a href="../data/curiosidades.json">Fatos e consultas SQL</a></li><li><a href="closures.json">Dados do mapa desta página</a></li><li><a href="https://github.com/robsonscheffer/brasildb">Código aberto e tabelas do BrasilDB</a></li></ul></details>
+  </div>
+</section>
+<noscript><p class="noscript">A investigação interativa precisa de JavaScript. Você pode ler os limites e as fontes acima, consultar os <a href="../data/curiosidades.json">fatos com suas consultas</a> e acessar o <a href="../como.html">método completo</a>.</p></noscript>
+</main>
+<footer><a class="brand" href="../">O BRASIL VOTANDO</a><p>Projeto independente · Dados públicos do TSE · Nunca em quem.</p><a href="../explorar/">Explorar o dia inteiro ↗</a></footer>
+</body>
+</html>
