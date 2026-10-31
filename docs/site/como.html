@@ -100,7 +100,7 @@
 <p>O boletim de urna (BU) é o resultado da seção, impresso em várias vias e gravado numa mídia. Uma via fica na porta da seção. A mídia leva o resultado para ser transmitido ao TSE. Este site não mostra resultados de candidatos.</p>
 
 <h3 id="totalizacao">Totalização</h3>
-<p>O TSE soma os boletins de todas as seções e publica os arquivos de cada seção no site de resultados. O site registra a hora desses arquivos, não a hora da soma. Essa é a curva do fim da noite; o que essa hora mede está em <a href="#chegada">A apuração</a>.</p>
+<p>O TSE soma os boletins de todas as seções. Os dados abertos do TSE dão a hora em que ele recebeu o boletim de cada seção. Essa é a curva do fim da noite; como conferimos essa hora está em <a href="#chegada">A apuração</a>.</p>
 
 <h3 id="hora">Hora de Brasília e hora local</h3>
 <p>Todas as horas do site são de Brasília. O relógio da urna marca a hora local, e nós a convertemos. Nos 22 municípios do Acre e em 11 do Amazonas, a hora local é duas horas a menos; em 339 municípios de Rondônia, Roraima, Mato Grosso, Mato Grosso do Sul e do resto do Amazonas, uma hora a menos; em Fernando de Noronha, uma a mais. Por isso as urnas do Acre abriram às 6h da manhã, hora local.</p>
@@ -113,7 +113,7 @@
   <li>Logs das urnas: o arquivo de cada seção no site de resultados do TSE, <code>resultados.tse.jus.br/oficial/ele2026/arquivo-urna</code>.</li>
   <li>Eleitores aptos e comparecimento por seção: dados abertos do TSE, arquivo <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip"><code>detalhe_votacao_secao_2026.zip</code></a>.</li>
   <li>Códigos dos municípios: dados abertos do TSE, arquivo <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/municipio_tse_ibge/municipio_tse_ibge.zip"><code>municipio_tse_ibge.zip</code></a>.</li>
-  <li>Hora dos arquivos de cada seção: o arquivo <code>cs.json</code> de cada estado no site de resultados, campo <code>ha</code>.</li>
+  <li>Hora em que o TSE recebeu o boletim de cada seção: dados abertos do TSE, <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">arquivos de boletim de urna</a> de cada estado, campo <code>DT_BU_RECEBIDO</code>.</li>
   <li>Prorrogação até as 19h: decisão liminar do ministro Cristiano Zanin, do STF, na <a href="https://portal.stf.jus.br/processos/listarProcessos.asp?classe=Rcl&amp;numeroProcesso=101673">Reclamação 101.673</a> (<a href="https://static.poder360.com.br/uploads/2026/10/zanin-prorroga-eleicoes-25out26.pdf">íntegra</a>). Uma segunda ordem limitou a prorrogação às seções ainda abertas. Hora: primeira notícia às 17h03 (<a href="https://www.oliberal.com/politica/nunes-marques-comunica-tres-sobre-prorrogacao-da-votacao-ate-19h-1.1186733">Estadão Conteúdo</a>); ofício do TSE aos tribunais regionais às 17h49 (<a href="https://timesbrasil.com.br/brasil/decisao-2026-tse-orienta-que-votacao-ate-as-19h-continue-apenas-nas-secoes-ainda-abertas/">Times Brasil</a>). À noite, o presidente do TSE, ministro Nunes Marques, disse: "Não houve nenhuma alteração advinda da decisão judicial" (<a href="https://correiodoestado.com.br/politica/nunes-marques-nao-houve-nenhuma-alteracao-advinda-de-decisao-do-stf/475528/">Estadão Conteúdo</a>, <a href="https://timesbrasil.com.br/brasil/decisao-2026-nunes-marques-diz-que-prorrogacao-apos-fechamento-das-urnas-gerou-dificuldades-mas-defende-seguranca-da-eleicao/">Times Brasil</a>). Um levantamento do TSE (<a href="https://www.gazetadopovo.com.br/republica/tse-informa-o-registro-de-343-mil-votos-apos-as-17h-no-segundo-turno/">Gazeta do Povo</a>) conta 34.393 votos depois das 17h no Brasil; os logs dão 34.330. O mesmo levantamento conta 473.065 seções encerradas até as 17h10; os logs dão 485.677. O site usa a hora em que a própria urna registra o encerramento; a reportagem não diz qual hora o TSE usou.</li>
   <li>Código, consultas e dados: o repositório <a href="https://github.com/robsonscheffer/brasildb">github.com/robsonscheffer/brasildb</a>. Cada número da página principal vem com a consulta SQL que o produz, no arquivo <code>data/curiosidades.json</code>.</li>
 </ul>
@@ -151,12 +151,12 @@
 <h3 id="trocadas">Urnas trocadas</h3>
 <p>Contamos uma urna trocada quando a seção tem dois logs ou mais: 1.842 seções no Brasil. A mensagem "Urna de contingência" aparece em 1.971 seções. A diferença são 133 seções com um log só: nelas, a urna foi trocada antes do primeiro voto, então a primeira urna não registrou nenhum voto, e os votos batem com o TSE.</p>
 
-<h3 id="chegada">A apuração: o que a hora de cada seção mede</h3>
-<p>A curva da noite usa o campo <code>ha</code> do <code>cs.json</code>: 497.897 seções, a primeira às 16h59 e a última às 23h21. A especificação do TSE para esse arquivo define <code>ha</code> como a data e hora do arquivo auxiliar da seção, ou seja, quando os arquivos da seção foram gerados para publicação. Não é a hora em que a seção entrou na soma: o site de resultados não publica essa hora por seção. Comparamos uma amostra de 4.948 seções com o arquivo de cada uma.</p>
+<h3 id="chegada">A apuração: a hora em que o TSE recebeu cada boletim</h3>
+<p>A curva da noite soma as seções na hora em que o TSE recebeu o boletim de urna de cada uma, nos <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">arquivos de boletim de urna</a> dos dados abertos (campo <code>DT_BU_RECEBIDO</code>, hora de Brasília): 497.897 seções no Brasil, a primeira às 17h05 e a última às 23h21.</p>
 <ul>
-  <li><code>ha</code> fica, na mediana, 2 minutos depois da hora gravada no arquivo da seção (<code>aux.json</code>, campo <code>hr</code>); em 90% das seções, até 1h30 depois.</li>
-  <li>Em 39 seções, um arquivo foi reenviado num dia seguinte. A hora do arquivo mudou para esse dia; <code>ha</code> manteve a noite da eleição. Ou seja, <code>ha</code> guarda a hora da primeira publicação.</li>
-  <li>Nenhuma seção teve arquivos publicados entre 18h e 19h. A votação foi estendida até as 19h nesse dia; ainda não confirmamos numa fonte oficial que a publicação parou por isso.</li>
+  <li>Conferimos essa hora com o <a href="https://evolucao-totalizacao.tse.jus.br/painel/index.html">painel de evolução da totalização do TSE</a>, que mostra a cada 5 minutos quantas seções de cada cidade já estavam somadas. Nos 27 estados, cada contagem do painel bate com as seções que o TSE recebeu até 8 minutos antes; na mediana, 1,8 minuto antes.</li>
+  <li>1.092 seções chegaram entre 17h05 e 17h07. A seguinte chegou às 19h03, depois do fim da prorrogação. Ainda não confirmamos numa fonte oficial por que nenhum boletim chegou entre essas horas.</li>
+  <li>O site de resultados também dá uma hora por seção, no campo <code>ha</code> do arquivo <code>cs.json</code>. Ela não é a hora da soma: em 8 estados (AC, AM, DF, ES, MT, PR, RN e TO) é uma hora só para todas as seções do estado, gravada depois da apuração; nos outros, fica cerca de 2 minutos depois do recebimento. Por isso o site não a usa.</li>
 </ul>
 
 <h3 id="limites">O que ainda não sabemos</h3>
