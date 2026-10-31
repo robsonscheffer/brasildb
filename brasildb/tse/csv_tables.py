@@ -66,6 +66,22 @@ _DETALHE = [
     ("modelo_urna", _clean("DS_MODELO_URNA"), "VARCHAR"),
 ]
 
+_VOTACAO = [
+    ("ano", f"CAST({_clean('ANO_ELEICAO')} AS INTEGER)", "INTEGER"),
+    ("turno", f"CAST({_clean('NR_TURNO')} AS INTEGER)", "INTEGER"),
+    ("id_eleicao", _clean("CD_ELEICAO"), "VARCHAR"),
+    ("sigla_uf", f"upper({_clean('SG_UF')})", "VARCHAR"),
+    ("id_municipio_tse", f"lpad({_clean('CD_MUNICIPIO')}, 5, '0')", "VARCHAR"),
+    ("zona", f"lpad({_clean('NR_ZONA')}, 4, '0')", "VARCHAR"),
+    ("secao", f"lpad({_clean('NR_SECAO')}, 4, '0')", "VARCHAR"),
+    ("cargo", _clean("DS_CARGO"), "VARCHAR"),
+    ("numero_votavel", _clean("NR_VOTAVEL"), "VARCHAR"),
+    ("nome_votavel", _clean("NM_VOTAVEL"), "VARCHAR"),
+    ("sequencial_candidato", _clean("SQ_CANDIDATO"), "VARCHAR"),
+    ("votos", f"CAST({_clean('QT_VOTOS')} AS BIGINT)", "BIGINT"),
+    ("id_local_votacao", _clean("NR_LOCAL_VOTACAO"), "VARCHAR"),
+]
+
 _MUNICIPIO = [
     ("id_municipio", f"lpad({_q('CD_MUNICIPIO_IBGE')}, 7, '0')", "VARCHAR"),
     ("id_municipio_tse", f"lpad({_q('CD_MUNICIPIO_TSE')}, 5, '0')", "VARCHAR"),
@@ -93,6 +109,11 @@ def _read(path: str, columns: list[tuple[str, str, str]]) -> pa.Table:
 def read_detalhe_votacao_secao(path: str) -> pa.Table:
     """detalhe_votacao_secao_<ano>_<UF|BR>.csv as br_tse_eleicoes.detalhes_votacao_secao."""
     return _read(path, _DETALHE)
+
+
+def read_votacao_secao(path: str) -> pa.Table:
+    """votacao_secao_<ano>_<UF|BR>.csv as br_tse_eleicoes.votacao_secao."""
+    return _read(path, _VOTACAO)
 
 
 def read_municipio(path: str) -> pa.Table:

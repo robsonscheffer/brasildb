@@ -239,6 +239,17 @@ def cmd_load_turnout(a) -> None:
         print(f"loaded {name}")
 
 
+def cmd_load_votes(a) -> None:
+    s = config.load()
+    for member in a.members:  # e.g. BR, RR
+        name = f"votacao_secao_{a.ano}_{member.upper()}.csv"
+        url = f"{CKAN_CDN}/votacao_secao/votacao_secao_{a.ano}_{member.upper()}.zip"
+        path = csv_tables.fetch_zip_member(url, name, f"{s.raw}/ckan")
+        lake.write_table(s.lake, "br_tse_eleicoes", "votacao_secao",
+                         csv_tables.read_votacao_secao(str(path)), f"votacao-{member.upper()}")
+        print(f"loaded {name}")
+
+
 def cmd_load_municipios(a) -> None:
     s = config.load()
     path = csv_tables.fetch_zip_member(f"{CKAN_CDN}/municipio_tse_ibge/municipio_tse_ibge.zip",
@@ -296,6 +307,11 @@ def main(argv=None) -> None:
     t.add_argument("--ano", type=int, default=2026)
     t.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
     t.set_defaults(fn=cmd_load_turnout)
+
+    v = sub.add_parser("load-votes", help="load votacao_secao (votes per votavel) from CKAN")
+    v.add_argument("--ano", type=int, default=2026)
+    v.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
+    v.set_defaults(fn=cmd_load_votes)
 
     m = sub.add_parser("load-municipios", help="load the TSE to IBGE municipality codes")
     m.set_defaults(fn=cmd_load_municipios)
