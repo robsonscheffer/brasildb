@@ -63,8 +63,6 @@
   .acc { color: var(--accent); }
   em, .it { font-style: italic; }
 
-  .topo { position: fixed; z-index: 10; top: max(16px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); pointer-events: none; }
-  .topo::before { display: none; }
   .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: var(--gx); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid #4a3a1e; background: rgba(7,10,18,.85); border-radius: 999px; padding: 4px 10px; }
 
   /* The rail: eight ticks, the current fold lit and its name beside it, a fill that grows with the scroll. */
@@ -84,7 +82,7 @@
     .trilha a.on i { width: 100%; }
     .trilha a span { display: none; }
     .trilha .nome { display: block; grid-column: 1 / -1; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-align: right; margin-top: 2px; }
-    .topo { display: none; }
+    .relogio .rd { display: none; }
     .relogio { top: max(36px, calc(env(safe-area-inset-top) + 26px)); }
     .relogio.grande { top: max(54px, calc(env(safe-area-inset-top) + 44px)); }
   }
@@ -101,6 +99,16 @@
   .relogio.grande { top: max(36px, calc(env(safe-area-inset-top) + 24px)); }
   .relogio.grande .rt { font-family: var(--sans); font-size: clamp(52px, 11vw, 104px); font-weight: 800; letter-spacing: -0.045em; color: var(--fg); line-height: .92; }
   .relogio.grande .rs { font-family: var(--sans); font-size: clamp(15px, 3vw, 18px); margin-top: 8px; }
+  .relogio .rd { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  /* Fixed-width digits leave a wide gap before a 1; the big clock uses the font's own widths so it lines up with the votes. */
+  .relogio.grande .rt { font-variant-numeric: proportional-nums lining-nums; margin-left: -.04em; }
+  /* A digit that changes slides up into place; the colon breathes while the clock rests. */
+  .rt .d { display: inline-block; }
+  .rt .d.rola { animation: rola .28s cubic-bezier(.2,.8,.2,1); }
+  .rt .dp { display: inline-block; animation: respira 1.1s ease-in-out infinite alternate; }
+  @keyframes rola { from { transform: translateY(.35em); opacity: 0; } }
+  @keyframes respira { to { opacity: .3; } }
+  .calmo .rt .d.rola, .calmo .rt .dp { animation: none; }
 
   /* A scene is a tall section whose stage sticks while the reader scrolls through it. */
   .cena { position: relative; height: var(--len, 300vh); }
@@ -412,8 +420,7 @@
 <a class="pula" href="#onde-votou">Pular para "Onde você votou"</a>
 <a class="pula" href="#compartilhamento">Pular para o cartão</a>
 <div class="sr" id="falado" aria-live="polite" aria-atomic="true"></div>
-<div class="topo k">25 out 2026</div>
-<div class="relogio" id="relogio"><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
+<div class="relogio" id="relogio"><div class="rd">25 out 2026</div><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
 <div class="rew" id="rew" aria-live="polite"></div>
 
@@ -700,6 +707,31 @@ $("indice").addEventListener("click", e => { if (e.target.closest("a")) { $("ind
 addEventListener("scroll", () => {
   if (scrollY > 40) $("barra").classList.remove("dica");
 }, { passive: true });
+// The clock's numbers move: a changed digit slides in, and the vote count runs to its new value
+// instead of jumping. A line of a different shape (another label, "1 voto") is set at once.
+const relo = { hora: "", alvo: 0, ve: 0, molde: null, raf: 0 };
+function poeHora(txt) {
+  if (txt === relo.hora) return;
+  const velha = relo.hora; relo.hora = txt;
+  if (!/^\d\d:\d\d(:\d\d)?$/.test(txt)) { $("rt").textContent = txt; return; }
+  $("rt").innerHTML = [...txt].map((c, i) => c === ":" ? '<span class="dp">:</span>' : `<span class="d${velha.length === txt.length && velha[i] !== c ? " rola" : ""}">${c}</span>`).join("");
+}
+function poeVotos(html) {
+  const m = /<b>([\d.]+)<\/b>/.exec(html), molde = m && html.replace(m[0], "<b>#</b>");
+  if (CALMO || !m || molde !== relo.molde) {
+    cancelAnimationFrame(relo.raf); relo.raf = 0; relo.molde = molde;
+    if (m) relo.ve = relo.alvo = +m[1].replace(/\./g, "");
+    $("rs").innerHTML = html; return;
+  }
+  relo.alvo = +m[1].replace(/\./g, "");
+  if (!relo.raf && relo.alvo !== relo.ve) relo.raf = requestAnimationFrame(corre);
+}
+function corre() {
+  const d = relo.alvo - relo.ve;
+  relo.ve = Math.abs(d) < 2 ? relo.alvo : relo.ve + d * 0.16;
+  $("rs").innerHTML = relo.molde.replace("#", fmt(Math.round(relo.ve)));
+  relo.raf = relo.ve === relo.alvo ? 0 : requestAnimationFrame(corre);
+}
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
   for (const s of scenes) {
@@ -717,7 +749,7 @@ function tick() {
   rel.classList.toggle("on", !!clock);
   const was = rel.classList.contains("grande");
   rel.classList.toggle("grande", !!clock && grande && !clock.pequeno);
-  if (clock) { $("rt").textContent = clock.txt || hhmm(clock.t); $("rs").innerHTML = clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`; }
+  if (clock) { poeHora(clock.txt || hhmm(clock.t)); poeVotos(clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`); }
   if (was !== rel.classList.contains("grande")) requestAnimationFrame(tick);
   rebobina(clock);
   trilha(vh);
