@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O dia simulado</title>
+<meta name="description" content="O resultado de cada seção distribuído pelas horas em que ela votou. Uma simulação: o voto é secreto.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #070a12;
+    --bg2: #0f1320;
+    --fg: #ece8dc;
+    --muted: #9a9ca6;
+    --line: #262a38;
+    --accent: #ffb43c;
+    --accent-dim: rgba(255,180,60,.16);
+    --b: #7f8597;           /* the second line: grey, so neither number reads as a side */
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --gx: max(16px, env(safe-area-inset-left));
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 19; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  main { max-width: 1080px; margin: 0 auto; padding: 40px var(--gx) 64px; position: relative; z-index: 1; }
+  .sobre { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 7vw, 84px); line-height: .98; margin: 0 0 14px; letter-spacing: -.01em; }
+  .lead { color: var(--muted); max-width: 640px; margin: 0 0 28px; }
+
+  /* Scale picker: Brasil > estado > cidade > zona > seção. Each level narrows the next. */
+  .escala { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin: 0 0 22px; }
+  .escala label { display: flex; flex-direction: column; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .escala select, .escala input { font: 16px var(--sans); color: var(--fg); background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-width: 0; }
+  .escala input { width: 220px; }
+  .escala select:disabled, .escala input:disabled { opacity: .4; }
+  .escala .cid { position: relative; }
+  .sug { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow: auto; text-transform: none; letter-spacing: 0; }
+  .sug li { padding: 7px 10px; border-radius: 6px; cursor: pointer; font: 15px var(--sans); color: var(--fg); }
+  .sug li[aria-selected="true"], .sug li:hover { background: var(--accent-dim); }
+  .sug li small { color: var(--muted); }
+
+  /* The readout above the chart: hour, the two shares, the running count. */
+  .placar { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px 28px; align-items: end; margin: 0 0 6px; }
+  .hora { font-family: var(--mono); font-size: clamp(30px, 5vw, 48px); font-variant-numeric: tabular-nums; line-height: 1; }
+  .hora small { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+  .cand { border-top: 2px solid var(--fg); padding-top: 8px; }
+  .cand.b { border-color: var(--b); }
+  .cand .n { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .cand .p { font-family: var(--serif); font-size: clamp(40px, 6.4vw, 68px); line-height: 1; font-variant-numeric: tabular-nums; }
+  .cand .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .grafico { position: relative; margin: 10px 0 0; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+  .eixo text { font: 12px var(--mono); fill: var(--muted); }
+  .eixo line { stroke: var(--line); }
+  .meio { stroke: var(--muted); stroke-dasharray: 3 5; opacity: .6; }
+  .la { fill: none; stroke: var(--fg); stroke-width: 2.5; stroke-linejoin: round; }
+  .lb { fill: none; stroke: var(--b); stroke-width: 2.5; stroke-linejoin: round; }
+  .barras rect { fill: var(--accent); opacity: .22; }
+  .barras rect.ja { opacity: .55; }
+  .cursor { stroke: var(--accent); stroke-width: 1; }
+  .ponto-a { fill: var(--fg); } .ponto-b { fill: var(--b); }
+  .rot { font: 500 13px var(--mono); }
+
+  .antes { margin: 6px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
+  .ctrl { display: flex; gap: 12px; align-items: center; margin: 14px 0 0; }
+  .ctrl button { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; }
+  .ctrl input[type=range] { flex: 1; accent-color: var(--accent); }
+
+  .fim { margin: 26px 0 0; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
+  .fim .of { display: block; font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 8px; }
+
+  .metodo { margin: 48px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; max-width: 720px; }
+  .metodo h2 { font-family: var(--serif); font-weight: 400; color: var(--fg); font-size: 30px; margin: 0 0 10px; }
+  .metodo p { margin: 0 0 12px; }
+
+  @media (max-width: 640px) {
+    main { padding-top: 28px; }
+    .placar { grid-template-columns: 1fr 1fr; }
+    .hora { grid-column: 1 / -1; }
+    .escala label, .escala .cid { flex: 1 1 140px; }
+    .escala input { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="sobre">Simulação · 2º turno · 25 out 2026 · Presidente</p>
+  <h1>O dia simulado</h1>
+  <p class="lead">A urna registra a hora de cada voto, nunca em quem foi. Aqui, o resultado de cada seção é distribuído pelas horas em que ela votou. Escolha a sua escala e veja como o dia teria corrido.</p>
+
+  <div class="escala">
+    <label>Estado
+      <select id="uf"><option value="">Brasil</option></select>
+    </label>
+    <label class="cid">Cidade
+      <input id="cidade" type="text" placeholder="Todas" autocomplete="off" disabled role="combobox" aria-expanded="false" aria-controls="sug">
+      <ul id="sug" class="sug" role="listbox" hidden></ul>
+    </label>
+    <label>Zona
+      <select id="zona" disabled><option value="">Todas</option></select>
+    </label>
+    <label>Seção
+      <select id="secao" disabled><option value="">Todas</option></select>
+    </label>
+  </div>
+
+  <div class="placar" aria-live="polite">
+    <div class="hora" id="hora">08h<small id="horadia">hora de Brasília</small></div>
+    <div class="cand"><div class="n">nº 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
+    <div class="cand b"><div class="n">nº 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
+  </div>
+
+  <div class="grafico">
+    <svg id="svg" viewBox="0 0 1000 440" role="img" aria-label="Votos válidos de cada número, hora a hora, simulados"></svg>
+  </div>
+  <p class="antes" id="antes"></p>
+  <div class="ctrl">
+    <button id="play" type="button">Repetir o dia</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Hora do dia">
+  </div>
+
+  <p class="fim" id="fim"></p>
+
+  <section class="metodo">
+    <h2>Como simulamos</h2>
+    <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada número recebeu na seção. Nenhum arquivo liga os dois.</p>
+    <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
+    <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado. Percentuais sobre votos válidos (sem brancos e nulos). Horas em horário de Brasília; o exterior começa a votar na véspera.</p>
+    <p>Fontes: votação por seção e registros das urnas, TSE (dados abertos). <a href="como.html">Como contamos</a>.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const D = "data/simulacao/";
+  const CALMO = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = id => document.getElementById(id);
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
+  const pct = x => (x * 100).toFixed(1).replace(".", ",") + "%";
+  const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
+  const cache = {};
+  const get = p => cache[p] || (cache[p] = fetch(D + p).then(r => { if (!r.ok) throw new Error(p); return r.json(); }));
+
+  let horas = [], towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
+
+  // A section's curve: its official result spread over its own hours (flat shares).
+  function serieSecao(s, n) {
+    const [, votos, i0, hs] = s, tot = hs.reduce((a, b) => a + b, 0);
+    const out = votos.map(() => new Array(n).fill(0));
+    hs.forEach((c, k) => votos.forEach((v, j) => { out[j][i0 + k] = v * c / tot; }));
+    return out;
+  }
+  const deDict = d => ["13", "22", "95", "96"].map(k => d[k]);
+
+  function nomeEscala() {
+    if (estado.secao) return `na seção ${estado.secao}, zona ${estado.zona}`;
+    if (estado.zona) return `na zona ${estado.zona} de ${cidadeNome()}`;
+    if (estado.mun) return `em ${cidadeNome()}`;
+    if (estado.uf) return estado.uf === "ZZ" ? "no exterior" : `em ${UFNOME[estado.uf]}`;
+    return "no Brasil";
+  }
+  function cidadeNome() {
+    if (!towns || !estado.mun) return "";
+    const i = towns.id.indexOf(estado.mun);
+    return i < 0 ? estado.mun : towns.nome[i];
+  }
+
+  async function carregar() {
+    const br = await get("brasil.json");
+    horas = br.horas;
+    let s;
+    if (!estado.uf) s = deDict(br.brasil);
+    else if (!estado.mun) s = deDict(br.ufs[estado.uf]);
+    else {
+      const m = await get(`mun/${estado.mun}.json`);
+      preencherZonas(m);
+      if (estado.secao) s = serieSecao(m.secoes[`${estado.zona}-${estado.secao}`], horas.length);
+      else if (estado.zona) s = deDict(m.zonas[estado.zona]);
+      else s = deDict((await get(`uf/${estado.uf}.json`)).cidades[estado.mun]);
+    }
+    // Each point is the running total at the end of its hour. The line starts once 1% of this
+    // scale's votes are in: a few early votes (abroad, the night before) give shares that swing
+    // on a handful of people. They stay in the running total from the first point.
+    const tot = horas.map((_, i) => s.reduce((a, v) => a + v[i], 0));
+    const total = tot.reduce((x, y) => x + y, 0);
+    let acc = 0, a = tot.findIndex(x => (acc += x) >= total * .01);
+    const b = tot.length - 1 - [...tot].reverse().findIndex(x => x > 0);
+    const cum = v => { let c = 0; return v.map(x => (c += x)); };
+    const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
+    serie = {h: horas.slice(a, b + 1), tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
+             antes: a > 0 ? ct[a - 1] : 0, antesDe: horas[a]};
+    desenhar();
+    tocar();
+    const q = new URLSearchParams();
+    for (const k of ["uf", "mun", "zona", "secao"]) if (estado[k]) q.set(k === "mun" ? "cidade" : k, estado[k]);
+    history.replaceState(null, "", q.toString() ? "?" + q : location.pathname);
+  }
+
+  let zonasDe = "";
+  function preencherZonas(m) {
+    if (zonasDe === m.id) return;
+    zonasDe = m.id;
+    const zs = Object.keys(m.zonas).sort();
+    $("zona").innerHTML = '<option value="">Todas</option>' + zs.map(z => `<option${z === estado.zona ? " selected" : ""}>${z}</option>`).join("");
+    $("zona").disabled = false;
+    secoesDe(m);
+  }
+  function secoesDe(m) {
+    const ss = Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).sort();
+    $("secao").innerHTML = '<option value="">Todas</option>' + ss.map(s => `<option${s === estado.secao ? " selected" : ""}>${s}</option>`).join("");
+    $("secao").disabled = !estado.zona;
+  }
+
+  // ---- chart
+  let W = 1000, H = 440;
+  const L = 46, R = 40, T = 14, B = 30, BAR = 64;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
+  let g = {};
+
+  function rotHora(h) { return `${String(h < 0 ? h + 24 : h).padStart(2, "0")}h`; }
+
+  function desenhar() {
+    const svg = $("svg"); svg.innerHTML = "";
+    W = Math.max(300, svg.parentNode.clientWidth); H = Math.round(Math.min(440, Math.max(300, W * .5)));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const n = serie.h.length, x = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1));
+    const sa = serie.ca.map((a, i) => a + serie.cb[i] ? a / (a + serie.cb[i]) : .5);
+    // y domain: around 50%, at least +-5 points, with the shares from the first hour with real weight.
+    let dev = Math.min(.5, Math.max(.05, ...sa.map(p => Math.abs(p - .5))));
+    dev = Math.min(.5, Math.ceil(dev * 50) / 50);
+    const yTop = T, yBot = H - B - BAR - 22;
+    const y = p => yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev));
+    const eixo = el("g", {class: "eixo"}, svg);
+    for (const p of [.5 - dev, .5, .5 + dev]) {
+      el("line", {x1: L, x2: W - R, y1: y(p), y2: y(p), class: p === .5 ? "meio" : ""}, eixo);
+      el("text", {x: L - 8, y: y(p) + 4, "text-anchor": "end"}, eixo).textContent = Math.round(p * 100) + "%";
+    }
+    const passo = Math.ceil(n / Math.max(3, Math.floor(W / 80)));
+    serie.h.forEach((h, i) => { if (i % passo === 0 || i === n - 1) el("text", {x: x(i), y: H - 8, "text-anchor": "middle"}, eixo).textContent = rotHora(h + 1); });
+    // hourly votes as bars at the bottom
+    const mx = Math.max(...serie.tot), bw = Math.max(2, (W - L - R) / n * .6);
+    const barras = el("g", {class: "barras"}, svg);
+    g.barras = serie.tot.map((v, i) => el("rect", {x: x(i) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
+    const pts = (f) => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
+    g.pa = pts(p => p); g.pb = pts(p => 1 - p);
+    g.la = el("polyline", {class: "la", points: ""}, svg);
+    g.lb = el("polyline", {class: "lb", points: ""}, svg);
+    g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
+    g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
+    g.db = el("circle", {r: 5, class: "ponto-b"}, svg);
+    g.ra = el("text", {class: "rot", fill: "var(--fg)"}, svg); g.ra.textContent = "13";
+    g.rb = el("text", {class: "rot", fill: "var(--b)"}, svg); g.rb.textContent = "22";
+    g.x = x; g.y = y; g.sa = sa; g.n = n;
+    pintar(1);
+  }
+
+  // Draw the day up to fraction f (0..1), interpolating between hours.
+  function pintar(f) {
+    t = f;
+    const n = g.n, pos = f * (n - 1), i = Math.floor(pos), r = pos - i;
+    const lerp = (arr) => i >= n - 1 ? arr[n - 1] : arr[i] + (arr[i + 1] - arr[i]) * r;
+    const cut = (pts, p) => {
+      const out = pts.slice(0, i + 1);
+      if (i < n - 1) out.push(`${g.x(pos).toFixed(1)},${g.y(p).toFixed(1)}`);
+      return out.join(" ");
+    };
+    const p = lerp(g.sa), xa = g.x(pos);
+    g.la.setAttribute("points", cut(g.pa, p));
+    g.lb.setAttribute("points", cut(g.pb, 1 - p));
+    g.cur.setAttribute("x1", xa); g.cur.setAttribute("x2", xa);
+    g.da.setAttribute("cx", xa); g.da.setAttribute("cy", g.y(p));
+    g.db.setAttribute("cx", xa); g.db.setAttribute("cy", g.y(1 - p));
+    const ya = g.y(p), yb = g.y(1 - p), sep = Math.abs(ya - yb) < 16 ? 9 : 0;
+    g.ra.setAttribute("x", xa + 10); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep));
+    g.rb.setAttribute("x", xa + 10); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep));
+    g.barras.forEach((b, k) => b.classList.toggle("ja", k <= pos + 1e-9));
+    const va = lerp(serie.ca), vb = lerp(serie.cb);
+    $("pa").textContent = pct(va + vb ? va / (va + vb) : 0);
+    $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
+    $("va").textContent = fmt(va) + " votos";
+    $("vb").textContent = fmt(vb) + " votos";
+    const h = serie.h[Math.min(n - 1, i)] + 1, min = i >= n - 1 ? 0 : Math.floor(r * 60);
+    $("hora").firstChild.textContent = `${rotHora(h)}${String(min).padStart(2, "0")}`.replace("h", ":");
+    $("horadia").textContent = (h < 0 ? "24 out, " : "") + "hora de Brasília";
+    $("scrub").value = Math.round(f * 1000);
+    $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
+    $("antes").textContent = serie.antes ? `A linha começa às ${rotHora(serie.antesDe + 1).replace("h", ":00")}, com 1% dos votos. Antes disso votaram ${fmt(serie.antes)} pessoas${!estado.uf || estado.uf === "ZZ" ? ", no exterior" : ""}; elas já estão na soma.` : "";
+  }
+
+  function fimTexto(va, vb) {
+    const onde = nomeEscala();
+    if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
+    const ven = va > vb ? "13" : "22", pv = Math.max(va, vb) / (va + vb);
+    let virou = "";
+    if (!estado.secao) {
+      const lid = g.sa.map(p => p > .5 ? "13" : p < .5 ? "22" : "");
+      const trocas = lid.filter((l, k) => k && l && lid[k - 1] && l !== lid[k - 1]).length;
+      virou = trocas ? ` Na simulação, a liderança trocou de lado ${trocas === 1 ? "uma vez" : trocas + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";
+    }
+    return `O ${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${virou}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
+  }
+
+  function tocar() {
+    cancelAnimationFrame(anim);
+    if (CALMO) { pintar(1); return; }
+    const dur = 6000, t0 = performance.now();
+    const passo = now => {
+      const f = Math.max(0, Math.min(1, (now - t0) / dur));
+      pintar(f < 1 ? 1 - Math.pow(1 - Math.max(0, f), 1.6) : 1);
+      if (f < 1) anim = requestAnimationFrame(passo);
+    };
+    anim = requestAnimationFrame(passo);
+  }
+
+  $("play").onclick = tocar;
+  $("scrub").oninput = e => { cancelAnimationFrame(anim); pintar(e.target.value / 1000); };
+  addEventListener("resize", () => { if (serie) { desenhar(); pintar(t); } });
+
+  // ---- pickers
+  const ufSel = $("uf");
+  Object.keys(UFNOME).sort((a, b) => UFNOME[a].localeCompare(UFNOME[b], "pt-BR")).forEach(u => ufSel.add(new Option(UFNOME[u], u)));
+  ufSel.onchange = () => {
+    estado = {uf: ufSel.value, mun: "", zona: "", secao: ""};
+    $("cidade").value = ""; $("cidade").disabled = !estado.uf || estado.uf === "ZZ";
+    $("zona").disabled = $("secao").disabled = true; zonasDe = "";
+    $("zona").innerHTML = $("secao").innerHTML = '<option value="">Todas</option>';
+    carregar();
+  };
+  $("zona").onchange = async () => {
+    estado.zona = $("zona").value; estado.secao = "";
+    secoesDe(await get(`mun/${estado.mun}.json`)); carregar();
+  };
+  $("secao").onchange = () => { estado.secao = $("secao").value; carregar(); };
+
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  let sugs = [], ativo = -1;
+  $("cidade").oninput = () => {
+    const q = norm($("cidade").value.trim()), ul = $("sug");
+    if (!towns || q.length < 2) { ul.hidden = true; return; }
+    sugs = [];
+    for (let i = 0; i < towns.id.length && sugs.length < 8; i++)
+      if (towns.uf[i] === estado.uf && norm(towns.nome[i]).startsWith(q)) sugs.push(i);
+    ativo = sugs.length ? 0 : -1;
+    ul.innerHTML = sugs.map((i, k) => `<li role="option" data-k="${k}" aria-selected="${k === ativo}">${towns.nome[i]} <small>${towns.uf[i]}</small></li>`).join("");
+    ul.hidden = !sugs.length; $("cidade").setAttribute("aria-expanded", String(!ul.hidden));
+  };
+  const escolher = k => {
+    const i = sugs[k]; if (i == null) return;
+    $("cidade").value = towns.nome[i]; $("sug").hidden = true;
+    estado = {uf: estado.uf, mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
+    carregar();
+  };
+  $("sug").onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); escolher(+li.dataset.k); } };
+  $("cidade").onkeydown = e => {
+    const ul = $("sug"); if (ul.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); ativo = (ativo + (e.key === "ArrowDown" ? 1 : -1) + sugs.length) % sugs.length;
+      [...ul.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === ativo)));
+    } else if (e.key === "Enter") { e.preventDefault(); escolher(ativo); }
+    else if (e.key === "Escape") ul.hidden = true;
+  };
+  $("cidade").onblur = () => setTimeout(() => { $("sug").hidden = true; }, 100);
+
+  // ---- start: a shared link keeps its scale
+  (async () => {
+    towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
+    const q = new URLSearchParams(location.search);
+    const uf = (q.get("uf") || "").toUpperCase();
+    if (UFNOME[uf]) {
+      estado.uf = uf; ufSel.value = uf; $("cidade").disabled = uf === "ZZ";
+      const mun = q.get("cidade") || "";
+      if (mun && towns && towns.id.includes(mun)) {
+        estado.mun = mun; $("cidade").value = cidadeNome();
+        estado.zona = q.get("zona") || ""; estado.secao = estado.zona ? q.get("secao") || "" : "";
+      }
+    }
+    carregar().catch(() => {
+      if (estado.zona) { estado.zona = estado.secao = ""; carregar(); }
+    });
+  })();
+})();
+</script>
+</body>
+</html>
