@@ -975,7 +975,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     { t: 478.5, h: "antes das 8h", titulo: `Antes do primeiro eleitor, cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>.`, texto: "Zero votos, em papel." },
     { t: 480, h: "08:00 · Brasil", titulo: `${fmt(cur("abertura_tie").valor)} urnas acordam às 8h em ponto.` },
     { t: 483, h: "08:03 · Brasil", titulo: "O país já passou de um milhão de votos." },
-    { t: PICO, h: `${hhmm(PICO)} · Brasil`, titulo: "O minuto mais cheio do dia.", texto: `${fmt(nat[PICO - S])} votos em sessenta segundos.` },
+    { t: PICO, h: `${hhmm(PICO)} · Brasil`, titulo: "O minuto mais movimentado do dia.", texto: `${fmt(nat[PICO - S])} votos em sessenta segundos.` },
     { t: 540, h: "09:00 · Brasil", titulo: "Uma hora de votação.", texto: `${fmt(votosAte(539))} votos até as 9h.` },
   ];
   const ag = agenda(its, 478.5, 540, 10);
@@ -1179,7 +1179,7 @@ function irMapa(q) {
     const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: comTermos(i), lugar: i.lugar });
     const its = [
       { t: 480, h: "08:00 · Brasil", titulo: "O país inteiro começa de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
-      { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
+      { t: PICO, h: "Brasil", titulo: "O minuto mais movimentado do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
       ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora && i.id !== "cem_milhoes").map(fato),
       { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
       (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(TOTAL - 1e8)}.`, lugar: l }; })(),
@@ -1193,16 +1193,16 @@ function irMapa(q) {
       const cz = state.cz, t = hm(cz.pico) - cz.fuso, fimB = hm(cz.ultimo_voto) - cz.fuso, lugar = { uf: "ZZ", municipio: tw.nome, pais: tw.pais };
       const sec = state.sec ? ` Na sua seção, ${state.sec.votos}.` : "";
       its.push(t >= 480 && t <= ULTM
-        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais cheio.`,
+        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais movimentado.`,
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}, hora local.${sec}`, lugar }
         : fimB < 480
         ? { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, a votação já tinha acabado.`,
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. A última, às ${hfala(cz.ultimo_voto)}, hora local.${sec}`, lugar }
         : { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, já eram ${hfala(hhmm(480 + cz.fuso))}.`,
-            texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais cheio foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
+            texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais movimentado foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
     } else if (tw && towns) {
       const cz = state.cz, i = tw.i;
-      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais cheio.`,
+      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais movimentado.`,
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
@@ -1325,7 +1325,7 @@ async function comVoce(h) {
   // The hour in the whole country: how many voted and where it ranks in the day.
   const fim = x => x === 18 ? ULTM + 1 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
   const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
-  const dia = h >= 17 ? "Depois das 17h, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
+  const dia = h >= 17 ? "Depois das 17h, só a fila." : rank === 1 ? "A hora mais movimentada do dia." : rank <= 3 ? `A ${rank}ª hora mais movimentada do dia.`
     : rank >= 9 ? `${pct}% dos votos do dia, uma das horas mais calmas.` : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
   // Abroad the hour is local, so the Brazil comparison does not apply.
