@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#242820">
+<title>O portão · Uma história jogável sobre a prorrogação</title>
+<meta name="description" content="Você já votou. Uma notícia muda o clima no pátio. Explore, converse e confira os registros. Uma ficção interativa com um epílogo documental sobre a prorrogação de 2026.">
+<link rel="canonical" href="https://votando.brasildb.org/o-portao/">
+<meta property="og:title" content="O portão · Você já votou. A notícia acabou de chegar.">
+<meta property="og:description" content="Uma escola. Versões diferentes. Você decide o que procura e o que conclui.">
+<meta property="og:image" content="https://votando.brasildb.org/og.jpg">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="game.mjs"></script>
+</head>
+<body>
+<main id="game" aria-label="O portão, uma ficção interativa">
+  <div id="world"></div>
+  <div class="film" aria-hidden="true"></div>
+  <div id="loading" role="status">Preparando o pátio…</div>
+  <div id="start-screen" class="start-screen">
+    <a class="brand" href="../">O BRASIL VOTANDO <span>apresenta</span></a>
+    <div class="start-copy">
+      <p class="eyebrow">UMA FICÇÃO INTERATIVA · UM EPÍLOGO DOCUMENTAL</p>
+      <h1>O portão<span>Você já votou.<br>A notícia acabou de chegar.</span></h1>
+      <p>O fim da tarde numa escola. Sua carona não chega.<br>Uma notícia muda a conversa de quem ficou.</p>
+      <button id="start" disabled>Entrar no pátio <span>→</span></button>
+      <p class="start-instructions">Caminhe. Escute. Pergunte. Você pode ir embora quando quiser.</p>
+      <div class="start-links"><button class="quiet" id="start-reading">Modo sem movimento</button><button class="quiet" id="start-sources">Fontes e limites</button></div>
+    </div>
+    <p class="fiction-note">Escola e pessoas são fictícias. Os documentos reais aparecem separados.<br>Esta experiência não simula seu voto nem define sua opinião.</p>
+  </div>
+  <div id="hud" hidden>
+    <header class="hud-top">
+      <div class="place"><span class="eyebrow">O PORTÃO</span><span id="clock">Fim da tarde</span><span id="phase-label">Você já votou. Sua carona ainda não chegou.</span></div>
+      <div class="hud-actions"><button id="phone" aria-label="Abrir telefone">Telefone <span id="phone-dot" hidden>●</span></button><button id="notebook">Caderno</button><button id="pause" aria-label="Pausar">Pausa</button></div>
+    </header>
+    <div id="npc-labels" aria-hidden="true"></div>
+    <div id="announcement" class="announcement" hidden role="status"><p class="eyebrow" id="announcement-source"></p><p id="announcement-text"></p></div>
+    <div id="subtitle" class="subtitle" hidden aria-live="polite"></div>
+    <div id="interaction" class="interaction" hidden><span class="keycap" aria-hidden="true">E</span><button id="interact">Conversar</button></div>
+    <div class="bottom-hints"><span id="movement-help">WASD / setas · E interagir · arraste para olhar</span><span>CENA FICCIONAL · SEM PONTUAÇÃO DE CRENÇA</span></div>
+    <div id="joystick" class="joystick" aria-label="Controle de movimento por toque"><div class="joystick-ring"><div id="joystick-knob"></div></div><span>mover</span></div>
+    <div class="touch-look" aria-hidden="true">arraste para olhar</div>
+  </div>
+  <div id="fallback" class="fallback" hidden role="status"><h2>O pátio 3D não pôde abrir.</h2><p>Você pode percorrer as mesmas conversas e documentos no modo sem movimento. Essa alternativa é identificada como tal, não substitui silenciosamente o jogo.</p><button id="fallback-reading">Abrir modo sem movimento</button><button class="quiet" id="fallback-retry">Tentar novamente</button></div>
+</main>
+<dialog id="panel" aria-labelledby="panel-title">
+  <div class="panel-header"><div><p id="panel-kicker" class="eyebrow"></p><h2 id="panel-title"></h2></div><button id="close-panel" class="close" aria-label="Fechar">×</button></div>
+  <div id="panel-body"></div>
+</dialog>
+<noscript><section class="no-js"><h2>O jogo precisa de JavaScript.</h2><p>A escola e os personagens são ficcionais. Você pode consultar o <a href="../como.html#fontes">método e as fontes do BrasilDB</a>, a <a href="https://exame.com/brasil/veja-a-cronologia-dos-pedidos-de-lula-e-flavio-para-prorrogar-a-votacao-no-2o-turno/">cronologia da Exame</a> e o <a href="https://portal.stf.jus.br/processos/downloadPeca.asp?id=15391720790&ext=.pdf">despacho posterior no STF</a> sem jogar.</p></section></noscript>
+</body>
+</html>
