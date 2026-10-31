@@ -18,7 +18,9 @@
     --line: #262a38;
     --accent: #ffb43c;
     --accent-dim: rgba(255,180,60,.16);
-    --b: #7f8597;           /* the second line: grey, so neither number reads as a side */
+    --a: #e2676b;           /* the two candidates: soft PT red and PL blue, as the press colours them */
+    --b: #5f93e3;
+    --mid: #787c8a;         /* an even city: neither hue */
     --serif: "Instrument Serif", "Times New Roman", serif;
     --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -61,7 +63,7 @@
 
   /* The readout: three cells built alike (label, number, detail). */
   .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
-  .cel { border-top: 2px solid var(--fg); padding-top: 10px; min-width: 0; }
+  .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; }
   .cel.b { border-color: var(--b); }
   .cel.tempo { border-color: var(--accent); }
   .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -73,20 +75,25 @@
   /* The map: each city a dot that lights up when its first section enters the sum. */
   .mapa { margin: 14px 0 0; }
   .mapa canvas { display: block; width: 100%; height: clamp(320px, 58vw, 560px); }
-  .leg { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0 0; font: 12px var(--mono); color: var(--muted); }
-  .leg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--fg); }
-  .leg i.b { background: var(--b); }
-  .leg i.n { background: transparent; border: 1.5px solid var(--accent); }
+  .mapa { position: relative; }
+  .mapcont { position: absolute; top: 4px; left: 0; font: 12px var(--mono); color: var(--muted); pointer-events: none; }
+  .mapcont b { color: var(--fg); font-weight: 500; }
+  .leg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
+  .escalac { display: inline-grid; grid-template-columns: auto minmax(120px, 220px) auto; align-items: center; gap: 8px; }
+  .escalac .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--a), var(--mid) 50%, var(--b)); position: relative; }
+  .escalac .bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+  .escalac .ta { color: var(--a); } .escalac .tb { color: var(--b); }
+  .leg i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1.5px solid var(--fg); }
   svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
   .eixo text { font: 12px var(--mono); fill: var(--muted); }
   .eixo line { stroke: var(--line); }
   .meio { stroke: var(--muted); stroke-dasharray: 3 5; opacity: .6; }
-  .la { fill: none; stroke: var(--fg); stroke-width: 2.5; stroke-linejoin: round; }
+  .la { fill: none; stroke: var(--a); stroke-width: 2.5; stroke-linejoin: round; }
   .lb { fill: none; stroke: var(--b); stroke-width: 2.5; stroke-linejoin: round; }
   .barras rect { fill: var(--accent); opacity: .22; }
   .barras rect.ja { opacity: .55; }
   .cursor { stroke: var(--accent); stroke-width: 1; }
-  .ponto-a { fill: var(--fg); } .ponto-b { fill: var(--b); }
+  .ponto-a { fill: var(--a); } .ponto-b { fill: var(--b); }
   .rot { font: 500 13px var(--mono); }
 
   .antes { margin: 4px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
@@ -120,6 +127,7 @@
     .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
     .ctrl #play { flex: 1 1 auto; }
     .dica { flex: 1 1 auto; text-align: right; }
+    .mapcont { position: static; margin: 0 0 4px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
@@ -175,8 +183,9 @@
     </div>
 
     <div class="mapa" id="mapawrap" hidden>
+      <p class="mapcont" id="mapcont"></p>
       <canvas id="mapa" role="img" aria-label="Mapa do Brasil: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
-      <p class="leg"><span><i></i><span id="lega">Lula</span> à frente na cidade</span><span><i class="b"></i><span id="legb">Bolsonaro</span> à frente</span><span><i class="n"></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
+      <p class="leg"><span class="escalac" aria-label="Cor da cidade: quem está à frente e por quanto"><span class="ta"><span id="lega">Lula</span> 75%</span><span class="bar"></span><span class="tb"><span id="legb">Bolsonaro</span> 75%</span></span><span><i></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
     </div>
 
     <div class="grafico">
@@ -407,7 +416,7 @@
     g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
     g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
     g.db = el("circle", {r: 5, class: "ponto-b"}, svg);
-    g.ra = el("text", {class: "rot", fill: "var(--fg)"}, svg); g.ra.textContent = NOMES["13"];
+    g.ra = el("text", {class: "rot", fill: "var(--a)"}, svg); g.ra.textContent = NOMES["13"];
     g.rb = el("text", {class: "rot", fill: "var(--b)"}, svg); g.rb.textContent = NOMES["22"];
     Object.assign(g, {x, y, sa, n});
     pintar(1);
@@ -539,7 +548,9 @@
   // counted so far; its tone is who leads there at that moment. The amber ring: it just came in.
   const MP = {on: false, q: 0, pAnt: 0, dados: null, borders: [], cid: [], raf: 0, last: 0};
   const cv = $("mapa"), PULSO = 900;
-  const FG = [236, 232, 220], CB = [127, 133, 151], AM = [255, 180, 60];
+  // A city's tone: the leader's hue, full at 75% of the valid votes, grey at an even split.
+  const CA = [226, 103, 107], CB = [95, 147, 227], MID = [120, 124, 138], BR = [236, 232, 220];
+  const tomDe = (a, b) => { const m = (a - b) / (a + b), k = Math.min(1, Math.abs(m) / .5); return mix(MID, m >= 0 ? CA : CB, Math.pow(k, .8)); };
   const mix = (u, v, k) => u.map((c, i) => Math.round(c + (v[i] - c) * k));
 
   async function mapaEscala(on) {
@@ -599,6 +610,7 @@
     for (const ring of MP.borders) { ring.forEach(([lo, la], j) => j ? ctx.lineTo(MP.X(lo), MP.Y(la)) : ctx.moveTo(MP.X(lo), MP.Y(la))); ctx.closePath(); }
     ctx.stroke();
     const rmin = .9 * dpr, aneis = [];
+    let dentro = 0;
     for (const c of MP.cid) {
       let a = 0, b = 0;
       for (let j = 0; j < c.e.length; j += 3) {
@@ -606,23 +618,25 @@
         a += c.e[j + 1] * w; b += c.e[j + 2] * w;
       }
       if (vem && c.first >= pa && c.first < p && !CALMO) c.born = now;
+      if (a + b > 0) dentro++;
       const alvo = a + b > 0 ? rmin + (MP.rmax - rmin) * Math.sqrt(a + b) / MP.tmax : 0;
       c.r += (alvo - c.r) * k; if (Math.abs(alvo - c.r) > .05) ocupado = true; else c.r = alvo;
       if (c.r < .2) {  // not counted yet: a faint grain that keeps the shape of the country
         ctx.fillStyle = "rgba(236,232,220,.07)"; ctx.fillRect(c.x - .5 * dpr, c.y - .5 * dpr, dpr, dpr); continue;
       }
-      const e = (now - c.born) / PULSO, tom = a >= b ? FG : CB;
-      const cor = e < 1 ? mix(AM, tom, e) : tom;
-      ctx.fillStyle = `rgba(${cor},${a >= b ? .82 : .78})`;
+      const e = (now - c.born) / PULSO, tom = tomDe(a, b);
+      const cor = e < 1 ? mix(BR, tom, Math.min(1, e * 1.4)) : tom;
+      ctx.fillStyle = `rgba(${cor},.86)`;
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
       if (e < 1) { aneis.push([c, e]); ocupado = true; }
     }
     ctx.lineWidth = 1.2 * dpr;
     for (const [c, e] of aneis) {
       const f = 1 - Math.pow(1 - e, 3);
-      ctx.strokeStyle = `rgba(255,180,60,${(.85 * Math.pow(1 - e, 1.4)).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(236,232,220,${(.8 * Math.pow(1 - e, 1.4)).toFixed(3)})`;
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r) + (3 + 14 * f) * dpr, 0, 6.283); ctx.stroke();
     }
+    $("mapcont").innerHTML = `<b>${fmt(dentro)}</b> de ${fmt(MP.cid.length)} cidades com seções somadas`;
     if (ocupado) MP.raf = requestAnimationFrame(quadro);
   }
 
