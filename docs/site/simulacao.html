@@ -90,6 +90,9 @@
     .hora { grid-column: 1 / -1; }
     .escala label, .escala .cid { flex: 1 1 140px; }
     .escala input { width: 100%; }
+    .ctrl { flex-wrap: wrap; }
+    .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
+    .ctrl button { flex: 1 1 0; white-space: nowrap; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   .modo { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
@@ -99,6 +102,16 @@
   .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
   .portao { stroke: var(--muted); stroke-dasharray: 2 4; }
   .portao-t { font: 12px var(--mono); fill: var(--muted); }
+  .troca { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
+  .troca-t { font: 500 12px var(--mono); fill: var(--accent); }
+  .troca, .troca-t { opacity: 0; transition: opacity .25s; }
+  .troca.on, .troca-t.on { opacity: 1; }
+  #svg { cursor: ew-resize; }
+  .grafico { transition: opacity .2s; }
+  .carregando .grafico { opacity: .4; }
+  .ctrl .sec { color: var(--fg); background: transparent; border: 1px solid var(--line); }
+  .ctrl .sec:hover { border-color: var(--muted); }
+  .dica { margin: 4px 0 0; font: 12px var(--mono); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -137,9 +150,11 @@
     <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
   </div>
   <p class="antes" id="antes"></p>
+  <p class="dica">Arraste sobre o gráfico para voltar e avançar.</p>
   <div class="ctrl">
-    <button id="play" type="button">Repetir</button>
-    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Hora">
+    <button id="play" type="button">Pausar</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
+    <button id="link" type="button" class="sec">Compartilhar</button>
   </div>
 
   <p class="fim" id="fim"></p>
@@ -212,6 +227,7 @@
   }
 
   async function montar() {
+    document.body.classList.add("carregando");
     const br = await get("brasil.json");
     NOMES = br.nomes || NOMES;
     $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
@@ -255,6 +271,8 @@
     const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
     serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
              antes: a > 0 ? ct[a - 1] : 0, marca};
+    serie.barras = modo === "dia" || !!m;  // in the count, equal shares of sections give equal bars
+    document.body.classList.remove("carregando");
     desenhar();
     tocar();
     const q = new URLSearchParams();
@@ -294,10 +312,12 @@
     const xm = m => L + (W - L - R) * (m - x0) / (x1 - x0);
     const x = i => xm(serie.x[i]);
     const sa = serie.ca.map((a, i) => a + serie.cb[i] ? a / (a + serie.cb[i]) : .5);
-    let dev = Math.min(.5, Math.max(.05, ...sa.map(p => Math.abs(p - .5))));
+    // The first sections swing on few votes: they stay on the line but do not set the scale.
+    const skip = modo === "apuracao" && !serie.marca ? Math.floor(n * .02) : 0;
+    let dev = Math.min(.5, Math.max(.05, ...sa.slice(skip).map(p => Math.abs(p - .5))));
     dev = Math.min(.5, Math.ceil(dev * 50) / 50);
-    const yTop = T, yBot = H - B - BAR - 22;
-    const y = p => yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev));
+    const yTop = T, yBot = H - B - (serie.barras ? BAR : 0) - 22;
+    const y = p => Math.max(yTop - 6, Math.min(yBot + 6, yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev))));
     const eixo = el("g", {class: "eixo"}, svg);
     for (const p of [.5 - dev, .5, .5 + dev]) {
       el("line", {x1: L, x2: W - R, y1: y(p), y2: y(p), class: p === .5 ? "meio" : ""}, eixo);
@@ -320,7 +340,8 @@
         el("text", {class: "portao-t", x: xm(F) + (xm(F) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(F) > W - 150 ? "end" : "start"}, svg).textContent = "17h, portões fecham";
       }
     }
-    const mx = Math.max(...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
+    if (!serie.barras) serie.tot = serie.tot.map(() => 0);
+    const mx = Math.max(1, ...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
     const barras = el("g", {class: "barras"}, svg);
     g.barras = serie.tot.map((v, i) => el("rect", {x: xm(serie.x[i] - serie.passo / 2) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
     if (serie.marca) {
@@ -332,6 +353,15 @@
     g.pa = pts(p => p); g.pb = pts(p => 1 - p);
     g.la = el("polyline", {class: "la", points: ""}, svg);
     g.lb = el("polyline", {class: "lb", points: ""}, svg);
+    // where the lead changes sides, shown once the line gets there (at most four)
+    const tr = trocasEm(sa);
+    g.trocas = tr.length > 4 ? [] : tr.map(i => {
+      const c = el("circle", {class: "troca", r: 4.5, cx: x(i), cy: y(.5)}, svg);
+      const dir = x(i) > W - 170 ? "end" : "start", up = k => k % 2 ? 18 : -10;
+      const tx = el("text", {class: "troca-t", x: x(i) + (dir === "end" ? -8 : 8), y: y(.5) + up(tr.indexOf(i)), "text-anchor": dir}, svg);
+      tx.textContent = `${NOMES[sa[i] > .5 ? "13" : "22"]} passa à frente`;
+      return {i, c, tx};
+    });
     g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
     g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
     g.db = el("circle", {r: 5, class: "ponto-b"}, svg);
@@ -361,6 +391,7 @@
     g.ra.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.ra.setAttribute("text-anchor", anc); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep) - (anc === "end" ? 10 : 0));
     g.rb.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.rb.setAttribute("text-anchor", anc); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep) + (anc === "end" ? 14 : 0));
     g.barras.forEach((bb, k) => bb.classList.toggle("ja", k <= pos + 1e-9));
+    for (const q of g.trocas) { q.c.classList.toggle("on", q.i <= pos + 1e-9); q.tx.classList.toggle("on", q.i <= pos + 1e-9); }
     const va = lerp(serie.ca), vb = lerp(serie.cb);
     $("pa").textContent = pct(va + vb ? va / (va + vb) : 0);
     $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
@@ -383,10 +414,13 @@
       : "";
   }
 
-  function trocas() {
-    const lid = g.sa.map(p => p > .5 ? "a" : p < .5 ? "b" : "");
-    return lid.filter((l, k) => k && l && lid[k - 1] && l !== lid[k - 1]).length;
+  // indices where the leader differs from the last point that had one
+  function trocasEm(sa) {
+    const out = []; let ant = "";
+    sa.forEach((p, k) => { const l = p > .5 ? "a" : p < .5 ? "b" : ""; if (l && ant && l !== ant) out.push(k); if (l) ant = l; });
+    return out;
   }
+  function trocas() { return trocasEm(g.sa).length; }
   function fimTexto(va, vb) {
     const onde = nomeEscala();
     if (serie.marca) {
@@ -405,14 +439,24 @@
     return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
   }
 
-  function tocar() {
+  function falha() {
+    document.body.classList.remove("carregando");
+    $("antes").textContent = "Não foi possível carregar esta escala. Tente outra.";
+  }
+
+  // Play from where the reader is (or from the start at the end); the button pauses mid-way.
+  let tocando = false;
+  function botao() { $("play").textContent = tocando ? "Pausar" : t >= 1 ? TEXTO[modo].play : "Continuar"; }
+  function parar() { cancelAnimationFrame(anim); tocando = false; botao(); }
+  function tocar(de = 0) {
     cancelAnimationFrame(anim);
-    if (CALMO) { pintar(1); return; }
-    const dur = 6000, t0 = performance.now();
+    if (CALMO) { pintar(1); tocando = false; botao(); return; }
+    const dur = 6000 * (1 - de), t0 = performance.now();
+    tocando = true; botao();
     const passo = now => {
       const f = Math.max(0, Math.min(1, (now - t0) / dur));
-      pintar(f < 1 ? 1 - Math.pow(1 - f, 1.6) : 1);
-      if (f < 1) anim = requestAnimationFrame(passo);
+      pintar(de + (1 - de) * (f < 1 ? 1 - Math.pow(1 - f, 1.6) : 1));
+      if (f < 1) anim = requestAnimationFrame(passo); else { tocando = false; botao(); }
     };
     anim = requestAnimationFrame(passo);
   }
@@ -422,12 +466,28 @@
     for (const b of document.querySelectorAll(".modo button")) b.setAttribute("aria-selected", String(b.dataset.modo === m));
     const tx = TEXTO[m];
     $("sobre").textContent = tx.sobre; $("titulo").textContent = tx.titulo; $("lead").textContent = tx.lead;
-    $("play").textContent = tx.play;
     document.title = tx.titulo;
   }
-  for (const b of document.querySelectorAll(".modo button")) b.onclick = () => { poeModo(b.dataset.modo); montar(); };
-  $("play").onclick = tocar;
-  $("scrub").oninput = e => { cancelAnimationFrame(anim); pintar(e.target.value / 1000); };
+  for (const b of document.querySelectorAll(".modo button")) b.onclick = () => { poeModo(b.dataset.modo); montar().catch(falha); };
+  $("play").onclick = () => tocando ? parar() : tocar(t >= 1 ? 0 : t);
+  $("scrub").oninput = e => { parar(); pintar(e.target.value / 1000); botao(); };
+  // drag or tap on the chart to move along it
+  const svgEl = $("svg");
+  const naPosicao = e => {
+    if (!g.n) return;
+    const r = svgEl.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const a = g.x(0), b = g.x(g.n - 1);
+    pintar(Math.max(0, Math.min(1, (px - a) / (b - a)))); botao();
+  };
+  svgEl.addEventListener("pointerdown", e => { parar(); svgEl.setPointerCapture(e.pointerId); naPosicao(e); });
+  svgEl.addEventListener("pointermove", e => { if (svgEl.hasPointerCapture(e.pointerId)) naPosicao(e); });
+  $("link").onclick = async () => {
+    const url = location.href, b = $("link");
+    try {
+      if (navigator.share) await navigator.share({title: document.title, url});
+      else { await navigator.clipboard.writeText(url); b.textContent = "Link copiado"; setTimeout(() => { b.textContent = "Compartilhar"; }, 1800); }
+    } catch (_) { /* closed the share sheet */ }
+  };
   addEventListener("resize", () => { if (serie) { desenhar(); pintar(t); } });
 
   // ---- pickers
@@ -438,13 +498,13 @@
     $("cidade").value = ""; $("cidade").disabled = !estado.uf || estado.uf === "ZZ";
     $("zona").disabled = $("secao").disabled = true; zonasDe = "";
     $("zona").innerHTML = $("secao").innerHTML = '<option value="">Todas</option>';
-    montar();
+    montar().catch(falha);
   };
   $("zona").onchange = async () => {
     estado.zona = $("zona").value; estado.secao = "";
-    secoesDe(await get(`mun/${estado.mun}.json`)); montar();
+    secoesDe(await get(`mun/${estado.mun}.json`)); montar().catch(falha);
   };
-  $("secao").onchange = () => { estado.secao = $("secao").value; montar(); };
+  $("secao").onchange = () => { estado.secao = $("secao").value; montar().catch(falha); };
 
   const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   let sugs = [], ativo = -1;
@@ -462,7 +522,7 @@
     const i = sugs[k]; if (i == null) return;
     $("cidade").value = towns.nome[i]; $("sug").hidden = true;
     estado = {uf: estado.uf, mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
-    montar();
+    montar().catch(falha);
   };
   $("sug").onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); escolher(+li.dataset.k); } };
   $("cidade").onkeydown = e => {
@@ -489,7 +549,9 @@
         estado.zona = q.get("zona") || ""; estado.secao = estado.zona ? q.get("secao") || "" : "";
       }
     }
-    montar().catch(() => { if (estado.zona) { estado.zona = estado.secao = ""; montar(); } });
+    montar().catch(() => {
+      if (estado.zona) { estado.zona = estado.secao = ""; montar().catch(falha); } else falha();
+    });
   })();
 })();
 </script>
