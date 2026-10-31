@@ -565,8 +565,10 @@ def cs_sections() -> list[dict]:
 
 
 def chegada() -> dict:
-    """W4: sections counted per minute, from the `ha` of each section in cs.json (Brasilia time;
-    sample check in P4 W4: the first count, about 2 minutes after the TSE received it).
+    """W4: sections published per minute, from the `ha` of each section in cs.json (Brasilia time).
+    The TSE spec defines `ha` as the time of the section's auxiliary file, so it is when the
+    section's files were first published, not when it was counted; the sample check put it about
+    2 minutes after the aux.json `hr`.
     `nacional` and `uf` are Brazil, the shape the page reads; `exterior` is abroad, on its own
     clock (Asia counts from 01:51). An aggregated section (nsp) has no own `ha`."""
     def minuto(r):
