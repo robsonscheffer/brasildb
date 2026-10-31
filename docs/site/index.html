@@ -281,6 +281,9 @@
   #barrafio { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), var(--line) 0); }
   .barra.dica #barrafold { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 13px; white-space: normal; text-align: center; }
   .barra.dica #barrafio { display: none; }
+  .barra kbd { margin-left: 8px; font-family: var(--mono); font-size: 11px; font-weight: 400; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: .6; }
+  /* Key hints only where there is a keyboard: a fine pointer that can hover. */
+  @media (hover: none), (pointer: coarse) { .tecla { display: none; } }
   .indice { display: none; position: fixed; z-index: 13; right: 24px; bottom: 84px; width: min(440px, calc(100% - 48px)); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
   .indice.aberto { display: block; }
   .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
@@ -424,9 +427,9 @@
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
 <div class="barra dica" id="barra">
-  <button class="b-ant" id="barraant" type="button" aria-label="Voltar"><span aria-hidden="true">‹</span><span class="t" aria-hidden="true"> Voltar</span></button>
-  <button class="b-meio" id="barranome" type="button" aria-expanded="false" aria-controls="indice"><span id="barrafold">Role a tela ou use Avançar</span><small id="barrapasso"></small><i id="barrafio"></i></button>
-  <button class="b-prox pulsa" id="barraprox" type="button">Avançar <span aria-hidden="true">›</span></button>
+  <button class="b-ant" id="barraant" type="button" aria-label="Voltar"><span aria-hidden="true">‹</span><span class="t" aria-hidden="true"> Voltar</span><kbd class="tecla" aria-hidden="true">←</kbd></button>
+  <button class="b-meio" id="barranome" type="button" aria-expanded="false" aria-controls="indice"><span id="barrafold">Role a tela ou use Avançar<span class="tecla"> ou as setas do teclado</span></span><small id="barrapasso"></small><i id="barrafio"></i></button>
+  <button class="b-prox pulsa" id="barraprox" type="button">Avançar <span aria-hidden="true">›</span><kbd class="tecla" aria-hidden="true">→</kbd></button>
 </div>
 <ol class="indice" id="indice" aria-label="Partes da história"></ol>
 
@@ -461,7 +464,7 @@
   <div class="palco duplo">
     <canvas id="c3" role="img" aria-label="Gráfico de barras: votos por minuto das 8h às 9h. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c3passos"></div>
-    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. Use <b>Avançar</b> ou role a tela.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -510,7 +513,7 @@
   <div class="palco duplo">
     <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c8passos"></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. Use <b>Avançar</b> ou role até o fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -542,7 +545,7 @@
     </div>
     <canvas class="fio" id="c10" aria-hidden="true"></canvas>
     <div class="passos" id="c10passos"></div>
-    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. Use <b>Avançar</b> ou role a tela.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -551,7 +554,7 @@
   <div class="palco duplo">
     <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções somadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c9passos"></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. Use <b>Avançar</b> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
