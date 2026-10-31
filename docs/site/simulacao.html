@@ -37,11 +37,21 @@
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 7vw, 84px); line-height: .98; margin: 0 0 14px; letter-spacing: -.01em; }
   .lead { color: var(--muted); max-width: 640px; margin: 0 0 28px; }
 
+  .topo { max-width: 760px; margin: 0 0 28px; }
+
+  /* The panel: view tabs, scale, readout, chart, controls. One frame, one grid. */
+  .painel { background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px 22px; }
+  .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 18px; }
+  .modo { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); }
+  .modo button { font: 600 14px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+  .modo button[aria-selected="true"] { color: var(--bg); background: var(--fg); }
+  .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+  .sec:hover { border-color: var(--muted); }
+
   /* Scale picker: Brasil > estado > cidade > zona > seção. Each level narrows the next. */
-  .escala { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin: 0 0 22px; }
-  .escala label { display: flex; flex-direction: column; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .escala select, .escala input { font: 16px var(--sans); color: var(--fg); background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-width: 0; }
-  .escala input { width: 220px; }
+  .escala { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr 1fr; gap: 10px; padding: 0 0 20px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .escala label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .escala select, .escala input { width: 100%; font: 16px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; height: 44px; }
   .escala select:disabled, .escala input:disabled { opacity: .4; }
   .escala .cid { position: relative; }
   .sug { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow: auto; text-transform: none; letter-spacing: 0; }
@@ -49,15 +59,15 @@
   .sug li[aria-selected="true"], .sug li:hover { background: var(--accent-dim); }
   .sug li small { color: var(--muted); }
 
-  /* The readout above the chart: hour, the two shares, the running count. */
-  .placar { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px 28px; align-items: end; margin: 0 0 6px; }
-  .hora { font-family: var(--mono); font-size: clamp(30px, 5vw, 48px); font-variant-numeric: tabular-nums; line-height: 1; }
-  .hora small { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
-  .cand { border-top: 2px solid var(--fg); padding-top: 8px; }
-  .cand.b { border-color: var(--b); }
-  .cand .n { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-  .cand .p { font-family: var(--serif); font-size: clamp(40px, 6.4vw, 68px); line-height: 1; font-variant-numeric: tabular-nums; }
-  .cand .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* The readout: three cells built alike (label, number, detail). */
+  .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
+  .cel { border-top: 2px solid var(--fg); padding-top: 10px; min-width: 0; }
+  .cel.b { border-color: var(--b); }
+  .cel.tempo { border-color: var(--accent); }
+  .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .cel .p { font-family: var(--serif); font-size: clamp(40px, 5.6vw, 64px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .cel.tempo .p { font-family: var(--mono); font-size: clamp(30px, 4.2vw, 48px); line-height: 1.33; }
+  .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .grafico { position: relative; margin: 10px 0 0; }
   svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
@@ -72,32 +82,39 @@
   .ponto-a { fill: var(--fg); } .ponto-b { fill: var(--b); }
   .rot { font: 500 13px var(--mono); }
 
-  .antes { margin: 6px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
-  .ctrl { display: flex; gap: 12px; align-items: center; margin: 14px 0 0; }
-  .ctrl button { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; }
+  .antes { margin: 4px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
+  .ctrl { display: flex; gap: 14px; align-items: center; margin: 12px 0 0; padding: 16px 0 0; border-top: 1px solid var(--line); }
+  .ctrl #play { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; min-width: 168px; }
   .ctrl input[type=range] { flex: 1; accent-color: var(--accent); }
+  .dica { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
 
-  .fim { margin: 26px 0 0; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
+  .fim { margin: 28px 0 0; max-width: 900px; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
   .fim .of { display: block; font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 8px; }
 
-  .metodo { margin: 48px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; max-width: 720px; }
+  .metodo { margin: 48px 0 0; padding: 28px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 48px; }
   .metodo h2 { font-family: var(--serif); font-weight: 400; color: var(--fg); font-size: 30px; margin: 0 0 10px; }
   .metodo p { margin: 0 0 12px; }
+  .metodo .fonte { grid-column: 1 / -1; font-size: 14px; }
 
+  @media (max-width: 860px) {
+    .escala { grid-template-columns: 1fr 1fr; }
+    .metodo { grid-template-columns: minmax(0, 720px); }
+  }
   @media (max-width: 640px) {
     main { padding-top: 28px; }
-    .placar { grid-template-columns: 1fr 1fr; }
-    .hora { grid-column: 1 / -1; }
-    .escala label, .escala .cid { flex: 1 1 140px; }
-    .escala input { width: 100%; }
+    .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
+    .barra { gap: 8px; }
+    .barra .modo { flex: 1; } .modo button { flex: 1; padding: 8px 8px; font-size: 13px; white-space: nowrap; }
+    .barra .sec { padding: 9px 12px; font-size: 13px; }
+    .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+    .cel.tempo { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
     .ctrl { flex-wrap: wrap; }
     .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
-    .ctrl button { flex: 1 1 0; white-space: nowrap; }
+    .ctrl #play { flex: 1 1 auto; }
+    .dica { flex: 1 1 auto; text-align: right; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-  .modo { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
-  .modo button { font: 600 14px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
-  .modo button[aria-selected="true"] { color: var(--bg); background: var(--fg); }
   .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
   .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
   .portao { stroke: var(--muted); stroke-dasharray: 2 4; }
@@ -109,65 +126,74 @@
   #svg { cursor: ew-resize; }
   .grafico { transition: opacity .2s; }
   .carregando .grafico { opacity: .4; }
-  .ctrl .sec { color: var(--fg); background: transparent; border: 1px solid var(--line); }
-  .ctrl .sec:hover { border-color: var(--muted); }
-  .dica { margin: 4px 0 0; font: 12px var(--mono); color: var(--muted); }
 </style>
 </head>
 <body>
 <main>
-  <div class="modo" role="tablist" aria-label="O que ver">
-    <button type="button" role="tab" data-modo="apuracao" aria-selected="true">A apuração</button>
-    <button type="button" role="tab" data-modo="dia" aria-selected="false">O dia simulado</button>
-  </div>
-  <p class="sobre" id="sobre"></p>
-  <h1 id="titulo"></h1>
-  <p class="lead" id="lead"></p>
+  <header class="topo">
+    <p class="sobre" id="sobre"></p>
+    <h1 id="titulo"></h1>
+    <p class="lead" id="lead"></p>
+  </header>
 
-  <div class="escala">
-    <label>Estado
-      <select id="uf"><option value="">Brasil</option></select>
-    </label>
-    <label class="cid">Cidade
-      <input id="cidade" type="text" placeholder="Todas" autocomplete="off" disabled role="combobox" aria-expanded="false" aria-controls="sug">
-      <ul id="sug" class="sug" role="listbox" hidden></ul>
-    </label>
-    <label>Zona
-      <select id="zona" disabled><option value="">Todas</option></select>
-    </label>
-    <label>Seção
-      <select id="secao" disabled><option value="">Todas</option></select>
-    </label>
-  </div>
+  <section class="painel" aria-label="Gráfico">
+    <div class="barra">
+      <div class="modo" role="tablist" aria-label="O que ver">
+        <button type="button" role="tab" data-modo="apuracao" aria-selected="true">A apuração</button>
+        <button type="button" role="tab" data-modo="dia" aria-selected="false">O dia simulado</button>
+      </div>
+      <button id="link" type="button" class="sec">Compartilhar</button>
+    </div>
 
-  <div class="placar" aria-live="polite">
-    <div class="hora" id="hora">00:00<small id="horadia">hora de Brasília</small></div>
-    <div class="cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
-    <div class="cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
-  </div>
+    <div class="escala">
+      <label>Estado
+        <select id="uf"><option value="">Brasil</option></select>
+      </label>
+      <label class="cid">Cidade
+        <input id="cidade" type="text" placeholder="Todas" autocomplete="off" disabled role="combobox" aria-expanded="false" aria-controls="sug">
+        <ul id="sug" class="sug" role="listbox" hidden></ul>
+      </label>
+      <label>Zona
+        <select id="zona" disabled><option value="">Todas</option></select>
+      </label>
+      <label>Seção
+        <select id="secao" disabled><option value="">Todas</option></select>
+      </label>
+    </div>
 
-  <div class="grafico">
-    <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
-  </div>
-  <p class="antes" id="antes"></p>
-  <p class="dica">Arraste sobre o gráfico para voltar e avançar.</p>
-  <div class="ctrl">
-    <button id="play" type="button">Pausar</button>
-    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
-    <button id="link" type="button" class="sec">Compartilhar</button>
-  </div>
+    <div class="placar" aria-live="polite">
+      <div class="cel tempo"><div class="n" id="horadia">Seções somadas</div><div class="p" id="hora">0%</div><div class="v" id="onde">Brasil</div></div>
+      <div class="cel cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,00%</div><div class="v" id="va">0 votos</div></div>
+      <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
+    </div>
+
+    <div class="grafico">
+      <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
+    </div>
+    <p class="antes" id="antes"></p>
+
+    <div class="ctrl">
+      <button id="play" type="button">Pausar</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
+      <span class="dica">ou arraste sobre o gráfico</span>
+    </div>
+  </section>
 
   <p class="fim" id="fim"></p>
 
   <section class="metodo">
-    <h2>A apuração</h2>
-    <p>O TSE não publica a hora em que cada seção entrou na soma. O que existe é a hora em que cada urna terminou de gravar o boletim de urna, no registro da própria urna. A curva da apuração soma as seções nessa ordem, cada uma de uma vez, com todos os seus votos. O eixo é a parcela das seções já somadas, não a hora.</p>
-    <p>É uma estimativa da ordem: o tempo de transmissão de cada boletim até o TSE não está nos arquivos. Conferimos a estimativa com o que a imprensa relatou nos dois turnos. No 1º turno, Flávio Bolsonaro à frente do começo ao fim. No 2º, Lula começa à frente, Bolsonaro passa à frente e Lula retoma a liderança depois da metade. Nas primeiras seções, a estimativa diverge do relatado: no 2º turno, Bolsonaro passa à frente com cerca de 2% das seções, e a imprensa relatou cerca de 13%.</p>
-    <h2>O dia simulado</h2>
-    <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada candidato recebeu na seção. Nenhum arquivo liga os dois.</p>
-    <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
-    <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado.</p>
-    <p>Nas duas curvas: percentuais sobre votos válidos (sem brancos e nulos). No dia simulado, horário de Brasília. Fontes: votação por seção e registros das urnas, TSE. <a href="como.html">Como contamos</a>.</p>
+    <div>
+      <h2>A apuração</h2>
+      <p>O TSE não publica a hora em que cada seção entrou na soma. O que existe é a hora em que cada urna terminou de gravar o boletim de urna, no registro da própria urna. A curva da apuração soma as seções nessa ordem, cada uma de uma vez, com todos os seus votos. O eixo é a parcela das seções já somadas, não a hora.</p>
+      <p>É uma estimativa da ordem: o tempo de transmissão de cada boletim até o TSE não está nos arquivos. Conferimos a estimativa com o que a imprensa relatou nos dois turnos. No 1º turno, Flávio Bolsonaro à frente do começo ao fim. No 2º, Lula começa à frente, Bolsonaro passa à frente e Lula retoma a liderança depois da metade. Nas primeiras seções, a estimativa diverge do relatado: no 2º turno, Bolsonaro passa à frente com cerca de 2% das seções, e a imprensa relatou cerca de 13%.</p>
+    </div>
+    <div>
+      <h2>O dia simulado</h2>
+      <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada candidato recebeu na seção. Nenhum arquivo liga os dois.</p>
+      <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
+      <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado.</p>
+    </div>
+    <p class="fonte">Nas duas curvas: percentuais sobre votos válidos (sem brancos e nulos). No dia simulado, horário de Brasília. Fontes: votação por seção e registros das urnas, TSE. <a href="como.html">Como contamos</a>.</p>
   </section>
 </main>
 
@@ -271,7 +297,9 @@
     const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
     serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
              antes: a > 0 ? ct[a - 1] : 0, marca};
-    serie.barras = modo === "dia" || !!m;  // in the count, equal shares of sections give equal bars
+    serie.barras = modo === "dia" || !!m;
+    $("onde").textContent = estado.secao ? `Seção ${estado.secao} · zona ${estado.zona}` : estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
+      : estado.mun ? cidadeNome() : estado.uf ? UFNOME[estado.uf] : "Brasil";  // in the count, equal shares of sections give equal bars
     document.body.classList.remove("carregando");
     desenhar();
     tocar();
@@ -398,12 +426,12 @@
     $("va").textContent = fmt(va) + " votos";
     $("vb").textContent = fmt(vb) + " votos";
     if (modo === "apuracao") {
-      $("hora").firstChild.textContent = Math.round(lerp(serie.x) * 100) + "%";
-      $("horadia").textContent = "das seções somadas";
+      $("hora").textContent = Math.round(lerp(serie.x) * 100) + "%";
+      $("horadia").textContent = "Seções somadas";
     } else {
       const min = Math.round(lerp(serie.x));
-      $("hora").firstChild.textContent = hhmm(min);
-      $("horadia").textContent = (min < 0 ? "24 out, " : "") + "hora de Brasília";
+      $("hora").textContent = hhmm(min);
+      $("horadia").textContent = (min < 0 ? "24 out, " : "") + "Hora de Brasília";
     }
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
