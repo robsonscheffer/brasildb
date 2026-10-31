@@ -957,7 +957,9 @@ const ready = (async () => {
   for (const id of ["zona", "secao"]) $(id).addEventListener("change", () => { if (state.town) afterAnswer(); });
   $("ir").addEventListener("click", async () => {
     await afterAnswer();
-    $("dia-no-mapa").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    const el = $("dia-no-mapa"), q = CALMO ? null : naHora();
+    if (q == null) el.scrollIntoView({ behavior: CALMO ? "auto" : "smooth" });
+    else ir(el.offsetTop + q * (el.offsetHeight - innerHeight));
   });
   $("pular").addEventListener("click", () => { state.town = null; afterAnswer(); });
 }
@@ -992,7 +994,7 @@ async function afterAnswer() {
   state.zona = z && n ? pad(z) : ""; state.secao = z && n ? pad(n) : "";
   state.sec = null; state.cz = null;
   const t = state.town;
-  if (t) state.cz = (await loadCidades(t.uf)).cidades[t.id] || null;
+  if (t) { const d = await loadCidades(t.uf); state.cz = d.cidades[t.id] || null; state.czHoras = d.horas; }
   if (t && state.zona && state.secao) {
     try { state.sec = secao(await get(`data/secoes/${t.uf}/${t.id}-${state.zona}.json`), state.secao); } catch { state.sec = null; }
   }
@@ -1017,6 +1019,7 @@ async function afterAnswer() {
 })();
 
 /* ---------- 5. The map ---------- */
+let naHora = () => null;
 {
   const el = $("dia-no-mapa"), c = $("c7"), host = $("c7passos");
   let M = null; // decoded map data, built once
@@ -1046,12 +1049,29 @@ async function afterAnswer() {
   }
   resizers.push(layout);
   near(el, build, "100% 0px");
+  // Where the button lands: the progress of the reader's hour step, or null without an hour.
+  naHora = () => { const { ag, lista } = planejar(), e = lista.find(x => x.voto), q = e && ag.pAt(e); return q == null ? null : ABRE + q * 0.8; };
 
   // What the map is showing, minute by minute. Facts come from curiosidades.json; counts from totals.
   const cur = id => curios.itens.find(i => i.id === id);
   let plano = null, planoDe = null;
+  // The reader's hour band as one step, in the middle of the band (Brasília time on the map).
+  function suaHora() {
+    const h = state.hora, tw = state.town;
+    if (h == null) return null;
+    const t = Math.min(h * 60 + 30, ULTM) - fuso();
+    if (t < 480 || t > ULTM) return null;
+    const banda = h < 18 ? `${h}h às ${h + 1}h` : "depois das 18h", local = fora() ? ", hora local" : "";
+    const k = state.czHoras?.indexOf(h), n = tw && state.cz && k >= 0 ? state.cz.horas[k] : null;
+    const br = somaMin(TOT.national, h * 60, h === 18 ? ULTM + 1 : (h + 1) * 60);
+    const quem = n === 0 ? `O registro das urnas não tem votos de ${rot(tw)} nessa hora.` : n != null ? `${fmt(n)} pessoas votaram em ${rot(tw)}, nessa hora, com você.` : `${fmt(br)} pessoas votaram no Brasil nessa hora, com você.`;
+    const lugar = !tw ? { uf: "BR" } : fora() ? { uf: "ZZ", municipio: tw.nome, pais: tw.pais }
+      : { uf: tw.uf, municipio: tw.nome, lat: towns?.lat[tw.i], lon: towns?.lon[tw.i] };
+    return { t, h: `${banda}${local} · ${tw ? rot(tw) : "Brasil"}`, seu: !!tw, voto: true, titulo: `Você votou${tw ? " aqui" : ""}, ${h < 18 ? `entre ${h}h e ${h + 1}h` : "depois das 18h"}${local}.`,
+      texto: `${quem} Role para ver o resto do dia.`, lugar };
+  }
   function planejar() {
-    const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0);
+    const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0) + "h" + state.hora;
     if (planoDe === key) return plano;
     const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: comTermos(i), lugar: i.lugar });
     const its = [
@@ -1083,6 +1103,7 @@ async function afterAnswer() {
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
+    const voto = suaHora(); if (voto) its.push(voto);
     const dia = curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && !i.hora).map(i => ({ h: `no dia todo · ${onde(i.lugar)}`, titulo: i.titulo, texto: comTermos(i), lugar: i.lugar }));
     its.sort((a, b) => a.t - b.t);
     planoDe = key; plano = { ag: agenda(its, 480, ULTM + 1, 55), dia, lista: [...its, ...dia] };
