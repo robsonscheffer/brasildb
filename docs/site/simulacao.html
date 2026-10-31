@@ -582,25 +582,30 @@
     });
     MP.cid.sort((a, b) => b.tot - a.tot);  // big dots first, small ones stay visible on top
     MP.pAnt = 0; MP.sel = null; $("dicac").hidden = true;
-    layout();
+    layout(true);
   }
 
-  function layout() {
+  // On a new scale the view glides from the old bounds to the new ones; a resize just snaps.
+  function layout(anima = false) {
     const dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
-    const KX = Math.cos(15 * Math.PI / 180), pad = 10 * dpr;
-    let [lo0, lo1, la0, la1] = [-74.2, -34.6, 5.6, -34.0];
-    if (estado.uf && MP.cid.length) {
-      lo0 = Math.min(...MP.cid.map(c => c.lon)) - .3; lo1 = Math.max(...MP.cid.map(c => c.lon)) + .3;
-      la0 = Math.max(...MP.cid.map(c => c.lat)) + .3; la1 = Math.min(...MP.cid.map(c => c.lat)) - .3;
-    }
+    let alvo = [-74.2, -34.6, 5.6, -34.0];
+    if (estado.uf && MP.cid.length) alvo = [Math.min(...MP.cid.map(c => c.lon)) - .3, Math.max(...MP.cid.map(c => c.lon)) + .3,
+      Math.max(...MP.cid.map(c => c.lat)) + .3, Math.min(...MP.cid.map(c => c.lat)) - .3];
+    MP.dpr = dpr;
+    if (anima && MP.limites && !CALMO && alvo.some((v, j) => v !== MP.limites[j])) MP.zoom = {de: MP.limites, para: alvo, t0: performance.now()};
+    else { MP.zoom = null; projetar(alvo); } MP.rmax = Math.min(cv.width, cv.height) * (estado.uf ? .05 : .045);
+    MP.tmax = Math.sqrt(Math.max(1, ...MP.cid.map(c => c.tot)));
+    kick();
+  }
+
+  function projetar(lim) {
+    MP.limites = lim;
+    const [lo0, lo1, la0, la1] = lim, KX = Math.cos(15 * Math.PI / 180), pad = 10 * MP.dpr;
     const w = cv.width - 2 * pad, h = cv.height - 2 * pad, mw = (lo1 - lo0) * KX, mh = la0 - la1, s = Math.min(w / mw, h / mh);
     const ox = pad + (w - mw * s) / 2, oy = pad + (h - mh * s) / 2;
     MP.X = lon => ox + (lon - lo0) * KX * s; MP.Y = lat => oy + (la0 - lat) * s;
     for (const c of MP.cid) { c.x = MP.X(c.lon); c.y = MP.Y(c.lat); }
-    MP.dpr = dpr; MP.rmax = Math.min(cv.width, cv.height) * (estado.uf ? .06 : .045);
-    MP.tmax = Math.sqrt(Math.max(1, ...MP.cid.map(c => c.tot)));
-    kick();
   }
 
   function kick() { if (!MP.raf && MP.on) { MP.last = performance.now(); MP.raf = requestAnimationFrame(quadro); } }
@@ -611,12 +616,19 @@
     const p = MP.ponto(MP.q), pa = MP.pAnt, vem = p > pa && p - pa < MP.dados.pontos * .04;
     MP.pAnt = p;
     const k = CALMO ? 1 : 1 - Math.exp(-dt / 140);
-    let ocupado = false;
+    if (MP.zoom) {
+      const z = Math.min(1, (now - MP.zoom.t0) / 700), e = z < .5 ? 4 * z * z * z : 1 - Math.pow(-2 * z + 2, 3) / 2;
+      const {de, para} = MP.zoom;
+      projetar(de.map((v, j) => v + (para[j] - v) * e));
+      if (z >= 1) MP.zoom = null;
+    }
+    let ocupado = !!MP.zoom;
     ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.strokeStyle = "rgba(236,232,220,.10)"; ctx.lineWidth = dpr; ctx.beginPath();
+    ctx.strokeStyle = "rgba(236,232,220,.14)"; ctx.lineWidth = dpr; ctx.beginPath();
     for (const ring of MP.borders) { ring.forEach(([lo, la], j) => j ? ctx.lineTo(MP.X(lo), MP.Y(la)) : ctx.moveTo(MP.X(lo), MP.Y(la))); ctx.closePath(); }
     ctx.stroke();
     const rmin = .9 * dpr, aneis = [];
+    ctx.strokeStyle = "rgba(15,19,32,.85)"; ctx.lineWidth = .8 * dpr;
     let dentro = 0;
     for (const c of MP.cid) {
       let a = 0, b = 0;
@@ -629,13 +641,12 @@
       c.a = a; c.b = b;
       const alvo = a + b > 0 ? rmin + (MP.rmax - rmin) * Math.sqrt(a + b) / MP.tmax : 0;
       c.r += (alvo - c.r) * k; if (Math.abs(alvo - c.r) > .05) ocupado = true; else c.r = alvo;
-      if (c.r < .2) {  // not counted yet: a faint grain that keeps the shape of the country
-        ctx.fillStyle = "rgba(236,232,220,.07)"; ctx.fillRect(c.x - .5 * dpr, c.y - .5 * dpr, dpr, dpr); continue;
-      }
+      if (c.r < .2) continue;  // not counted yet: the state borders hold the shape
       const e = (now - c.born) / PULSO, tom = tomDe(a, b);
       const cor = e < 1 ? mix(BR, tom, Math.min(1, e * 1.4)) : tom;
       ctx.fillStyle = `rgba(${cor},.86)`;
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
+      if (c.r > 2.5 * dpr) ctx.stroke();  // a thin dark rim keeps neighbouring big cities apart
       if (e < 1) { aneis.push([c, e]); ocupado = true; }
     }
     if (MP.sel) {  // the city under the pointer, or the one tapped
