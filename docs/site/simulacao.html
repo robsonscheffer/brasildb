@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>O dia simulado</title>
-<meta name="description" content="O resultado de cada seção distribuído pelas horas em que ela votou. Uma simulação: o voto é secreto.">
+<title>A noite da apuração</title>
+<meta name="description" content="A apuração do 2º turno na ordem em que as seções entraram na soma do TSE, e o dia de votação simulado, na sua cidade, zona e seção.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,13 +92,24 @@
     .escala input { width: 100%; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .modo { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
+  .modo button { font: 600 14px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  .modo button[aria-selected="true"] { color: var(--bg); background: var(--fg); }
+  .pausa { fill: var(--fg); opacity: .05; }
+  .pausa-t { font: 12px var(--mono); fill: var(--muted); }
+  .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
+  .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
 </style>
 </head>
 <body>
 <main>
-  <p class="sobre">Simulação · 2º turno · 25 out 2026 · Presidente</p>
-  <h1>O dia simulado</h1>
-  <p class="lead">A urna registra a hora de cada voto, nunca em quem foi. Aqui, o resultado de cada seção é distribuído pelas horas em que ela votou. Escolha a sua escala e veja como o dia teria corrido.</p>
+  <div class="modo" role="tablist" aria-label="O que ver">
+    <button type="button" role="tab" data-modo="apuracao" aria-selected="true">A apuração</button>
+    <button type="button" role="tab" data-modo="dia" aria-selected="false">O dia simulado</button>
+  </div>
+  <p class="sobre" id="sobre"></p>
+  <h1 id="titulo"></h1>
+  <p class="lead" id="lead"></p>
 
   <div class="escala">
     <label>Estado
@@ -117,28 +128,30 @@
   </div>
 
   <div class="placar" aria-live="polite">
-    <div class="hora" id="hora">08h<small id="horadia">hora de Brasília</small></div>
-    <div class="cand"><div class="n" id="na">nº 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
-    <div class="cand b"><div class="n" id="nb">nº 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
+    <div class="hora" id="hora">00:00<small id="horadia">hora de Brasília</small></div>
+    <div class="cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
+    <div class="cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
   </div>
 
   <div class="grafico">
-    <svg id="svg" viewBox="0 0 1000 440" role="img" aria-label="Votos válidos de cada candidato, hora a hora, simulados"></svg>
+    <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
   </div>
   <p class="antes" id="antes"></p>
   <div class="ctrl">
-    <button id="play" type="button">Repetir o dia</button>
-    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Hora do dia">
+    <button id="play" type="button">Repetir</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Hora">
   </div>
 
   <p class="fim" id="fim"></p>
 
   <section class="metodo">
-    <h2>Como simulamos</h2>
+    <h2>A apuração</h2>
+    <p>O site de resultados do TSE registra a hora em que cada seção entrou na soma pela primeira vez. A seção entra de uma vez, com todos os seus votos. A curva da apuração soma as seções nessa ordem: é registro, não simulação. Entre 17h08 e 19h nenhuma seção entrou na soma: a votação foi estendida até as 19h nesse dia.</p>
+    <h2>O dia simulado</h2>
     <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada candidato recebeu na seção. Nenhum arquivo liga os dois.</p>
     <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
-    <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado. Percentuais sobre votos válidos (sem brancos e nulos). Horas em horário de Brasília; o exterior começa a votar na véspera.</p>
-    <p>Fontes: votação por seção e registros das urnas, TSE (dados abertos). <a href="como.html">Como contamos</a>.</p>
+    <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado.</p>
+    <p>Nas duas curvas: percentuais sobre votos válidos (sem brancos e nulos), horário de Brasília. Fontes: votação por seção, registros das urnas e site de resultados, TSE. <a href="como.html">Como contamos</a>.</p>
   </section>
 </main>
 
@@ -150,21 +163,28 @@
   const fmt = n => Math.round(n).toLocaleString("pt-BR");
   const pct = x => (x * 100).toFixed(1).replace(".", ",") + "%";
   const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
+  const TEXTO = {
+    apuracao: {sobre: "Apuração · 2º turno · 25 out 2026 · Presidente", titulo: "A noite da apuração",
+      lead: "Cada seção entra na soma do TSE de uma vez, com todos os seus votos, na hora registrada pelo site de resultados. Escolha a sua escala e veja a contagem como ela aconteceu.",
+      aria: "Votos válidos de cada candidato na apuração, na ordem em que as seções entraram na soma", play: "Repetir a apuração"},
+    dia: {sobre: "Simulação · 2º turno · 25 out 2026 · Presidente", titulo: "O dia simulado",
+      lead: "A urna registra a hora de cada voto, nunca em quem foi. Aqui, o resultado de cada seção é distribuído pelas horas em que ela votou. Escolha a sua escala e veja como o dia teria corrido.",
+      aria: "Votos válidos de cada candidato, hora a hora, simulados", play: "Repetir o dia"},
+  };
+  const PAUSA = [17 * 60 + 10, 19 * 60];  // no section entered the sum (voting extended to 19h)
   const cache = {};
   const get = p => cache[p] || (cache[p] = fetch(D + p).then(r => { if (!r.ok) throw new Error(p); return r.json(); }));
 
-  let NOMES = {"13": "13", "22": "22"};
-  let horas = [], towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
-
-  // A section's curve: its official result spread over its own hours (flat shares).
-  function serieSecao(s, n) {
-    const [, votos, i0, hs] = s, tot = hs.reduce((a, b) => a + b, 0);
-    const out = votos.map(() => new Array(n).fill(0));
-    hs.forEach((c, k) => votos.forEach((v, j) => { out[j][i0 + k] = v * c / tot; }));
-    return out;
-  }
+  let NOMES = {"13": "Lula", "22": "Bolsonaro"};
+  let modo = "apuracao", towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
   const deDict = d => ["13", "22", "95", "96"].map(k => d[k]);
+  const hhmm = m => { m = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
 
+  function cidadeNome() {
+    if (!towns || !estado.mun) return "";
+    const i = towns.id.indexOf(estado.mun);
+    return i < 0 ? estado.mun : towns.nome[i];
+  }
   function nomeEscala() {
     if (estado.secao) return `na seção ${estado.secao}, zona ${estado.zona}`;
     if (estado.zona) return `na zona ${estado.zona} de ${cidadeNome()}`;
@@ -172,40 +192,69 @@
     if (estado.uf) return estado.uf === "ZZ" ? "no exterior" : `em ${UFNOME[estado.uf]}`;
     return "no Brasil";
   }
-  function cidadeNome() {
-    if (!towns || !estado.mun) return "";
-    const i = towns.id.indexOf(estado.mun);
-    return i < 0 ? estado.mun : towns.nome[i];
+
+  // ---- series. Both modes give: x (minutes, Brasília, end of each step), per-step votes of
+  // 13, 22 and all, and the share where the line starts (corte).
+  // The simulated day for one section: its result spread over its own hours (flat shares).
+  function diaSecao(s, n) {
+    const [, votos, i0, hs] = s, tot = hs.reduce((a, b) => a + b, 0);
+    const out = votos.map(() => new Array(n).fill(0));
+    hs.forEach((c, k) => votos.forEach((v, j) => { out[j][i0 + k] = v * c / tot; }));
+    return out;
+  }
+  function apuracaoDe(secoes, passo) {
+    const ms = secoes.map(([, s]) => s[4]).filter(x => x != null);
+    const ini = Math.floor(Math.min(...ms) / passo) * passo, n = Math.floor((Math.max(...ms) - ini) / passo) + 1;
+    const out = [0, 1, 2, 3].map(() => new Array(n).fill(0));
+    for (const [, s] of secoes) if (s[4] != null) s[1].forEach((v, j) => { out[j][Math.floor((s[4] - ini) / passo)] += v; });
+    return {ini, s: out};
   }
 
-  async function carregar() {
+  async function montar() {
     const br = await get("brasil.json");
-    horas = br.horas; NOMES = br.nomes || NOMES;
+    NOMES = br.nomes || NOMES;
     $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
-    let s;
-    if (!estado.uf) s = deDict(br.brasil);
-    else if (!estado.mun) s = deDict(br.ufs[estado.uf]);
-    else {
-      const m = await get(`mun/${estado.mun}.json`);
-      preencherZonas(m);
-      if (estado.secao) s = serieSecao(m.secoes[`${estado.zona}-${estado.secao}`], horas.length);
+    const m = estado.mun ? await get(`mun/${estado.mun}.json`) : null;
+    if (m) preencherZonas(m);
+    let s, x, passo, marca = null;
+    if (modo === "apuracao") {
+      const ap = br.apuracao; passo = ap.passo;
+      if (!m) {
+        s = deDict(estado.uf ? ap.ufs[estado.uf] : ap.brasil);
+        x = s[0].map((_, i) => ap.inicio + i * passo);
+      } else {
+        // A section enters the sum at once: draw its zone, and mark when the section came in.
+        const zonaToda = Object.entries(m.secoes).filter(([k]) => !estado.zona || k.startsWith(estado.zona + "-"));
+        const r = apuracaoDe(zonaToda, passo);
+        s = r.s; x = s[0].map((_, i) => r.ini + i * passo);
+        if (estado.secao) { const sc = m.secoes[`${estado.zona}-${estado.secao}`]; marca = {min: sc[4], votos: sc[1]}; }
+      }
+      x = x.map(v => v + passo);  // each point is the end of its step
+    } else {
+      const horas = br.horas; passo = 60;
+      if (!estado.uf) s = deDict(br.brasil);
+      else if (!m) s = deDict(br.ufs[estado.uf]);
+      else if (estado.secao) s = diaSecao(m.secoes[`${estado.zona}-${estado.secao}`], horas.length);
       else if (estado.zona) s = deDict(m.zonas[estado.zona]);
       else s = deDict((await get(`uf/${estado.uf}.json`)).cidades[estado.mun]);
+      x = horas.map(h => (h + 1) * 60);
     }
-    // Each point is the running total at the end of its hour. The line starts once 1% of this
-    // scale's votes are in: a few early votes (abroad, the night before) give shares that swing
-    // on a handful of people. They stay in the running total from the first point.
-    const tot = horas.map((_, i) => s.reduce((a, v) => a + v[i], 0));
-    const total = tot.reduce((x, y) => x + y, 0);
-    let acc = 0, a = tot.findIndex(x => (acc += x) >= total * .01);
-    const b = tot.length - 1 - [...tot].reverse().findIndex(x => x > 0);
-    const cum = v => { let c = 0; return v.map(x => (c += x)); };
+    // The line starts once a share of this scale's votes is in: a few early votes (abroad) give
+    // shares that swing on a handful of people. They stay in the running total.
+    const tot = s[0].map((_, i) => s.reduce((a, v) => a + v[i], 0));
+    const total = tot.reduce((p, q) => p + q, 0);
+    const corte = modo === "apuracao" ? .003 : .01;
+    let acc = 0, a = tot.findIndex(v => (acc += v) >= total * corte);
+    if (marca) a = 0;
+    const b = tot.length - 1 - [...tot].reverse().findIndex(v => v > 0);
+    const cum = v => { let c = 0; return v.map(y => (c += y)); };
     const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
-    serie = {h: horas.slice(a, b + 1), tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
-             antes: a > 0 ? ct[a - 1] : 0, antesDe: horas[a]};
+    serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
+             antes: a > 0 ? ct[a - 1] : 0, marca};
     desenhar();
     tocar();
     const q = new URLSearchParams();
+    if (modo === "dia") q.set("modo", "dia");
     for (const k of ["uf", "mun", "zona", "secao"]) if (estado[k]) q.set(k === "mun" ? "cidade" : k, estado[k]);
     history.replaceState(null, "", q.toString() ? "?" + q : location.pathname);
   }
@@ -232,87 +281,112 @@
   const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
   let g = {};
 
-  function rotHora(h) { return `${String(h < 0 ? h + 24 : h).padStart(2, "0")}h`; }
-
   function desenhar() {
     const svg = $("svg"); svg.innerHTML = "";
     W = Math.max(300, svg.parentNode.clientWidth); H = Math.round(Math.min(440, Math.max(300, W * .5)));
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    const n = serie.h.length, x = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1));
+    svg.setAttribute("aria-label", TEXTO[modo].aria);
+    const n = serie.x.length, x0 = serie.x[0] - serie.passo, x1 = serie.x[n - 1];
+    const xm = m => L + (W - L - R) * (m - x0) / (x1 - x0);
+    const x = i => xm(serie.x[i]);
     const sa = serie.ca.map((a, i) => a + serie.cb[i] ? a / (a + serie.cb[i]) : .5);
-    // y domain: around 50%, at least +-5 points, with the shares from the first hour with real weight.
     let dev = Math.min(.5, Math.max(.05, ...sa.map(p => Math.abs(p - .5))));
     dev = Math.min(.5, Math.ceil(dev * 50) / 50);
     const yTop = T, yBot = H - B - BAR - 22;
     const y = p => yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev));
     const eixo = el("g", {class: "eixo"}, svg);
+    if (modo === "apuracao" && x0 < PAUSA[1] && x1 > PAUSA[0]) {
+      const pa = Math.max(PAUSA[0], x0), pb = Math.min(PAUSA[1], x1);
+      el("rect", {class: "pausa", x: xm(pa), width: xm(pb) - xm(pa), y: T, height: H - B - T}, svg);
+      if (xm(pb) - xm(pa) > 70) el("text", {class: "pausa-t", x: (xm(pa) + xm(pb)) / 2, y: H - B - BAR - 4, "text-anchor": "middle"}, svg).textContent = "votação até 19h";
+    }
     for (const p of [.5 - dev, .5, .5 + dev]) {
       el("line", {x1: L, x2: W - R, y1: y(p), y2: y(p), class: p === .5 ? "meio" : ""}, eixo);
       el("text", {x: L - 8, y: y(p) + 4, "text-anchor": "end"}, eixo).textContent = Math.round(p * 100) + "%";
     }
-    const passo = Math.ceil(n / Math.max(3, Math.floor(W / 80)));
-    serie.h.forEach((h, i) => { if (i % passo === 0 || i === n - 1) el("text", {x: x(i), y: H - 8, "text-anchor": "middle"}, eixo).textContent = rotHora(h + 1); });
-    // hourly votes as bars at the bottom
-    const mx = Math.max(...serie.tot), bw = Math.max(2, (W - L - R) / n * .6);
+    // time ticks on round hours (or half hours on a short range)
+    const span = x1 - x0, step = span > 360 ? 120 : span > 150 ? 60 : span > 60 ? 30 : 10;
+    const maxT = Math.max(3, Math.floor(W / 70));
+    let st = step; while (span / st > maxT) st *= 2;
+    for (let m = Math.ceil(x0 / st) * st; m <= x1; m += st) el("text", {x: xm(m), y: H - 8, "text-anchor": "middle"}, eixo).textContent = hhmm(m);
+    const mx = Math.max(...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
     const barras = el("g", {class: "barras"}, svg);
-    g.barras = serie.tot.map((v, i) => el("rect", {x: x(i) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
-    const pts = (f) => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
+    g.barras = serie.tot.map((v, i) => el("rect", {x: xm(serie.x[i] - serie.passo / 2) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
+    if (serie.marca) {
+      const mm = Math.floor(serie.marca.min / serie.passo) * serie.passo + serie.passo;
+      g.marca = el("line", {class: "marca", x1: xm(mm), x2: xm(mm), y1: T, y2: H - B}, svg);
+      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = `sua seção, ${hhmm(serie.marca.min)}`;
+    }
+    const pts = f => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
     g.pa = pts(p => p); g.pb = pts(p => 1 - p);
     g.la = el("polyline", {class: "la", points: ""}, svg);
     g.lb = el("polyline", {class: "lb", points: ""}, svg);
     g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
     g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
     g.db = el("circle", {r: 5, class: "ponto-b"}, svg);
-    g.ra = el("text", {class: "rot", fill: "var(--fg)"}, svg); g.ra.textContent = "13";
-    g.rb = el("text", {class: "rot", fill: "var(--b)"}, svg); g.rb.textContent = "22";
-    g.x = x; g.y = y; g.sa = sa; g.n = n;
+    g.ra = el("text", {class: "rot", fill: "var(--fg)"}, svg); g.ra.textContent = NOMES["13"];
+    g.rb = el("text", {class: "rot", fill: "var(--b)"}, svg); g.rb.textContent = NOMES["22"];
+    Object.assign(g, {x, y, sa, n});
     pintar(1);
   }
 
-  // Draw the day up to fraction f (0..1), interpolating between hours.
   function pintar(f) {
     t = f;
     const n = g.n, pos = f * (n - 1), i = Math.floor(pos), r = pos - i;
-    const lerp = (arr) => i >= n - 1 ? arr[n - 1] : arr[i] + (arr[i + 1] - arr[i]) * r;
+    const lerp = arr => i >= n - 1 ? arr[n - 1] : arr[i] + (arr[i + 1] - arr[i]) * r;
     const cut = (pts, p) => {
       const out = pts.slice(0, i + 1);
-      if (i < n - 1) out.push(`${g.x(pos).toFixed(1)},${g.y(p).toFixed(1)}`);
+      if (i < n - 1) out.push(`${(g.x(i) + (g.x(i + 1) - g.x(i)) * r).toFixed(1)},${g.y(p).toFixed(1)}`);
       return out.join(" ");
     };
-    const p = lerp(g.sa), xa = g.x(pos);
+    const p = lerp(g.sa), xa = i >= n - 1 ? g.x(n - 1) : g.x(i) + (g.x(i + 1) - g.x(i)) * r;
     g.la.setAttribute("points", cut(g.pa, p));
     g.lb.setAttribute("points", cut(g.pb, 1 - p));
     g.cur.setAttribute("x1", xa); g.cur.setAttribute("x2", xa);
     g.da.setAttribute("cx", xa); g.da.setAttribute("cy", g.y(p));
     g.db.setAttribute("cx", xa); g.db.setAttribute("cy", g.y(1 - p));
     const ya = g.y(p), yb = g.y(1 - p), sep = Math.abs(ya - yb) < 16 ? 9 : 0;
-    g.ra.setAttribute("x", xa + 10); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep));
-    g.rb.setAttribute("x", xa + 10); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep));
-    g.barras.forEach((b, k) => b.classList.toggle("ja", k <= pos + 1e-9));
+    const anc = xa > W - 120 ? "end" : "start";
+    g.ra.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.ra.setAttribute("text-anchor", anc); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep) - (anc === "end" ? 10 : 0));
+    g.rb.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.rb.setAttribute("text-anchor", anc); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep) + (anc === "end" ? 14 : 0));
+    g.barras.forEach((bb, k) => bb.classList.toggle("ja", k <= pos + 1e-9));
     const va = lerp(serie.ca), vb = lerp(serie.cb);
     $("pa").textContent = pct(va + vb ? va / (va + vb) : 0);
     $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
     $("va").textContent = fmt(va) + " votos";
     $("vb").textContent = fmt(vb) + " votos";
-    const h = serie.h[Math.min(n - 1, i)] + 1, min = i >= n - 1 ? 0 : Math.floor(r * 60);
-    $("hora").firstChild.textContent = `${rotHora(h)}${String(min).padStart(2, "0")}`.replace("h", ":");
-    $("horadia").textContent = (h < 0 ? "24 out, " : "") + "hora de Brasília";
+    const min = Math.round(lerp(serie.x));
+    $("hora").firstChild.textContent = hhmm(min);
+    $("horadia").textContent = (min < 0 ? "24 out, " : "") + "hora de Brasília";
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
-    $("antes").textContent = serie.antes ? `A linha começa às ${rotHora(serie.antesDe + 1).replace("h", ":00")}, com 1% dos votos. Antes disso votaram ${fmt(serie.antes)} pessoas${!estado.uf || estado.uf === "ZZ" ? ", no exterior" : ""}; elas já estão na soma.` : "";
+    $("antes").textContent = serie.antes
+      ? (modo === "apuracao"
+        ? `A linha começa às ${hhmm(serie.x[0] - serie.passo)}. Antes disso, ${fmt(serie.antes)} votos já tinham entrado na soma${!estado.uf || estado.uf === "ZZ" ? ", quase todos do exterior" : ""}; eles já estão no total.`
+        : `A linha começa às ${hhmm(serie.x[0] - serie.passo)}, com 1% dos votos. Antes disso votaram ${fmt(serie.antes)} pessoas${!estado.uf || estado.uf === "ZZ" ? ", no exterior" : ""}; elas já estão na soma.`)
+      : "";
   }
 
+  function trocas() {
+    const lid = g.sa.map(p => p > .5 ? "a" : p < .5 ? "b" : "");
+    return lid.filter((l, k) => k && l && lid[k - 1] && l !== lid[k - 1]).length;
+  }
   function fimTexto(va, vb) {
     const onde = nomeEscala();
-    if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
-    const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb);
-    let virou = "";
-    if (!estado.secao) {
-      const lid = g.sa.map(p => p > .5 ? "a" : p < .5 ? "b" : "");
-      const trocas = lid.filter((l, k) => k && l && lid[k - 1] && l !== lid[k - 1]).length;
-      virou = trocas ? ` Na simulação, a liderança trocou de lado ${trocas === 1 ? "uma vez" : trocas + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";
+    if (serie.marca) {
+      const [a, b] = serie.marca.votos;
+      const ven = a === b ? "empate" : `${NOMES[a > b ? "13" : "22"]} venceu`;
+      return `Sua seção entrou na soma às ${hhmm(serie.marca.min)}, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona. Hora do site de resultados do TSE.</span>`;
     }
-    return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${virou}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
+    if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
+    const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb), tr = trocas();
+    if (modo === "apuracao") {
+      const lid = tr ? ` Na apuração, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"}.` : " Liderou a apuração do começo ao fim.";
+      return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">Ordem e hora em que as seções entraram na soma, do site de resultados do TSE.</span>`;
+    }
+    if (estado.secao) return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.<span class="of">Numa seção, a simulação divide igual em todas as horas: é o pressuposto.</span>`;
+    const lid = tr ? ` Na simulação, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";
+    return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
   }
 
   function tocar() {
@@ -321,12 +395,21 @@
     const dur = 6000, t0 = performance.now();
     const passo = now => {
       const f = Math.max(0, Math.min(1, (now - t0) / dur));
-      pintar(f < 1 ? 1 - Math.pow(1 - Math.max(0, f), 1.6) : 1);
+      pintar(f < 1 ? 1 - Math.pow(1 - f, 1.6) : 1);
       if (f < 1) anim = requestAnimationFrame(passo);
     };
     anim = requestAnimationFrame(passo);
   }
 
+  function poeModo(m) {
+    modo = m;
+    for (const b of document.querySelectorAll(".modo button")) b.setAttribute("aria-selected", String(b.dataset.modo === m));
+    const tx = TEXTO[m];
+    $("sobre").textContent = tx.sobre; $("titulo").textContent = tx.titulo; $("lead").textContent = tx.lead;
+    $("play").textContent = tx.play;
+    document.title = tx.titulo;
+  }
+  for (const b of document.querySelectorAll(".modo button")) b.onclick = () => { poeModo(b.dataset.modo); montar(); };
   $("play").onclick = tocar;
   $("scrub").oninput = e => { cancelAnimationFrame(anim); pintar(e.target.value / 1000); };
   addEventListener("resize", () => { if (serie) { desenhar(); pintar(t); } });
@@ -339,13 +422,13 @@
     $("cidade").value = ""; $("cidade").disabled = !estado.uf || estado.uf === "ZZ";
     $("zona").disabled = $("secao").disabled = true; zonasDe = "";
     $("zona").innerHTML = $("secao").innerHTML = '<option value="">Todas</option>';
-    carregar();
+    montar();
   };
   $("zona").onchange = async () => {
     estado.zona = $("zona").value; estado.secao = "";
-    secoesDe(await get(`mun/${estado.mun}.json`)); carregar();
+    secoesDe(await get(`mun/${estado.mun}.json`)); montar();
   };
-  $("secao").onchange = () => { estado.secao = $("secao").value; carregar(); };
+  $("secao").onchange = () => { estado.secao = $("secao").value; montar(); };
 
   const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   let sugs = [], ativo = -1;
@@ -363,7 +446,7 @@
     const i = sugs[k]; if (i == null) return;
     $("cidade").value = towns.nome[i]; $("sug").hidden = true;
     estado = {uf: estado.uf, mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
-    carregar();
+    montar();
   };
   $("sug").onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); escolher(+li.dataset.k); } };
   $("cidade").onkeydown = e => {
@@ -376,10 +459,11 @@
   };
   $("cidade").onblur = () => setTimeout(() => { $("sug").hidden = true; }, 100);
 
-  // ---- start: a shared link keeps its scale
+  // ---- start: a shared link keeps its view and scale
   (async () => {
-    towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
     const q = new URLSearchParams(location.search);
+    poeModo(q.get("modo") === "dia" ? "dia" : "apuracao");
+    towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
     const uf = (q.get("uf") || "").toUpperCase();
     if (UFNOME[uf]) {
       estado.uf = uf; ufSel.value = uf; $("cidade").disabled = uf === "ZZ";
@@ -389,9 +473,7 @@
         estado.zona = q.get("zona") || ""; estado.secao = estado.zona ? q.get("secao") || "" : "";
       }
     }
-    carregar().catch(() => {
-      if (estado.zona) { estado.zona = estado.secao = ""; carregar(); }
-    });
+    montar().catch(() => { if (estado.zona) { estado.zona = estado.secao = ""; montar(); } });
   })();
 })();
 </script>

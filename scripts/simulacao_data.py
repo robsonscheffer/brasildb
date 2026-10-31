@@ -3,6 +3,9 @@
   uv run python scripts/simulacao_data.py cache    # lake -> $BRASILDB_DATA/simulacao.duckdb (full eventos scan, minutes)
   uv run python scripts/simulacao_data.py dados    # docs/site/data/simulacao/{brasil.json, uf/<UF>.json, mun/<id>.json}
 
+The count (apuracao) is not simulated: each section enters the TSE sum at its `ha` time
+(cs.json, Brasilia), with its whole official result.
+
 The vote is secret: an urna logs when each vote was cast, never for whom. The model spreads each
 section's official result (votacao_secao) over the hours in which that section voted (its urna
 log), so within one section every hour votes alike. Zones, cities, states and Brasil are sums of
@@ -69,6 +72,8 @@ def build_cache(only: list[str] | None = None) -> None:
             WHERE ano = {ANO} AND turno = {TURNO} AND secao_principal IS NOT NULL
             GROUP BY ALL""",
     }
+    if not only or "apuracao" in only:
+        apuracao(con)
     for name, sql in steps.items():
         if only and name not in only:
             continue
@@ -76,6 +81,33 @@ def build_cache(only: list[str] | None = None) -> None:
         con.execute(f"CREATE OR REPLACE TABLE c_{name} AS {sql}")
         n = con.execute(f"SELECT count(*) FROM c_{name}").fetchone()[0]
         print(f"c_{name}: {n} rows, {time.time() - t:.0f}s", flush=True)
+
+
+def apuracao(con: duckdb.DuckDBPyConnection) -> None:
+    """c_apuracao: the minute each section was first counted (cs.json `ha`), Brasilia time,
+    in minutes from election day 00:00. Aggregated sections (nsp) have none; the CSV reports
+    their votes under the principal section."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import pyarrow as pa
+    from site_v2_data import cs_sections
+
+    from datetime import datetime
+
+    dia = config.ELECTIONS[(ANO, TURNO)].data
+    rows = []
+    for r in cs_sections():
+        if r["ha"] and r["da"]:
+            h, m, _ = r["ha"].split(":")
+            rows.append({"sigla_uf": r["uf"].upper(), "id_municipio_tse": r["mun"].zfill(5),
+                         "zona": r["zona"], "secao": r["secao"],
+                         "minuto": (datetime.strptime(r["da"], "%d/%m/%Y").date() - dia).days * 1440
+                                   + int(h) * 60 + int(m)})
+    con.register("cs_rows", pa.Table.from_pylist(rows))
+    con.execute("CREATE OR REPLACE TABLE c_apuracao AS SELECT * FROM cs_rows")
+    print(f"c_apuracao: {len(rows)} rows", flush=True)
+
+
+PASSO = 5  # minutes per count bucket
 
 
 SIMULAR_SQL = f"""
@@ -177,12 +209,8 @@ def _grouped(con, cols: str, where: str = "TRUE") -> dict[tuple, list]:
     return out
 
 
-MINUSCULAS = {"da", "das", "de", "do", "dos", "e"}
-
-
-def nome(s: str) -> str:
-    """TSE upper-case name in title case: LUIZ INÁCIO LULA DA SILVA -> Luiz Inácio Lula da Silva."""
-    return " ".join(w.lower() if w.lower() in MINUSCULAS else w.capitalize() for w in s.split())
+# The names the page shows, as the candidates are known; votacao_secao has only the civil name.
+NOMES = {"13": "Lula", "22": "Bolsonaro"}
 
 
 def dump(path: Path, obj) -> None:
@@ -190,16 +218,39 @@ def dump(path: Path, obj) -> None:
     path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
+def apuracao_series(con: duckdb.DuckDBPyConnection) -> dict:
+    """Votes entering the TSE sum per PASSO-minute bucket, Brasil and per state (not simulated)."""
+    sem = con.execute("""SELECT count(*) FROM (SELECT DISTINCT sigla_uf, id_municipio_tse, zona, secao
+        FROM c_votacao) ANTI JOIN c_apuracao USING (sigla_uf, id_municipio_tse, zona, secao)""").fetchone()[0]
+    if sem:
+        sys.exit(f"check failed: {sem} sections with votes have no count time")
+    rows = con.execute(f"""
+        SELECT v.sigla_uf, CAST(floor(a.minuto / {PASSO}) * {PASSO} AS INTEGER) AS b, v.numero_votavel,
+               sum(v.votos)
+        FROM c_votacao v JOIN c_apuracao a USING (sigla_uf, id_municipio_tse, zona, secao)
+        GROUP BY ALL""").fetchall()
+    ini, fim = min(r[1] for r in rows), max(r[1] for r in rows)
+    n = (fim - ini) // PASSO + 1
+    brasil = {k: [0] * n for k in VOTAVEIS}
+    ufs: dict[str, dict] = {}
+    for uf, b, num, v in rows:
+        i = (b - ini) // PASSO
+        brasil[num][i] += v
+        ufs.setdefault(uf, {k: [0] * n for k in VOTAVEIS})[num][i] += v
+    return {"passo": PASSO, "inicio": ini, "brasil": brasil, "ufs": ufs}
+
+
 def dados(con: duckdb.DuckDBPyConnection) -> None:
     horas = [h for (h,) in con.execute("SELECT DISTINCT hora FROM c_sim ORDER BY 1").fetchall()]
-    nomes = dict(con.execute("SELECT * FROM c_nomes").fetchall())
     base = {"mock": False, "simulacao": True, "hora": "Brasília", "horas": horas,
             "votaveis": VOTAVEIS}
-    nomes_out = {n: nome(nomes[n]) for n in VOTAVEIS[:2]}
+    civil = dict(con.execute("SELECT * FROM c_nomes").fetchall())
+    assert civil["13"].startswith("LUIZ INÁCIO LULA") and civil["22"].endswith("BOLSONARO"), civil
     brasil = _series(con.execute("SELECT hora, numero_votavel, sum(votos) FROM c_sim GROUP BY ALL")
                      .fetchall(), horas)
     ufs = {k[0]: _series(v, horas) for k, v in _grouped(con, "sigla_uf").items()}
-    dump(OUT / "brasil.json", {**base, "nomes": nomes_out, "brasil": brasil, "ufs": ufs})
+    dump(OUT / "brasil.json", {**base, "nomes": NOMES, "brasil": brasil, "ufs": ufs,
+                               "apuracao": apuracao_series(con)})
     for uf in ufs:
         cidades = {k[0]: _series(v, horas)
                    for k, v in _grouped(con, "id_municipio_tse", f"sigla_uf = '{uf}'").items()}
@@ -226,11 +277,13 @@ def dados(con: duckdb.DuckDBPyConnection) -> None:
     por_mun: dict[tuple, dict] = {}
     for (uf_, mun, zona), rows in zonas.items():
         por_mun.setdefault((uf_, mun), {"zonas": {}, "secoes": {}})["zonas"][zona] = _series(rows, horas)
+    minuto = {tuple(r[:4]): r[4] for r in con.execute("SELECT * FROM c_apuracao").fetchall()}
     for (uf_, mun, zona, secao), e in pesos.items():
         v = votos.get((uf_, mun, zona, secao), {})
         i0, i1 = min(e["h"]), max(e["h"])
         por_mun[(uf_, mun)]["secoes"][f"{zona}-{secao}"] = [
-            e["fonte"], [v.get(n, 0) for n in VOTAVEIS], i0, [e["h"].get(i, 0) for i in range(i0, i1 + 1)]]
+            e["fonte"], [v.get(n, 0) for n in VOTAVEIS], i0, [e["h"].get(i, 0) for i in range(i0, i1 + 1)],
+            minuto.get((uf_, mun, zona, secao))]
     for (uf_, mun), m in por_mun.items():
         dump(OUT / "mun" / f"{mun}.json", {**base, "uf": uf_, "id": mun, **m})
     print(f"{len(ufs)} states, {len(por_mun)} cities, hours {horas[0]}..{horas[-1]}")
@@ -239,7 +292,7 @@ def dados(con: duckdb.DuckDBPyConnection) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("step", choices=["cache", "dados"])
-    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (votos_hora votacao nomes principal)")
+    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (apuracao votos_hora votacao nomes principal)")
     a = ap.parse_args()
     if a.step == "cache":
         build_cache(a.only)
