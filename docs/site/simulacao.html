@@ -95,8 +95,6 @@
   .modo { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg2); }
   .modo button { font: 600 14px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
   .modo button[aria-selected="true"] { color: var(--bg); background: var(--fg); }
-  .pausa { fill: var(--fg); opacity: .05; }
-  .pausa-t { font: 12px var(--mono); fill: var(--muted); }
   .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
   .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
 </style>
@@ -146,12 +144,13 @@
 
   <section class="metodo">
     <h2>A apuração</h2>
-    <p>O site de resultados do TSE registra a hora em que cada seção entrou na soma pela primeira vez. A seção entra de uma vez, com todos os seus votos. A curva da apuração soma as seções nessa ordem: é registro, não simulação. Entre 17h08 e 19h nenhuma seção entrou na soma: a votação foi estendida até as 19h nesse dia.</p>
+    <p>O TSE não publica a hora em que cada seção entrou na soma. O que existe é a hora em que cada urna terminou de gravar o boletim de urna, no registro da própria urna. A curva da apuração soma as seções nessa ordem, cada uma de uma vez, com todos os seus votos. O eixo é a parcela das seções já somadas, não a hora.</p>
+    <p>É uma estimativa da ordem: o tempo de transmissão de cada boletim até o TSE não está nos arquivos. Conferimos a estimativa com o que a imprensa relatou nos dois turnos. No 1º turno, Flávio Bolsonaro à frente do começo ao fim. No 2º, Lula começa à frente, Bolsonaro passa à frente e Lula retoma a liderança depois da metade. Nas primeiras seções, a estimativa diverge do relatado: no 2º turno, Bolsonaro passa à frente com cerca de 2% das seções, e a imprensa relatou cerca de 13%.</p>
     <h2>O dia simulado</h2>
     <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada candidato recebeu na seção. Nenhum arquivo liga os dois.</p>
     <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
     <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado.</p>
-    <p>Nas duas curvas: percentuais sobre votos válidos (sem brancos e nulos), horário de Brasília. Fontes: votação por seção, registros das urnas e site de resultados, TSE. <a href="como.html">Como contamos</a>.</p>
+    <p>Nas duas curvas: percentuais sobre votos válidos (sem brancos e nulos). No dia simulado, horário de Brasília. Fontes: votação por seção e registros das urnas, TSE. <a href="como.html">Como contamos</a>.</p>
   </section>
 </main>
 
@@ -165,13 +164,12 @@
   const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
   const TEXTO = {
     apuracao: {sobre: "Apuração · 2º turno · 25 out 2026 · Presidente", titulo: "A noite da apuração",
-      lead: "Cada seção entra na soma do TSE de uma vez, com todos os seus votos, na hora registrada pelo site de resultados. Escolha a sua escala e veja a contagem como ela aconteceu.",
-      aria: "Votos válidos de cada candidato na apuração, na ordem em que as seções entraram na soma", play: "Repetir a apuração"},
+      lead: "Cada seção entra na soma de uma vez, com todos os seus votos, na ordem em que as urnas fecharam. Escolha a sua escala e veja a contagem, das primeiras seções às últimas.",
+      aria: "Votos válidos de cada candidato na apuração, pela parcela das seções somadas, na ordem em que as urnas fecharam", play: "Repetir a apuração"},
     dia: {sobre: "Simulação · 2º turno · 25 out 2026 · Presidente", titulo: "O dia simulado",
       lead: "A urna registra a hora de cada voto, nunca em quem foi. Aqui, o resultado de cada seção é distribuído pelas horas em que ela votou. Escolha a sua escala e veja como o dia teria corrido.",
       aria: "Votos válidos de cada candidato, hora a hora, simulados", play: "Repetir o dia"},
   };
-  const PAUSA = [17 * 60 + 10, 19 * 60];  // no section entered the sum (voting extended to 19h)
   const cache = {};
   const get = p => cache[p] || (cache[p] = fetch(D + p).then(r => { if (!r.ok) throw new Error(p); return r.json(); }));
 
@@ -193,8 +191,8 @@
     return "no Brasil";
   }
 
-  // ---- series. Both modes give: x (minutes, Brasília, end of each step), per-step votes of
-  // 13, 22 and all, and the share where the line starts (corte).
+  // ---- series. Both modes give x (end of each step: minutes, Brasília, in the day; share of
+  // sections counted, 0..1, in the count), per-step votes of 13, 22, 95 and 96, and the step.
   // The simulated day for one section: its result spread over its own hours (flat shares).
   function diaSecao(s, n) {
     const [, votos, i0, hs] = s, tot = hs.reduce((a, b) => a + b, 0);
@@ -202,12 +200,13 @@
     hs.forEach((c, k) => votos.forEach((v, j) => { out[j][i0 + k] = v * c / tot; }));
     return out;
   }
-  function apuracaoDe(secoes, passo) {
-    const ms = secoes.map(([, s]) => s[4]).filter(x => x != null);
-    const ini = Math.floor(Math.min(...ms) / passo) * passo, n = Math.floor((Math.max(...ms) - ini) / passo) + 1;
-    const out = [0, 1, 2, 3].map(() => new Array(n).fill(0));
-    for (const [, s] of secoes) if (s[4] != null) s[1].forEach((v, j) => { out[j][Math.floor((s[4] - ini) / passo)] += v; });
-    return {ini, s: out};
+  // The count for a city or zone: its sections in the order their urnas closed (s[4], the
+  // place in Brasil), one step per section, or PONTOS steps when there are more.
+  function apuracaoDe(secoes, pontos) {
+    const ss = secoes.map(([k, s]) => [k, s]).sort((p, q) => p[1][4] - q[1][4]);
+    const n = Math.min(ss.length, pontos), out = [0, 1, 2, 3].map(() => new Array(n).fill(0));
+    ss.forEach(([, s], k) => s[1].forEach((v, j) => { out[j][Math.floor(k * n / ss.length)] += v; }));
+    return {s: out, n, ss};
   }
 
   async function montar() {
@@ -218,18 +217,21 @@
     if (m) preencherZonas(m);
     let s, x, passo, marca = null;
     if (modo === "apuracao") {
-      const ap = br.apuracao; passo = ap.passo;
+      const ap = br.apuracao;
       if (!m) {
         s = deDict(estado.uf ? ap.ufs[estado.uf] : ap.brasil);
-        x = s[0].map((_, i) => ap.inicio + i * passo);
       } else {
-        // A section enters the sum at once: draw its zone, and mark when the section came in.
+        // A section enters the sum at once: draw its zone, and mark where the section came in.
         const zonaToda = Object.entries(m.secoes).filter(([k]) => !estado.zona || k.startsWith(estado.zona + "-"));
-        const r = apuracaoDe(zonaToda, passo);
-        s = r.s; x = s[0].map((_, i) => r.ini + i * passo);
-        if (estado.secao) { const sc = m.secoes[`${estado.zona}-${estado.secao}`]; marca = {min: sc[4], votos: sc[1]}; }
+        const r = apuracaoDe(zonaToda, ap.pontos);
+        s = r.s;
+        if (estado.secao) {
+          const k = `${estado.zona}-${estado.secao}`, i = r.ss.findIndex(([q]) => q === k);
+          marca = {pos: (Math.floor(i * r.n / r.ss.length) + 1) / r.n, k: i + 1, de: r.ss.length, votos: m.secoes[k][1]};
+        }
       }
-      x = x.map(v => v + passo);  // each point is the end of its step
+      passo = 1 / s[0].length;
+      x = s[0].map((_, i) => (i + 1) * passo);  // each point is the end of its step
     } else {
       const horas = br.horas; passo = 60;
       if (!estado.uf) s = deDict(br.brasil);
@@ -295,27 +297,28 @@
     const yTop = T, yBot = H - B - BAR - 22;
     const y = p => yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev));
     const eixo = el("g", {class: "eixo"}, svg);
-    if (modo === "apuracao" && x0 < PAUSA[1] && x1 > PAUSA[0]) {
-      const pa = Math.max(PAUSA[0], x0), pb = Math.min(PAUSA[1], x1);
-      el("rect", {class: "pausa", x: xm(pa), width: xm(pb) - xm(pa), y: T, height: H - B - T}, svg);
-      if (xm(pb) - xm(pa) > 70) el("text", {class: "pausa-t", x: (xm(pa) + xm(pb)) / 2, y: H - B - BAR - 4, "text-anchor": "middle"}, svg).textContent = "votação até 19h";
-    }
     for (const p of [.5 - dev, .5, .5 + dev]) {
       el("line", {x1: L, x2: W - R, y1: y(p), y2: y(p), class: p === .5 ? "meio" : ""}, eixo);
       el("text", {x: L - 8, y: y(p) + 4, "text-anchor": "end"}, eixo).textContent = Math.round(p * 100) + "%";
     }
-    // time ticks on round hours (or half hours on a short range)
-    const span = x1 - x0, step = span > 360 ? 120 : span > 150 ? 60 : span > 60 ? 30 : 10;
-    const maxT = Math.max(3, Math.floor(W / 70));
-    let st = step; while (span / st > maxT) st *= 2;
-    for (let m = Math.ceil(x0 / st) * st; m <= x1; m += st) el("text", {x: xm(m), y: H - 8, "text-anchor": "middle"}, eixo).textContent = hhmm(m);
+    if (modo === "apuracao") {
+      // ticks on the share of sections counted
+      for (let q = Math.ceil(x0 * 4) / 4; q <= x1 + 1e-9; q += .25)
+        el("text", {x: xm(q), y: H - 8, "text-anchor": q >= 1 ? "end" : "middle"}, eixo).textContent = Math.round(q * 100) + "%";
+    } else {
+      // time ticks on round hours (or half hours on a short range)
+      const span = x1 - x0, step = span > 360 ? 120 : span > 150 ? 60 : span > 60 ? 30 : 10;
+      const maxT = Math.max(3, Math.floor(W / 70));
+      let st = step; while (span / st > maxT) st *= 2;
+      for (let m = Math.ceil(x0 / st) * st; m <= x1; m += st) el("text", {x: xm(m), y: H - 8, "text-anchor": "middle"}, eixo).textContent = hhmm(m);
+    }
     const mx = Math.max(...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
     const barras = el("g", {class: "barras"}, svg);
     g.barras = serie.tot.map((v, i) => el("rect", {x: xm(serie.x[i] - serie.passo / 2) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
     if (serie.marca) {
-      const mm = Math.floor(serie.marca.min / serie.passo) * serie.passo + serie.passo;
+      const mm = serie.marca.pos;
       g.marca = el("line", {class: "marca", x1: xm(mm), x2: xm(mm), y1: T, y2: H - B}, svg);
-      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = `sua seção, ${hhmm(serie.marca.min)}`;
+      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = "sua seção";
     }
     const pts = f => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
     g.pa = pts(p => p); g.pb = pts(p => 1 - p);
@@ -355,14 +358,19 @@
     $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
     $("va").textContent = fmt(va) + " votos";
     $("vb").textContent = fmt(vb) + " votos";
-    const min = Math.round(lerp(serie.x));
-    $("hora").firstChild.textContent = hhmm(min);
-    $("horadia").textContent = (min < 0 ? "24 out, " : "") + "hora de Brasília";
+    if (modo === "apuracao") {
+      $("hora").firstChild.textContent = Math.round(lerp(serie.x) * 100) + "%";
+      $("horadia").textContent = "das seções somadas";
+    } else {
+      const min = Math.round(lerp(serie.x));
+      $("hora").firstChild.textContent = hhmm(min);
+      $("horadia").textContent = (min < 0 ? "24 out, " : "") + "hora de Brasília";
+    }
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
     $("antes").textContent = serie.antes
       ? (modo === "apuracao"
-        ? `A linha começa às ${hhmm(serie.x[0] - serie.passo)}. Antes disso, ${fmt(serie.antes)} votos já tinham entrado na soma${!estado.uf || estado.uf === "ZZ" ? ", quase todos do exterior" : ""}; eles já estão no total.`
+        ? `A linha começa com ${(Math.round((serie.x[0] - serie.passo) * 1000) / 10).toLocaleString("pt-BR")}% das seções somadas. Antes disso, ${fmt(serie.antes)} votos já tinham entrado na soma; eles já estão no total.`
         : `A linha começa às ${hhmm(serie.x[0] - serie.passo)}, com 1% dos votos. Antes disso votaram ${fmt(serie.antes)} pessoas${!estado.uf || estado.uf === "ZZ" ? ", no exterior" : ""}; elas já estão na soma.`)
       : "";
   }
@@ -376,13 +384,13 @@
     if (serie.marca) {
       const [a, b] = serie.marca.votos;
       const ven = a === b ? "empate" : `${NOMES[a > b ? "13" : "22"]} venceu`;
-      return `Sua seção entrou na soma às ${hhmm(serie.marca.min)}, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona. Hora do site de resultados do TSE.</span>`;
+      return `Sua seção foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a fechar a urna e entrou na soma com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona, na ordem em que as urnas fecharam.</span>`;
     }
     if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
     const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb), tr = trocas();
     if (modo === "apuracao") {
       const lid = tr ? ` Na apuração, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"}.` : " Liderou a apuração do começo ao fim.";
-      return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">Ordem e hora em que as seções entraram na soma, do site de resultados do TSE.</span>`;
+      return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O resultado é o oficial do TSE. A ordem é estimada pela hora em que cada urna fechou.</span>`;
     }
     if (estado.secao) return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.<span class="of">Numa seção, a simulação divide igual em todas as horas: é o pressuposto.</span>`;
     const lid = tr ? ` Na simulação, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";

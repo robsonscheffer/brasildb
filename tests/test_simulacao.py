@@ -55,3 +55,13 @@ def test_the_sum_moves_when_places_vote_at_different_hours():
     share = dict(con.execute("""SELECT hora, sum(votos) FILTER (WHERE numero_votavel = '13') / sum(votos)
         FROM c_sim WHERE secao IN ('0001', '0002') GROUP BY hora""").fetchall())
     assert share[8] > share[10]
+
+
+def test_the_count_orders_sections_by_urna_close_and_fills_a_missing_one():
+    con = _con()
+    con.execute("""CREATE TABLE c_apuracao AS SELECT * FROM (VALUES
+        ('RR', '03085', '0008', '0001', 1030.0), ('RR', '03085', '0008', '0002', 1021.5))
+        AS t(sigla_uf, id_municipio_tse, zona, secao, minuto)""")
+    assert sim.ordem(con) == 1  # 0003 has no log: it takes the city's median, 1025.75
+    rows = con.execute("SELECT secao, ordem_br, estimado FROM c_ordem ORDER BY ordem_br").fetchall()
+    assert rows == [("0002", 1, False), ("0003", 2, True), ("0001", 3, False)]
