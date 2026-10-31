@@ -41,7 +41,9 @@
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html { background: var(--bg); scroll-behavior: smooth; }
+  html { background: var(--bg); }
+  /* Smooth only after the reader acts: a shared link or a reload jumps, it does not play every fold on the way. */
+  html.suave { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   /* Film grain and a soft vignette: the page reads as one dark room, not a flat colour. */
   body::before { content: ""; position: fixed; inset: -50%; z-index: 20; pointer-events: none; opacity: .055; mix-blend-mode: screen;
@@ -587,6 +589,7 @@ function near(el, fn, margin = "150% 0px") {
 // holds the screen returns the time it shows, and the one clock at the top follows it.
 const scenes = [];
 const CALMO = matchMedia("(prefers-reduced-motion: reduce)").matches;
+for (const ev of ["pointerdown", "keydown", "wheel", "touchstart"]) addEventListener(ev, () => document.documentElement.classList.add("suave"), { once: true, passive: true });
 if (CALMO) document.documentElement.classList.add("calmo");
 // A hidden table behind a chart, for screen readers.
 function tabela(el, titulo, cabecalho, linhas) {
