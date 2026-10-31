@@ -134,9 +134,9 @@ br_tse_eleicoes:
       tipo_urna: VARCHAR               # DS_TIPO_URNA, e.g. "Apurada"
       id_urna: VARCHAR                 # NR_URNA_EFETIVADA
       data_hora_recebimento: TIMESTAMP # DT_BU_RECEBIDO: the TSE received the bulletin; Brasília
-                                       # time. The count time: round 2 of 2026, sections received
-                                       # by 1 min before each snapshot of the TSE totalization
-                                       # panel equal its city count in 90% of snapshots
+                                       # time. The count time: scripts/check_count_time.py checks
+                                       # it against the TSE totalization panel (round 2 of 2026:
+                                       # every city count within 0 to 8 min of our arrivals)
       data_hora_carga: TIMESTAMP       # DT_CARGA_URNA_EFETIVADA, urna local clock
       data_hora_abertura: TIMESTAMP    # DT_ABERTURA, urna local clock
       data_hora_encerramento: TIMESTAMP # DT_ENCERRAMENTO, urna local clock
