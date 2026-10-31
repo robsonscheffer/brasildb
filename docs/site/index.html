@@ -36,6 +36,7 @@
     --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     --gx: max(20px, env(safe-area-inset-left));
+    --nav: 84px; /* the band at the bottom that holds the bar; the stages end above it */
     --topo: 64px;           /* the clock's measured bottom; tick() keeps it fresh */
     color-scheme: dark;
   }
@@ -62,8 +63,6 @@
   .acc { color: var(--accent); }
   em, .it { font-style: italic; }
 
-  .topo { position: fixed; z-index: 10; top: max(16px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); pointer-events: none; }
-  .topo::before { display: none; }
   .mockpill { position: fixed; z-index: 10; bottom: max(12px, env(safe-area-inset-bottom)); left: var(--gx); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid #4a3a1e; background: rgba(7,10,18,.85); border-radius: 999px; padding: 4px 10px; }
 
   /* The rail: eight ticks, the current fold lit and its name beside it, a fill that grows with the scroll. */
@@ -83,7 +82,7 @@
     .trilha a.on i { width: 100%; }
     .trilha a span { display: none; }
     .trilha .nome { display: block; grid-column: 1 / -1; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-align: right; margin-top: 2px; }
-    .topo { display: none; }
+    .relogio .rd { display: none; }
     .relogio { top: max(36px, calc(env(safe-area-inset-top) + 26px)); }
     .relogio.grande { top: max(54px, calc(env(safe-area-inset-top) + 44px)); }
   }
@@ -100,10 +99,20 @@
   .relogio.grande { top: max(36px, calc(env(safe-area-inset-top) + 24px)); }
   .relogio.grande .rt { font-family: var(--sans); font-size: clamp(52px, 11vw, 104px); font-weight: 800; letter-spacing: -0.045em; color: var(--fg); line-height: .92; }
   .relogio.grande .rs { font-family: var(--sans); font-size: clamp(15px, 3vw, 18px); margin-top: 8px; }
+  .relogio .rd { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  /* Fixed-width digits leave a wide gap before a 1; the big clock uses the font's own widths so it lines up with the votes. */
+  .relogio.grande .rt { font-variant-numeric: proportional-nums lining-nums; margin-left: -.04em; }
+  /* A digit that changes slides up into place; the colon breathes while the clock rests. */
+  .rt .d { display: inline-block; }
+  .rt .d.rola { animation: rola .28s cubic-bezier(.2,.8,.2,1); }
+  .rt .dp { display: inline-block; animation: respira 1.1s ease-in-out infinite alternate; }
+  @keyframes rola { from { transform: translateY(.35em); opacity: 0; } }
+  @keyframes respira { to { opacity: .3; } }
+  .calmo .rt .d.rola, .calmo .rt .dp { animation: none; }
 
   /* A scene is a tall section whose stage sticks while the reader scrolls through it. */
   .cena { position: relative; height: var(--len, 300vh); }
-  .palco { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; background: var(--bg); }
+  .palco { position: sticky; top: 0; height: calc(100vh - var(--nav)); height: calc(100svh - var(--nav)); overflow: hidden; display: grid; background: var(--bg); }
   .palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .flow { padding-top: 18vh; padding-bottom: 18vh; max-width: 760px; margin: 0 auto; }
   .flow > .k { display: block; margin-bottom: 16px; }
@@ -207,7 +216,6 @@
   .pq .pular { margin-top: 22px; color: var(--muted); }
   .pq-link { margin-top: 16px; color: var(--accent); }
   .pq .mais { margin-top: 10px; }
-  .pq .acoes { margin-top: 20px; }
   .comvoce { margin-top: 14px; font-size: 16px; line-height: 1.4; color: #cfccc3; }
   .comvoce:empty { display: none; }
   .comvoce .n { display: block; font-family: var(--serif); font-size: clamp(56px, 6vw, 84px); line-height: 1; color: var(--accent); }
@@ -220,7 +228,7 @@
   /* Phone: typing the town sits under the clock, above the keyboard; the hour and the answer
      are a sheet over the bar, so the map above shows the town and the hour. */
   @media (max-width: 640px) {
-    .pq { left: 10px; right: 10px; top: auto; bottom: calc(72px + env(safe-area-inset-bottom)); max-height: calc(100% - var(--topo, 64px) - 90px); justify-content: flex-start; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 20px; background: rgba(18,22,34,.96); }
+    .pq { left: 10px; right: 10px; top: auto; bottom: 10px; max-height: calc(100% - var(--topo, 64px) - 24px); justify-content: flex-start; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 20px; background: rgba(18,22,34,.96); }
     .pq[data-passo="1"] { top: calc(var(--topo, 64px) + 6px); bottom: auto; }
     .pq .k { display: none; }
     .pq-escolhas { margin-top: 0; gap: 6px; }
@@ -239,8 +247,6 @@
     .pq[data-passo="3"] .pq-3 { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; }
     .pq-3 > .comvoce, .pq-3 > .mais, .pq-3 > .eco { grid-column: 1 / -1; }
     .pq-link { margin-top: 12px; font-size: 14px; }
-    .pq .acoes { margin-top: 12px; grid-column: 2; grid-row: 2; }
-    .pq .btn { padding: 10px 18px; font-size: 15px; }
     .pq .mais { grid-row: 3; }
     .eco { font-size: 14px; padding: 10px 12px; grid-row: 4; }
   }
@@ -261,31 +267,48 @@
   .abre .esc { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
   .abre .esc i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,180,60,.12), var(--accent), var(--hot)); }
   .abre .seta { width: 1px; height: 32px; margin: 24px auto 0; background: linear-gradient(var(--accent), transparent); animation: cai 1.6s ease-in-out infinite; }
-  /* The step button (U8): the next note, or the next fold after the last one. The arrow keys do the same. */
-  .prox { position: absolute; z-index: 2; right: 150px; bottom: 28px; display: flex; gap: 10px; align-items: center; background: rgba(7,10,18,.7); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer; transition: border-color .15s, color .15s; }
-  .prox:hover { border-color: var(--accent); color: var(--accent); }
-  .prox kbd { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
-  @media (max-width: 640px) { .prox { right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); } .prox kbd { display: none; } }
-  /* The phone bar (W8 N1-N3): back, the fold's name and number, next; the name opens the list. */
-  .barra, .indice { display: none; }
+  /* The bar (U10), on every screen: Voltar, where the reader is (the fold, the step inside it and
+     a line that fills through the fold), Avançar. The name opens the list of folds. The arrow keys,
+     Page Up/Down and Space do the same as the buttons. */
+  .faixa { position: fixed; z-index: 11; left: 0; right: 0; bottom: 0; height: var(--nav); background: var(--bg); border-top: 1px solid var(--line); pointer-events: none; }
+  .calmo .faixa { display: none; }
+  .barra { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; position: fixed; z-index: 12; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(600px, calc(100% - 48px)); padding: 5px; background: var(--bg2); border: 1px solid rgba(255,180,60,.5); border-radius: 999px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .barra button { background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .barra .b-ant { height: 46px; padding: 0 18px; border: 1px solid rgba(236,232,220,.35); border-radius: 999px; font-size: 16px; }
+  .barra .b-ant:hover { border-color: var(--muted); }
+  .barra .b-ant:disabled { color: var(--line); border-color: transparent; cursor: default; }
+  .barra .b-prox { height: 46px; padding: 0 24px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: 16px; font-weight: 700; }
+  .barra .b-prox:hover { filter: brightness(1.08); }
+  .barra .b-prox:disabled { opacity: .35; cursor: default; }
+  .barra .b-prox.pulsa { animation: pulsa 1.6s ease-in-out infinite; }
+  @keyframes pulsa { 0% { box-shadow: 0 0 0 0 rgba(255,180,60,.75); transform: scale(1); } 50% { transform: scale(1.06); } 70% { box-shadow: 0 0 0 16px rgba(255,180,60,0); } 100% { box-shadow: 0 0 0 0 rgba(255,180,60,0); transform: scale(1); } }
+  .barra .b-meio { position: relative; height: 44px; min-width: 0; display: grid; align-content: center; justify-items: center; gap: 1px; padding: 0 6px 4px; line-height: 1.2; }
+  #barrafold { max-width: 100%; font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #barrapasso { font-family: var(--mono); font-size: 12px; color: var(--fg); }
+  #barrapasso:empty { display: none; }
+  #barrafio { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), var(--line) 0); }
+  .barra.dica #barrafold { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); white-space: normal; text-align: center; padding: 0 14px; font-size: 13px; }
+  .barra.dica #barrafio { display: none; }
+  .barra kbd { margin-left: 8px; font-family: var(--mono); font-size: 11px; font-weight: 400; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: .6; }
+  /* Key hints only where there is a keyboard: a fine pointer that can hover. */
+  @media (hover: none), (pointer: coarse) { .tecla { display: none; } }
+  .indice { display: none; position: fixed; z-index: 13; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav) + 8px); width: min(600px, calc(100% - 48px)); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .indice.aberto { display: block; }
+  .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
+  .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
+  footer { padding-bottom: 110px; }
   @media (max-width: 640px) {
-    .prox { display: none; }
-    .barra { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; position: fixed; z-index: 12; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); height: 52px; background: rgba(15,19,32,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 999px; }
-    .barra button { height: 52px; background: none; border: 0; color: var(--fg); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .barra .seta2 { font-size: 22px; line-height: 1; }
-    .barra .seta2:disabled { color: var(--line); }
-    .barra #barranome { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .barra #barranome small { color: var(--muted); font-size: 11px; margin-left: 6px; }
-    .barra.dica #barranome { color: var(--fg); text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 14px; }
-    .indice { position: fixed; z-index: 13; left: 12px; right: 12px; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 62px); background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 8px; margin: 0; list-style: none; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
-    .indice.aberto { display: block; }
-    .indice a { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 10px; color: var(--fg); text-decoration: none; font-size: 16px; }
-    .indice a span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-    .indice a.on { background: rgba(255,180,60,.1); color: var(--accent); }
+    :root { --nav: calc(68px + env(safe-area-inset-bottom)); }
+    .barra { left: 10px; right: 10px; width: auto; transform: none; bottom: max(8px, env(safe-area-inset-bottom)); padding: 4px; }
+    .barra .b-ant, .barra .b-prox { height: 48px; }
+    .barra .b-ant { width: 48px; padding: 0; font-size: 22px; }
+    .barra .b-ant .t { display: none; }
+    .barra .b-prox { padding: 0 16px; }
+    .indice { left: 10px; right: 10px; width: auto; transform: none; }
     .trilha .nome { display: none; }
     body:has(input:focus) .barra, body:has(input:focus) .indice { display: none; }
     .cartao { padding-bottom: calc(10vh + 64px); }
-    footer { padding-bottom: 96px; }
   }
   .carregando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 
@@ -379,7 +402,7 @@
   .calmo .palco.duplo canvas { grid-area: auto; height: 70vh; }
   .calmo .abre { order: -1; position: relative; inset: auto; grid-column: 1 / -1; background: none; padding: 12vh var(--gx) 4vh; opacity: 1 !important; pointer-events: auto !important; }
   .calmo .pq { order: -1; position: relative; inset: auto; grid-column: 1 / -1; max-height: none; margin: 0 var(--gx); padding: 0 0 6vh; border: 0; background: none; opacity: 1 !important; pointer-events: auto !important; }
-  .calmo .abre .seta, .calmo .prox, .calmo .rew, .calmo .hint { display: none; }
+  .calmo .abre .seta, .calmo .rew, .calmo .hint { display: none; }
   .calmo .passos { grid-area: auto; border: 0; padding: 24px var(--gx) 48px; }
   .calmo .passos ol { position: static; transform: none; }
   .calmo .passos li, .calmo .passos li.feita { opacity: 1; }
@@ -397,8 +420,7 @@
 <a class="pula" href="#onde-votou">Pular para "Onde você votou"</a>
 <a class="pula" href="#compartilhamento">Pular para o cartão</a>
 <div class="sr" id="falado" aria-live="polite" aria-atomic="true"></div>
-<div class="topo k">25 out 2026</div>
-<div class="relogio" id="relogio"><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
+<div class="relogio" id="relogio"><div class="rd">25 out 2026</div><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
 <div class="mockpill" id="mockpill" hidden title="">dados simulados</div>
 <div class="rew" id="rew" aria-live="polite"></div>
 
@@ -413,10 +435,11 @@
   <a href="#compartilhamento"><i></i><span>seu cartão</span></a>
   <div class="nome" id="trilhanome" aria-hidden="true"></div>
 </nav>
+<div class="faixa" aria-hidden="true"></div>
 <div class="barra dica" id="barra">
-  <button class="seta2" id="barraant" type="button" aria-label="Voltar">‹</button>
-  <button id="barranome" type="button" aria-expanded="false" aria-controls="indice">Role para começar, ou toque em ›</button>
-  <button class="seta2" id="barraprox" type="button" aria-label="Próximo">›</button>
+  <button class="b-ant" id="barraant" type="button" aria-label="Voltar"><span aria-hidden="true">‹</span><span class="t" aria-hidden="true"> Voltar</span><kbd class="tecla" aria-hidden="true">←</kbd></button>
+  <button class="b-meio" id="barranome" type="button" aria-expanded="false" aria-controls="indice"><span id="barrafold">Role a tela ou use Avançar<span class="tecla"> ou as setas do teclado</span></span><small id="barrapasso"></small><i id="barrafio"></i></button>
+  <button class="b-prox pulsa" id="barraprox" type="button">Avançar <span aria-hidden="true">›</span><kbd class="tecla" aria-hidden="true">→</kbd></button>
 </div>
 <ol class="indice" id="indice" aria-label="Partes da história"></ol>
 
@@ -441,7 +464,7 @@
     </div>
     <div class="enx" id="enx"></div>
     <canvas class="fio" id="c1" aria-hidden="true"></canvas>
-    <div class="passos" id="c1passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
+    <div class="passos" id="c1passos"></div>
     <div class="hint k" id="hint">role para baixo</div>
   </div>
 </section>
@@ -450,8 +473,8 @@
 <section class="cena" id="abertura" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c3" role="img" aria-label="Gráfico de barras: votos por minuto das 8h às 9h. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c3passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. <b>Role</b> para avançar o relógio, ou use as setas do teclado.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c3passos"></div>
+    <div class="abre" id="abre-abertura"><div><span class="k">02 · abertura</span><h2>Às 8h em ponto, o país inteiro acorda.</h2><p>A primeira hora, minuto a minuto. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -460,8 +483,8 @@
   <div class="palco duplo">
     <canvas id="c7" role="img" aria-label="Mapa do Brasil: cada cidade é um ponto, maior quanto mais eleitores e mais forte no minuto em que mais eleitores votaram ali. Os fatos do dia estão na lista a seguir."></canvas>
     <div class="carregando" id="c7load">carregando o mapa…</div>
-    <div class="passos" id="c7passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-mapa"><div><span class="k">03 · o dia no mapa</span><h2>O Brasil inteiro votando, minuto a minuto.</h2><p>Cada ponto no mapa é uma cidade. Ponto grande, cidade com muitos eleitores. Ponto forte, muitos eleitores votando naquele minuto. <b>Role</b> e conte onde e quando você votou.</p><div class="esc"><span>poucos eleitores</span><i></i><span>muitos</span></div><div class="seta"></div></div></div>
+    <div class="passos" id="c7passos"></div>
+    <div class="abre" id="abre-mapa"><div><span class="k">03 · o dia no mapa</span><h2>O Brasil inteiro votando, minuto a minuto.</h2><p>Cada ponto no mapa é uma cidade. Ponto grande, cidade com muitos eleitores. Ponto forte, muitos eleitores votando naquele minuto. Use <b>Avançar</b> e conte onde e quando você votou.</p><div class="esc"><span>poucos eleitores</span><i></i><span>muitos</span></div><div class="seta"></div></div></div>
     <div class="pq" id="onde-votou" data-passo="1" inert>
       <span class="k">seu dia</span>
       <div class="pq-escolhas">
@@ -488,7 +511,6 @@
           <small>Estão no título de eleitor ou no app e-Título.</small>
         </div>
         <div class="eco" id="eco" aria-live="polite"></div>
-        <div class="acoes"><button class="btn" id="ir" type="button">Seguir o dia</button></div>
       </div>
       <button class="pular" id="pular" type="button">Pular e ver o dia desde as 8h</button>
     </div>
@@ -499,8 +521,8 @@
 <section class="cena" id="fechamento" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c8" role="img" aria-label="Gráfico de área: votos por minuto das 16h ao último voto. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c8passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. <b>Role</b> para seguir até o fim.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c8passos"></div>
+    <div class="abre" id="abre-fechamento"><div><span class="k">04 · fechamento</span><h2>Às 17h os portões fecham. Quem está na fila ainda vota.</h2><p>Das 16h ao último voto, às <span data-ultimo>19h06</span>. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role até o fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -531,8 +553,8 @@
       </div>
     </div>
     <canvas class="fio" id="c10" aria-hidden="true"></canvas>
-    <div class="passos" id="c10passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. <b>Role</b> para acompanhar.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c10passos"></div>
+    <div class="abre" id="abre-encerramento"><div><span class="k">05 · encerramento</span><h2 id="abre-urna">A sua urna fecha, imprime e transmite.</h2><p>O caminho do resultado até Brasília. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role a tela.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -540,8 +562,8 @@
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
     <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções somadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
-    <div class="passos" id="c9passos"><button class="prox" type="button">próximo <kbd>↓</kbd></button></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. <b>Role</b> para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
+    <div class="passos" id="c9passos"></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -648,6 +670,7 @@ function scene(el, render, salto) { scenes.push({ el, render, salto }); }
 const ABRE = 0.06, apos = p => clamp((p - ABRE) / (1 - ABRE - 0.05)), antes = q => ABRE + q * (1 - ABRE - 0.05);
 function abrir(id, p) { const a = $(id); a.style.opacity = p < ABRE ? 1 : 0; a.style.pointerEvents = p < ABRE ? "auto" : "none"; }
 function pular(d) {
+  $("barraprox").classList.remove("pulsa");
   const vh = innerHeight, y = scrollY;
   for (const s of scenes) {
     if (s.el.hidden || !s.salto || CALMO) continue;
@@ -667,10 +690,10 @@ const ir = y => scrollTo({ top: Math.round(y), behavior: "smooth" });
 addEventListener("keydown", e => {
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
   const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  const d = ["ArrowDown", "ArrowRight", "PageDown"].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
+  if (e.key === " " && t?.closest?.("button, a")) return; // Space presses the focused control
+  const d = ["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
   if (!d) return; e.preventDefault(); pular(d);
 });
-for (const b of document.querySelectorAll(".prox")) b.addEventListener("click", () => pular(1));
 $("barraant").addEventListener("click", () => pular(-1));
 $("barraprox").addEventListener("click", () => pular(1));
 $("barranome").addEventListener("click", () => {
@@ -681,7 +704,34 @@ addEventListener("click", e => {
   if ($("indice").classList.contains("aberto") && !e.target.closest("#indice, #barranome")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); }
 });
 $("indice").addEventListener("click", e => { if (e.target.closest("a")) { $("indice").classList.remove("aberto"); $("barranome").setAttribute("aria-expanded", "false"); } });
-addEventListener("scroll", () => { if (scrollY > 40) $("barra").classList.remove("dica"); }, { passive: true });
+addEventListener("scroll", () => {
+  if (scrollY > 40) $("barra").classList.remove("dica");
+}, { passive: true });
+// The clock's numbers move: a changed digit slides in, and the vote count runs to its new value
+// instead of jumping. A line of a different shape (another label, "1 voto") is set at once.
+const relo = { hora: "", alvo: 0, ve: 0, molde: null, raf: 0 };
+function poeHora(txt) {
+  if (txt === relo.hora) return;
+  const velha = relo.hora; relo.hora = txt;
+  if (!/^\d\d:\d\d(:\d\d)?$/.test(txt)) { $("rt").textContent = txt; return; }
+  $("rt").innerHTML = [...txt].map((c, i) => c === ":" ? '<span class="dp">:</span>' : `<span class="d${velha.length === txt.length && velha[i] !== c ? " rola" : ""}">${c}</span>`).join("");
+}
+function poeVotos(html) {
+  const m = /<b>([\d.]+)<\/b>/.exec(html), molde = m && html.replace(m[0], "<b>#</b>");
+  if (CALMO || !m || molde !== relo.molde) {
+    cancelAnimationFrame(relo.raf); relo.raf = 0; relo.molde = molde;
+    if (m) relo.ve = relo.alvo = +m[1].replace(/\./g, "");
+    $("rs").innerHTML = html; return;
+  }
+  relo.alvo = +m[1].replace(/\./g, "");
+  if (!relo.raf && relo.alvo !== relo.ve) relo.raf = requestAnimationFrame(corre);
+}
+function corre() {
+  const d = relo.alvo - relo.ve;
+  relo.ve = Math.abs(d) < 2 ? relo.alvo : relo.ve + d * 0.16;
+  $("rs").innerHTML = relo.molde.replace("#", fmt(Math.round(relo.ve)));
+  relo.raf = relo.ve === relo.alvo ? 0 : requestAnimationFrame(corre);
+}
 function tick() {
   const vh = innerHeight; let clock = null, grande = false;
   for (const s of scenes) {
@@ -699,7 +749,7 @@ function tick() {
   rel.classList.toggle("on", !!clock);
   const was = rel.classList.contains("grande");
   rel.classList.toggle("grande", !!clock && grande && !clock.pequeno);
-  if (clock) { $("rt").textContent = clock.txt || hhmm(clock.t); $("rs").innerHTML = clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`; }
+  if (clock) { poeHora(clock.txt || hhmm(clock.t)); poeVotos(clock.sub ?? `<b>${fmt(votosAte(clock.t))}</b> votos`); }
   if (was !== rel.classList.contains("grande")) requestAnimationFrame(tick);
   rebobina(clock);
   trilha(vh);
@@ -717,6 +767,17 @@ function rebobina(clock) {
   }
   ultimoT = t;
 }
+// The step the reader is on inside the scene that fills the screen, as [n, of], or null.
+function passoAgora(vh) {
+  for (const s of scenes) {
+    if (s.el.hidden || !s.salto || CALMO) continue;
+    const r = s.el.getBoundingClientRect();
+    if (!(r.top <= 1 && r.bottom >= vh - 1)) continue;
+    const p = clamp(-r.top / Math.max(1, r.height - vh)), st = s.salto();
+    return [Math.max(1, st.filter(q => q <= p + 0.004).length), st.length];
+  }
+  return null;
+}
 // The rail: the fold under the middle of the screen is "on", the ones above it are done.
 const dobras = [...document.querySelectorAll("body > section")], ticks = [...$("trilha").querySelectorAll("a")];
 function trilha(vh) {
@@ -732,10 +793,17 @@ function trilha(vh) {
   });
   ticks.forEach((a, i) => { a.classList.toggle("on", i === on); a.classList.toggle("feita", on >= 0 && i < on); if (i === on) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
   $("trilhanome").textContent = on >= 0 ? ticks[on].querySelector("span").textContent : "";
-  // The phone bar names the fold and its place among the visible ones.
+  // The bar names the fold, the step inside it (or the fold's place, without steps) and fills its line.
   const vis = ticks.filter(a => !a.hidden), k = vis.indexOf(ticks[on]);
-  if (!$("barra").classList.contains("dica") && k >= 0) $("barranome").innerHTML = `${vis[k].querySelector("span").textContent}<small>${k + 1} de ${vis.length}</small>`;
+  if (scrollY > 40) $("barra").classList.remove("dica");
+  if (!$("barra").classList.contains("dica") && k >= 0) {
+    const ps = passoAgora(vh);
+    $("barrafold").textContent = vis[k].querySelector("span").textContent;
+    $("barrapasso").textContent = ps ? `passo ${ps[0]} de ${ps[1]}` : `parte ${k + 1} de ${vis.length}`;
+    $("barrafio").style.setProperty("--p", ticks[on].style.getPropertyValue("--p") || 0);
+  }
   $("barraant").disabled = scrollY < 2;
+  $("barraprox").disabled = scrollY + vh >= document.documentElement.scrollHeight - 2;
   const lista = vis.map((a, i) => `<li><a href="${a.getAttribute("href")}" class="${a === ticks[on] ? "on" : ""}">${a.querySelector("span").textContent}<span>${i + 1}</span></a></li>`).join("");
   if ($("indice").dataset.l !== lista) { $("indice").innerHTML = lista; $("indice").dataset.l = lista; }
 }
@@ -939,7 +1007,7 @@ const UFNOME = { RJ: "no Rio", SP: "em São Paulo", BA: "na Bahia", PE: "em Pern
     { t: 478.5, h: "antes das 8h", titulo: `Antes do primeiro eleitor, cada urna imprime a <a class="termo" href="como.html#zeresima">zerésima</a>.`, texto: "Zero votos, em papel." },
     { t: 480, h: "08:00 · Brasil", titulo: `${fmt(cur("abertura_tie").valor)} urnas acordam às 8h em ponto.` },
     { t: 483, h: "08:03 · Brasil", titulo: "O país já passou de um milhão de votos." },
-    { t: PICO, h: `${hhmm(PICO)} · Brasil`, titulo: "O minuto mais cheio do dia.", texto: `${fmt(nat[PICO - S])} votos em sessenta segundos.` },
+    { t: PICO, h: `${hhmm(PICO)} · Brasil`, titulo: "O minuto mais movimentado do dia.", texto: `${fmt(nat[PICO - S])} votos em sessenta segundos.` },
     { t: 540, h: "09:00 · Brasil", titulo: "Uma hora de votação.", texto: `${fmt(votosAte(539))} votos até as 9h.` },
   ];
   const ag = agenda(its, 478.5, 540, 10);
@@ -988,7 +1056,7 @@ const ready = (async () => {
   input.addEventListener("input", async () => {
     await ready;
     const q = norm(input.value.trim());
-    if (state.town) { state.town = null; $("ir").disabled = true; renderHoras(); }
+    if (state.town) { state.town = null; renderHoras(); }
     if (q.length < 2) { hits.innerHTML = ""; return; }
     const a = [], b = [], todos = names.concat(extNames);
     for (let i = 0; i < todos.length && a.length < 8; i++) { if (todos[i].startsWith(q)) a.push(i); else if (b.length < 8 && todos[i].includes(q)) b.push(i); }
@@ -1007,8 +1075,7 @@ const ready = (async () => {
     afterAnswer().then(() => $("hora").querySelector("button")?.focus({ preventScroll: true }));
   }
   for (const id of ["zona", "secao"]) $(id).addEventListener("change", () => { if (state.town) afterAnswer(); });
-  // "Seguir o dia" goes on from the reader's hour; "Pular" from 8h.
-  $("ir").addEventListener("click", () => irMapa(naHora()));
+  // After the answer, Avançar plays the day in order from 8h; "Pular" does the same without answering.
   $("pular").addEventListener("click", () => irMapa(null));
   $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; afterAnswer().then(() => input.focus({ preventScroll: true })); });
   $("trocar-hora").addEventListener("click", () => { state.hora = null; saveURL(); renderHoras(); tick(); $("hora").querySelector("button")?.focus({ preventScroll: true }); });
@@ -1076,7 +1143,6 @@ async function afterAnswer() {
 /* ---------- 5. The map ---------- */
 // The map holds the question from ABRE to PQ1, then plays the day from 8h.
 const PQ1 = 0.12, DIA = 0.86;
-let naHora = () => null;
 const irPergunta = suave => {
   const el = $("dia-no-mapa");
   if (CALMO) { $("onde-votou").scrollIntoView(); }
@@ -1120,8 +1186,6 @@ function irMapa(q) {
   }
   resizers.push(layout);
   near(el, build, "100% 0px");
-  // Where the button lands: the progress of the reader's hour step, or null without an hour.
-  naHora = () => { const { ag, lista } = planejar(), e = lista.find(x => x.voto), q = e && ag.pAt(e); return q == null ? null : PQ1 + q * (DIA - PQ1); };
 
   // What the map is showing, minute by minute. Facts come from curiosidades.json; counts from totals.
   const cur = id => curios.itens.find(i => i.id === id);
@@ -1139,7 +1203,7 @@ function irMapa(q) {
     const lugar = !tw ? { uf: "BR" } : fora() ? { uf: "ZZ", municipio: tw.nome, pais: tw.pais }
       : { uf: tw.uf, municipio: tw.nome, lat: towns?.lat[tw.i], lon: towns?.lon[tw.i] };
     return { t, h: `${banda}${local} · ${tw ? rot(tw) : "Brasil"}`, seu: !!tw, voto: true, titulo: `Você votou${tw ? " aqui" : ""}, ${h < 18 ? `entre ${h}h e ${h + 1}h` : "depois das 18h"}${local}.`,
-      texto: `${quem} Role para ver o resto do dia.`, lugar };
+      texto: `${quem} Avance para ver o resto do dia.`, lugar };
   }
   function planejar() {
     const key = (state.town?.id || "") + state.secao + (state.cz ? 1 : 0) + "h" + state.hora;
@@ -1147,7 +1211,7 @@ function irMapa(q) {
     const fato = i => ({ t: hm(i.hora), h: onde(i.lugar), titulo: i.titulo, texto: comTermos(i), lugar: i.lugar });
     const its = [
       { t: 480, h: "08:00 · Brasil", titulo: "O país inteiro começa de uma vez.", texto: `${fmt(cur("abertura_tie").valor)} urnas abrem às 8h, no mesmo minuto.`, lugar: { uf: "BR" } },
-      { t: PICO, h: "Brasil", titulo: "O minuto mais cheio do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
+      { t: PICO, h: "Brasil", titulo: "O minuto mais movimentado do dia.", texto: `${fmt(TOT.national[PICO - TOT.start])} votos entre ${hhmm(PICO)} e ${hhmm(PICO + 1)}.`, lugar: { uf: "BR" } },
       ...curios.itens.filter(i => (i.tela === 4 || i.tela === 5) && i.hora && i.id !== "cem_milhoes").map(fato),
       { t: quando(VOTOS / 2), h: `${hhmm(quando(VOTOS / 2))} · Brasil`, titulo: "Metade do Brasil já votou.", texto: `${fmt(VOTOS / 2)} votos.`, lugar: { uf: "BR" } },
       (() => { const c = cur("cem_milhoes"), l = c?.lugar || { uf: "BR" }, em = l.municipio ? ` na seção ${l.secao} de ${l.municipio}` : "", t = c?.hora ? hm(c.hora) : quando(1e8); return { t, h: `${hhmm(t)} · ${onde(l)}`, titulo: "100 milhões de votos.", texto: `O voto de número 100.000.000 entrou às ${hfala(hhmm(t))}${em}. Faltavam ${fmt(TOTAL - 1e8)}.`, lugar: l }; })(),
@@ -1161,16 +1225,16 @@ function irMapa(q) {
       const cz = state.cz, t = hm(cz.pico) - cz.fuso, fimB = hm(cz.ultimo_voto) - cz.fuso, lugar = { uf: "ZZ", municipio: tw.nome, pais: tw.pais };
       const sec = state.sec ? ` Na sua seção, ${state.sec.votos}.` : "";
       its.push(t >= 480 && t <= ULTM
-        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais cheio.`,
+        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais movimentado.`,
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}, hora local.${sec}`, lugar }
         : fimB < 480
         ? { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, a votação já tinha acabado.`,
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. A última, às ${hfala(cz.ultimo_voto)}, hora local.${sec}`, lugar }
         : { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, já eram ${hfala(hhmm(480 + cz.fuso))}.`,
-            texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais cheio foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
+            texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais movimentado foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
     } else if (tw && towns) {
       const cz = state.cz, i = tw.i;
-      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais cheio.`,
+      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais movimentado.`,
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
@@ -1285,7 +1349,7 @@ function passo() {
 $("hora").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   state.hora = +b.dataset.h; saveURL(); renderHoras(); drawCard(); tick();
-  $("ir").focus({ preventScroll: true });
+  $("barraprox").focus({ preventScroll: true });
 });
 async function comVoce(h) {
   const tw = state.town; let n = null, lugar;
@@ -1293,7 +1357,7 @@ async function comVoce(h) {
   // The hour in the whole country: how many voted and where it ranks in the day.
   const fim = x => x === 18 ? ULTM + 1 : (x + 1) * 60, naBanda = x => somaMin(TOT.national, x * 60, fim(x));
   const br = naBanda(h), rank = 1 + [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].filter(x => naBanda(x) > br).length, pct = Math.round(100 * br / VOTOS);
-  const dia = h >= 17 ? "Depois das 17h, só a fila." : rank === 1 ? "A hora mais cheia do dia." : rank <= 3 ? `A ${rank}ª hora mais cheia do dia.`
+  const dia = h >= 17 ? "Depois das 17h, só a fila." : rank === 1 ? "A hora mais movimentada do dia." : rank <= 3 ? `A ${rank}ª hora mais movimentada do dia.`
     : rank >= 9 ? `${pct}% dos votos do dia, uma das horas mais calmas.` : `${pct}% dos votos do dia.`;
   if (n == null) { n = br; lugar = "no Brasil"; }
   // Abroad the hour is local, so the Brazil comparison does not apply.
