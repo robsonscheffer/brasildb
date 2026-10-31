@@ -1,7 +1,7 @@
 """Build the simulated day's data files: each candidate's votes spread over the hours (Brasilia).
 
   uv run python scripts/simulacao_data.py cache    # lake -> $BRASILDB_DATA/simulacao.duckdb (full eventos scan, minutes)
-  uv run python scripts/simulacao_data.py dados    # docs/site/data/simulacao/{brasil.json, uf/<UF>.json, mun/<id>.json}
+  uv run python scripts/simulacao_data.py dados    # docs/site/data/simulacao/{brasil.json, mapa.json, uf/<UF>.json, mun/<id>.json}
 
 The count (apuracao) is an estimate of order, not of time: the TSE publishes no time at which
 each section entered its sum (cs.json `ha` is the time of the section's public files). Sections
@@ -260,6 +260,31 @@ def apuracao_series(con: duckdb.DuckDBPyConnection) -> dict:
     return {"pontos": PONTOS, "estimados": estimados, "brasil": brasil, "ufs": ufs}
 
 
+PONTOS_MAPA = 400  # finer than the curve, so the map fills city by city
+
+
+def mapa(con: duckdb.DuckDBPyConnection) -> dict:
+    """The count on the map: for each city (not abroad), the points of the Brasil count at which
+    its sections enter and the votes of 13 and 22 they bring, flat as [point, 13, 22, ...]. The
+    state count is the same order within the state, so `secoes` (sections entering per point, per
+    state) turns a Brasil point into the state's share."""
+    rows = con.execute(f"""
+        SELECT o.sigla_uf, o.id_municipio_tse,
+               CAST(floor((o.ordem_br - 1) * {PONTOS_MAPA} / o.n_br) AS INTEGER) AS p,
+               count(DISTINCT (o.zona, o.secao)) AS n,
+               coalesce(sum(v.votos) FILTER (WHERE v.numero_votavel = '13'), 0),
+               coalesce(sum(v.votos) FILTER (WHERE v.numero_votavel = '22'), 0)
+        FROM c_ordem o JOIN c_votacao v USING ({KEYS})
+        WHERE o.sigla_uf <> 'ZZ' GROUP BY ALL ORDER BY 2, 3""").fetchall()
+    cidades: dict[str, list] = {}
+    secoes: dict[str, list] = {}
+    for uf, mun, pt, n, a, b in rows:
+        cidades.setdefault(mun, []).extend([pt, int(a), int(b)])
+        secoes.setdefault(uf, [0] * PONTOS_MAPA)[pt] += n
+    return {"pontos": PONTOS_MAPA, "id": list(cidades), "c": list(cidades.values()),
+            "secoes": dict(sorted(secoes.items()))}
+
+
 def dados(con: duckdb.DuckDBPyConnection) -> None:
     horas = [h for (h,) in con.execute("SELECT DISTINCT hora FROM c_sim ORDER BY 1").fetchall()]
     base = {"mock": False, "simulacao": True, "hora": "Brasília", "horas": horas,
@@ -271,6 +296,7 @@ def dados(con: duckdb.DuckDBPyConnection) -> None:
     ufs = {k[0]: _series(v, horas) for k, v in _grouped(con, "sigla_uf").items()}
     dump(OUT / "brasil.json", {**base, "nomes": NOMES, "brasil": brasil, "ufs": ufs,
                                "apuracao": apuracao_series(con)})
+    dump(OUT / "mapa.json", mapa(con))
     for uf in ufs:
         cidades = {k[0]: _series(v, horas)
                    for k, v in _grouped(con, "id_municipio_tse", f"sigla_uf = '{uf}'").items()}
