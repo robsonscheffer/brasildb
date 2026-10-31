@@ -585,9 +585,9 @@
 <!-- 8. The night -->
 <section class="cena" id="transmissao" style="--len:320vh" data-grande>
   <div class="palco duplo">
-    <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções somadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
+    <canvas id="c9" role="img" aria-label="Gráfico de barras: a apuração por estado, seções publicadas pelo TSE. Os dados estão na tabela a seguir."></canvas>
     <div class="passos" id="c9passos"></div>
-    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção, e os 27 estados se completam ao longo da noite. A hora de cada seção é a da sua <a class="termo" href="como.html#chegada">primeira soma</a>. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
+    <div class="abre" id="abre-transmissao"><div><span class="k">06 · apuração</span><h2 id="abre-noite">A apuração: cada seção, uma por uma.</h2><p>O TSE soma o boletim de cada seção e publica os arquivos dela no site de resultados. A hora de cada seção aqui é a da <a class="termo" href="como.html#chegada">publicação desses arquivos</a>, não a da soma. Use <b>Avançar</b><span class="tecla">, as setas do teclado</span> ou role para ver a soma chegar ao fim.</p><div class="seta"></div></div></div>
   </div>
 </section>
 
@@ -1129,7 +1129,7 @@ function suaUrna(s) {
   const linhas = [
     s.votos != null && s.aptos ? `${fmt(s.votos)} de ${fmt(s.aptos)} eleitores votaram nela` : "",
     s.encerramento ? `Fechou às ${hfala(s.encerramento)}${fora() ? ", hora local" : ""}` : "",
-    s.chegada ? `Entrou na contagem do TSE às ${hfala(s.chegada)}${fora() ? ", hora de Brasília" : ""}` : "",
+    s.chegada ? `Arquivos publicados pelo TSE às ${hfala(s.chegada)}${fora() ? ", hora de Brasília" : ""}` : "",
   ].filter(Boolean);
   return `<b>Sua urna · zona ${state.zona} · seção ${state.secao}</b>${linhas.join("<br>")}`;
 }
@@ -1488,7 +1488,7 @@ renderHoras();
       { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `${state.sec ? `Os ${state.sec.votos} votos da seção` : "Os votos do dia"} já estão somados na urna, cada um na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
       { h: "transmissão", titulo: "O resultado é transmitido ao TSE.", texto: "O mesmo boletim, agora a caminho de Brasília." },
-      { h: `${bsb(mi.chega)} · Brasília`, titulo: `${hfala(bsb(mi.chega))}. O resultado entra na soma do TSE.`, texto: `${durTxt} depois do encerramento.` },
+      { h: `${bsb(mi.chega)} · Brasília`, titulo: `${hfala(bsb(mi.chega))}. O TSE publica os arquivos da seção.`, texto: `${durTxt} depois do encerramento.` },
     ];
     T = { key, ls, n, imp, last, b, its }; return T;
   }
@@ -1525,7 +1525,7 @@ renderHoras();
       ligar(c, ctx, anc, host, dpr, via);
     }
     const t = chegou ? b : viaja > 0 ? lerp(last, b, viaja) : seg(ls[Math.max(0, k - 1)].hora);
-    return { txt: hms(t), sub: (chegou ? "somado no TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : `${rot(state.town)}`) + (fora() ? " · hora local" : "") };
+    return { txt: hms(t), sub: (chegou ? "publicado pelo TSE" : viaja > 0 ? "a caminho de Brasília" : state.sec ? `zona ${state.zona} · seção ${state.secao}` : `${rot(state.town)}`) + (fora() ? " · hora local" : "") };
   }, () => [0, ABRE, ABRE + 0.44 * 0.55, 0.62, 0.9]);
 }
 
@@ -1541,14 +1541,14 @@ renderHoras();
       .sort((a, b) => a.fim - b.fim);
     const at = i => hhmm(A + i);
     const passos = [
-      { t: A, h: `${CH.inicio} · Brasília`, titulo: `A primeira seção entra na <a class="termo" href="como.html#totalizacao">soma</a>.`, texto: `Faltam ${fmt(CH.total - 1)}. Cada seção entra com o resultado do seu <a class="termo" href="como.html#boletim">boletim de urna</a>, uma por uma.` },
-      { t: A + nac.findIndex(x => x >= CH.total / 2), h: `${at(nac.findIndex(x => x >= CH.total / 2))} · Brasil`, titulo: "Metade das seções já entrou na soma.", texto: "" },
-      { t: A + ufs[0].fim, h: ufs[0].uf, uf: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[0].fim))}.` },
-      { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, uf: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[ufs.length - 1].fim))}.` },
-      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções somadas.`, texto: `A última entrou às ${hfala(CH.fim)}.` },
+      { t: A, h: `${CH.inicio} · Brasília`, titulo: `O TSE publica a primeira seção.`, texto: `Faltam ${fmt(CH.total - 1)}. Cada seção é publicada com o resultado do seu <a class="termo" href="como.html#boletim">boletim de urna</a>, uma por uma.` },
+      { t: A + nac.findIndex(x => x >= CH.total / 2), h: `${at(nac.findIndex(x => x >= CH.total / 2))} · Brasil`, titulo: "Metade das seções já foi publicada.", texto: "" },
+      { t: A + ufs[0].fim, h: ufs[0].uf, uf: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as seções publicadas às ${hfala(at(ufs[0].fim))}.` },
+      { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, uf: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último estado completo.`, texto: `Todas as seções publicadas às ${hfala(at(ufs[ufs.length - 1].fim))}.` },
+      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções publicadas.`, texto: `A última às ${hfala(CH.fim)}.` },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
-    tabela(el, "Apuração por estado: seções somadas", ["Estado", "Todas somadas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
+    tabela(el, "Apuração por estado: seções publicadas", ["Estado", "Todas publicadas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
   }
   scene(el, p => {
     if (!CH) { loadChegada().then(tick); return null; }
@@ -1556,7 +1556,7 @@ renderHoras();
     const mi = minha(), key = mi ? mi.chega + state.town.uf : "";
     if (R.key !== key) {
       const tc = mi ? hm(bsb(mi.chega)) : null, cabe = tc != null && tc >= R.A && tc <= R.A + R.n - 1;
-      const extra = cabe ? [{ t: tc, seu: true, uf: state.town.uf, h: `${hhmm(tc)} · ${fora() ? rot(state.town) : state.town.uf}`, titulo: mi.exata ? "A sua seção entra na soma." : `As seções de ${rot(state.town)} entram na soma.`, texto: mi.exata ? "" : `Na mediana da cidade, às ${hfala(hhmm(tc))}.` }] : [];
+      const extra = cabe ? [{ t: tc, seu: true, uf: state.town.uf, h: `${hhmm(tc)} · ${fora() ? rot(state.town) : state.town.uf}`, titulo: mi.exata ? "A sua seção é publicada." : `As seções de ${rot(state.town)} são publicadas.`, texto: mi.exata ? "" : `Na mediana da cidade, às ${hfala(hhmm(tc))}.` }] : [];
       R.lista = [...R.passos, ...extra].sort((a, b) => a.t - b.t);
       R.ag = agenda(R.lista, R.A, R.A + R.n - 1, 50); R.key = key;
     }
@@ -1571,7 +1571,7 @@ renderHoras();
     const fs = clamp(rh * 0.55, 12 * dpr, 16 * dpr); // labels grow with the rows, so the state and its time can be read
     const x0 = 0.06 * W + fs * 2.6, x1 = 0.94 * W - fs * 4, ty = topo(dpr) + 16 * dpr;
     const y0 = y0t, y1 = y0 + rh * R.ufs.length;
-    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Apuração por estado: seções somadas", 0.06 * W, ty);
+    ctx.fillStyle = "#ece8dc"; ctx.font = `600 ${15 * dpr}px "Inter Tight"`; ctx.fillText("Apuração por estado: seções publicadas", 0.06 * W, ty);
     const meu = state.town?.uf, cabe = rh >= 13 * dpr; // on a short screen only the named rows get a label
     R.ufs.forEach((u, j) => {
       const y = y0 + j * rh + rh / 2, f = u.cum[k] / u.tot, eu = u.uf === meu;
@@ -1590,7 +1590,7 @@ renderHoras();
       }
     });
     ligar(c, ctx, anc, host, dpr);
-    return { t, sub: `<b>${fmt(R.nac[k])}</b> de ${fmt(CH.total)} seções somadas` };
+    return { t, sub: `<b>${fmt(R.nac[k])}</b> de ${fmt(CH.total)} seções publicadas` };
   }, () => R?.ag ? [0, ...R.ag.paradas(antes)] : [0]);
 }
 
