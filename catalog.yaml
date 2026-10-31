@@ -79,6 +79,33 @@ br_tse_eleicoes:
       secao_instalada: BOOLEAN     # ST_SECAO_INSTALADA Sim/Não
       modelo_urna: VARCHAR         # DS_MODELO_URNA
 
+  boletim_urna_secao:
+    source: CKAN resultados-<ano>-boletim-de-urna, bweb_<turno>t_<UF>_<stamp>.csv (latin-1, ";"),
+      each zip checked against its .sha512
+    grain: one row per section per round (the file repeats a section's times on every vote row)
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao]
+    columns:
+      ano: INTEGER                     # ANO_ELEICAO
+      turno: INTEGER                   # NR_TURNO
+      sigla_uf: VARCHAR                # SG_UF; ZZ is abroad
+      id_municipio_tse: VARCHAR        # CD_MUNICIPIO, zero-pad to 5
+      zona: VARCHAR                    # NR_ZONA, zero-pad to 4
+      secao: VARCHAR                   # NR_SECAO, zero-pad to 4
+      id_local_votacao: VARCHAR        # NR_LOCAL_VOTACAO
+      secoes_agregadas: VARCHAR        # DS_SECOES_AGREGADAS, as in the file
+      tipo_urna: VARCHAR               # DS_TIPO_URNA, e.g. "Apurada"
+      id_urna: VARCHAR                 # NR_URNA_EFETIVADA
+      data_hora_recebimento: TIMESTAMP # DT_BU_RECEBIDO: the TSE received the bulletin; Brasília
+                                       # time. The count time: round 2 of 2026, sections received
+                                       # by 1 min before each snapshot of the TSE totalization
+                                       # panel equal its city count in 90% of snapshots
+      data_hora_carga: TIMESTAMP       # DT_CARGA_URNA_EFETIVADA, urna local clock
+      data_hora_abertura: TIMESTAMP    # DT_ABERTURA, urna local clock
+      data_hora_encerramento: TIMESTAMP # DT_ENCERRAMENTO, urna local clock
+      data_hora_emissao: TIMESTAMP     # DT_EMISSAO_BU, urna local clock
+      data_hora_geracao: TIMESTAMP     # DT_GERACAO + HH_GERACAO: when the TSE built the file
+
   totalizacao_secao:
     source: aux.json per section (the index of its files), results site
     grain: one row per section x hash; a section with no hash (aux.json 404 or empty) has one
@@ -97,10 +124,11 @@ br_tse_eleicoes:
       data_hora_geracao: TIMESTAMP   # top-level "dg" + "hg": when aux.json was generated
       arquivo_hash: VARCHAR          # hashes[].hash, the folder of the section's files
       situacao: VARCHAR              # hashes[].st, e.g. "Totalizado"
-      data_hora: TIMESTAMP           # hashes[].dr + hr, Brasília time. Matched the official
-                                     # count time in a 1% sample of round 2 of 2026, checked
-                                     # against the TSE totalization panel; the TSE does not
-                                     # document the field.
+      data_hora: TIMESTAMP           # hashes[].dr + hr, Brasília time: the latest receipt of
+                                     # the hash. Equals boletim_urna_secao.data_hora_recebimento,
+                                     # except for sections received again later (situacao
+                                     # "Recebido", days after the vote); for the count time
+                                     # use boletim_urna_secao.
                                      # cs.json "ha" is a different time: when files were rewritten
       coletado_em: TIMESTAMP
 
