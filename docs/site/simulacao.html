@@ -118,12 +118,12 @@
 
   <div class="placar" aria-live="polite">
     <div class="hora" id="hora">08h<small id="horadia">hora de Brasília</small></div>
-    <div class="cand"><div class="n">nº 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
-    <div class="cand b"><div class="n">nº 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
+    <div class="cand"><div class="n" id="na">nº 13</div><div class="p" id="pa">0,0%</div><div class="v" id="va">0 votos</div></div>
+    <div class="cand b"><div class="n" id="nb">nº 22</div><div class="p" id="pb">0,0%</div><div class="v" id="vb">0 votos</div></div>
   </div>
 
   <div class="grafico">
-    <svg id="svg" viewBox="0 0 1000 440" role="img" aria-label="Votos válidos de cada número, hora a hora, simulados"></svg>
+    <svg id="svg" viewBox="0 0 1000 440" role="img" aria-label="Votos válidos de cada candidato, hora a hora, simulados"></svg>
   </div>
   <p class="antes" id="antes"></p>
   <div class="ctrl">
@@ -135,7 +135,7 @@
 
   <section class="metodo">
     <h2>Como simulamos</h2>
-    <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada número recebeu na seção. Nenhum arquivo liga os dois.</p>
+    <p>O voto é secreto por desenho: o registro da urna guarda a hora de cada voto, e o boletim de urna guarda quantos votos cada candidato recebeu na seção. Nenhum arquivo liga os dois.</p>
     <p>Para cada seção, pegamos o resultado oficial do TSE e o distribuímos pelas horas na mesma proporção dos votos registrados na urna. Dentro de uma seção, toda hora vota igual: esse é o pressuposto. Zona, cidade, estado e Brasil são a soma das suas seções. A divisão muda ao longo do dia só porque lugares que votam diferente votam em horas diferentes.</p>
     <p>Por isso o fim do dia é fato: em toda escala, a simulação termina no resultado oficial. Quem liderava às 10h é simulação, não registro. Uma seção sem registro próprio usa as horas do seu estado. Percentuais sobre votos válidos (sem brancos e nulos). Horas em horário de Brasília; o exterior começa a votar na véspera.</p>
     <p>Fontes: votação por seção e registros das urnas, TSE (dados abertos). <a href="como.html">Como contamos</a>.</p>
@@ -153,6 +153,7 @@
   const cache = {};
   const get = p => cache[p] || (cache[p] = fetch(D + p).then(r => { if (!r.ok) throw new Error(p); return r.json(); }));
 
+  let NOMES = {"13": "13", "22": "22"};
   let horas = [], towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
 
   // A section's curve: its official result spread over its own hours (flat shares).
@@ -179,7 +180,8 @@
 
   async function carregar() {
     const br = await get("brasil.json");
-    horas = br.horas;
+    horas = br.horas; NOMES = br.nomes || NOMES;
+    $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
     let s;
     if (!estado.uf) s = deDict(br.brasil);
     else if (!estado.mun) s = deDict(br.ufs[estado.uf]);
@@ -303,14 +305,14 @@
   function fimTexto(va, vb) {
     const onde = nomeEscala();
     if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
-    const ven = va > vb ? "13" : "22", pv = Math.max(va, vb) / (va + vb);
+    const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb);
     let virou = "";
     if (!estado.secao) {
-      const lid = g.sa.map(p => p > .5 ? "13" : p < .5 ? "22" : "");
+      const lid = g.sa.map(p => p > .5 ? "a" : p < .5 ? "b" : "");
       const trocas = lid.filter((l, k) => k && l && lid[k - 1] && l !== lid[k - 1]).length;
       virou = trocas ? ` Na simulação, a liderança trocou de lado ${trocas === 1 ? "uma vez" : trocas + " vezes"} durante o dia.` : " Na simulação, liderou o dia inteiro.";
     }
-    return `O ${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${virou}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
+    return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${virou}<span class="of">O fim do dia é o resultado oficial do TSE; as horas antes dele são simulação.</span>`;
   }
 
   function tocar() {

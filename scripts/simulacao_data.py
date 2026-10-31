@@ -58,6 +58,11 @@ def build_cache(only: list[str] | None = None) -> None:
             SELECT {KEYS}, numero_votavel, votos
             FROM br_tse_eleicoes.votacao_secao
             WHERE ano = {ANO} AND turno = {TURNO} AND cargo = '{CARGO}' AND votos > 0""",
+        "nomes": f"""
+            SELECT numero_votavel, any_value(nome_votavel) AS nome_votavel
+            FROM br_tse_eleicoes.votacao_secao
+            WHERE ano = {ANO} AND turno = {TURNO} AND cargo = '{CARGO}'
+            GROUP BY ALL""",
         "principal": f"""
             SELECT {KEYS}, any_value(secao_principal) AS secao_principal
             FROM br_tse_urna_logs.secoes_coleta
@@ -172,6 +177,14 @@ def _grouped(con, cols: str, where: str = "TRUE") -> dict[tuple, list]:
     return out
 
 
+MINUSCULAS = {"da", "das", "de", "do", "dos", "e"}
+
+
+def nome(s: str) -> str:
+    """TSE upper-case name in title case: LUIZ INÁCIO LULA DA SILVA -> Luiz Inácio Lula da Silva."""
+    return " ".join(w.lower() if w.lower() in MINUSCULAS else w.capitalize() for w in s.split())
+
+
 def dump(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -179,12 +192,14 @@ def dump(path: Path, obj) -> None:
 
 def dados(con: duckdb.DuckDBPyConnection) -> None:
     horas = [h for (h,) in con.execute("SELECT DISTINCT hora FROM c_sim ORDER BY 1").fetchall()]
+    nomes = dict(con.execute("SELECT * FROM c_nomes").fetchall())
     base = {"mock": False, "simulacao": True, "hora": "Brasília", "horas": horas,
             "votaveis": VOTAVEIS}
+    nomes_out = {n: nome(nomes[n]) for n in VOTAVEIS[:2]}
     brasil = _series(con.execute("SELECT hora, numero_votavel, sum(votos) FROM c_sim GROUP BY ALL")
                      .fetchall(), horas)
     ufs = {k[0]: _series(v, horas) for k, v in _grouped(con, "sigla_uf").items()}
-    dump(OUT / "brasil.json", {**base, "brasil": brasil, "ufs": ufs})
+    dump(OUT / "brasil.json", {**base, "nomes": nomes_out, "brasil": brasil, "ufs": ufs})
     for uf in ufs:
         cidades = {k[0]: _series(v, horas)
                    for k, v in _grouped(con, "id_municipio_tse", f"sigla_uf = '{uf}'").items()}
@@ -224,7 +239,7 @@ def dados(con: duckdb.DuckDBPyConnection) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("step", choices=["cache", "dados"])
-    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (votos_hora votacao principal)")
+    ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (votos_hora votacao nomes principal)")
     a = ap.parse_args()
     if a.step == "cache":
         build_cache(a.only)
