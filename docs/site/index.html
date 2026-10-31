@@ -1249,7 +1249,7 @@ function irMapa(q) {
       const cz = state.cz, t = hm(cz.pico) - cz.fuso, fimB = hm(cz.ultimo_voto) - cz.fuso, lugar = { uf: "ZZ", municipio: tw.nome, pais: tw.pais };
       const sec = state.sec ? ` Na sua seção, ${state.sec.votos}.` : "";
       its.push(t >= 480 && t <= ULTM
-        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o seu minuto mais movimentado.`,
+        ? { t, h: `${hhmm(t)} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(cz.pico)} na hora local: o minuto mais movimentado da cidade.`,
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}, hora local.${sec}`, lugar }
         : fimB < 480
         ? { t: 480, h: `08:00 · ${rot(tw)}`, seu: true, titulo: `Em ${tw.nome}, a votação já tinha acabado.`,
@@ -1258,7 +1258,7 @@ function irMapa(q) {
             texto: `${fmt(cz.votos)} pessoas votaram na cidade. O minuto mais movimentado foi às ${hfala(cz.pico)}, hora local; a última, às ${hfala(cz.ultimo_voto)}.${sec}`, lugar });
     } else if (tw && towns) {
       const cz = state.cz, i = tw.i;
-      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o seu minuto mais movimentado.`,
+      its.push({ t: towns.pico_min[i], h: `${hhmm(towns.pico_min[i])} · ${rot(tw)}`, seu: true, titulo: `${tw.nome}, ${hfala(hhmm(towns.pico_min[i]))}: o minuto mais movimentado da cidade.`,
         texto: cz ? `${fmt(cz.votos)} pessoas votaram na cidade. Metade já tinha votado às ${hfala(cz.metade)}.${state.sec ? ` Na sua seção, ${state.sec.votos}.` : ""}` : "",
         lugar: { uf: tw.uf, municipio: tw.nome, lat: towns.lat[i], lon: towns.lon[i] } });
     }
