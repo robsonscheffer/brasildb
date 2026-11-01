@@ -62,7 +62,7 @@
 <span class="k">O Brasil votando · método</span>
 <h1>Como funciona e como fizemos</h1>
 <p class="lead">O que cada termo do site quer dizer, de onde vem cada número e onde os números não batem.</p>
-<aside class="aviso" aria-label="Antes de ler"><b>Antes de ler.</b> Os números oficiais da eleição são os do TSE. Este site é independente e usa os dados que o TSE publica: os logs das urnas e o comparecimento por seção. Onde nossas contas diferem das do TSE, a diferença vem de logs que faltam nos arquivos publicados ou de como lemos cada linha, e <a href="#diferencas">cada caso está explicado abaixo</a>. O site não mostra votos por candidato e não questiona o resultado. Se achar um erro nosso, <a href="https://github.com/robsonscheffer/brasildb/issues">abra uma issue</a>.</aside>
+<aside class="aviso" aria-label="Antes de ler"><b>Antes de ler.</b> Os números oficiais da eleição são os do TSE. Este site é independente e usa os dados que o TSE publica: os logs das urnas, o comparecimento e a votação por seção e os boletins de urna. Onde nossas contas diferem das do TSE, a diferença vem de logs que faltam nos arquivos publicados ou de como lemos cada linha, e <a href="#diferencas">cada caso está explicado abaixo</a>. Os votos por candidato, em <a href="apuracao.html">A apuração</a>, são o resultado oficial do TSE, seção por seção; o site só mostra a ordem em que entraram na soma e não questiona o resultado. Se achar um erro nosso, <a href="https://github.com/robsonscheffer/brasildb/issues">abra uma issue</a>.</aside>
 <nav class="indice" aria-label="Nesta página">
   <a href="#dia">O dia de uma urna</a> <a href="#fontes">Fontes</a> <a href="#metodo">Método</a> <a href="#diferencas">Onde não bate</a> <a href="#chegada">A apuração</a>
 </nav>
@@ -99,7 +99,7 @@
 <p>A votação termina às 17h de Brasília. Quem já está na fila vota. Depois do último eleitor, o mesário encerra a urna, que imprime o boletim e grava o resultado.</p>
 
 <h3 id="boletim">Boletim de urna</h3>
-<p>O boletim de urna (BU) é o resultado da seção, impresso em várias vias e gravado numa mídia. Uma via fica na porta da seção. A mídia leva o resultado para ser transmitido ao TSE. Este site não mostra resultados de candidatos.</p>
+<p>O boletim de urna (BU) é o resultado da seção, impresso em várias vias e gravado numa mídia. Uma via fica na porta da seção. A mídia leva o resultado para ser transmitido ao TSE. <a href="apuracao.html">A apuração</a> soma o resultado de cada seção na hora em que o TSE recebeu o seu boletim.</p>
 
 <h3 id="totalizacao">Totalização</h3>
 <p>O TSE soma os boletins de todas as seções. Os dados abertos do TSE dão a hora em que ele recebeu o boletim de cada seção. Essa é a curva do fim da noite; como conferimos essa hora está em <a href="#chegada">A apuração</a>.</p>
@@ -169,7 +169,7 @@
 <p>Achou um número errado? Abra uma issue no <a href="https://github.com/robsonscheffer/brasildb/issues">repositório</a>, com o link da página.</p>
 
 <h3 id="fora">O que o site não mostra</h3>
-<p>O site não mostra em quem as pessoas votaram, nem resultados por candidato. Ele mostra quando o Brasil votou.</p>
+<p>O site não mostra em quem cada pessoa votou: o voto é secreto, e nenhum dado do TSE liga um eleitor ao seu voto. Os votos por candidato aparecem só somados por seção, em <a href="apuracao.html">A apuração</a>, como o TSE os publica.</p>
 
 <p class="volta"><a href="./">Voltar para O Brasil votando</a></p>
 </main>
