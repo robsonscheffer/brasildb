@@ -59,21 +59,26 @@
     background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a9ca6' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 13px center / 10px 6px; border: 1px solid var(--line); border-radius: 999px; }
   .caminho select:hover { border-color: var(--muted); }
   .caminho select:has(option[value=""]:checked) { color: var(--muted); }
-  .caminho select.on { color: var(--bg); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23070a12' stroke-width='1.6'/%3E%3C/svg%3E"); border-color: var(--accent); }
+  .caminho select.on, .caminho select.on:has(option[value=""]:checked) { color: var(--bg); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23070a12' stroke-width='1.6'/%3E%3C/svg%3E"); border-color: var(--accent); }
   .caminho select option { color: var(--fg); background: var(--bg2); }
   .acao .volta, .acao .escolha { font: 500 14px/36px var(--sans); color: var(--accent); background: none; border: 0; padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-  .suasec { margin: 0 0 8px; font: 500 15px var(--sans); color: var(--accent); }
 
   /* The readout: three cells built alike (label, number, detail). */
-  .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
+  .escopo { margin: 0 0 12px; font: 600 17px var(--sans); color: var(--fg); }
+  .escopo span { color: var(--muted); font-weight: 400; }
+  .placar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin: 0; }
+  .placar.espera .p, .placar.espera .v { opacity: .3; }
+  .compara { margin: 10px 0 0; font: 14px/1.5 var(--mono); color: var(--muted); }
+  .compara .ca { color: var(--a); } .compara .cb { color: var(--b); }
+  .vazio { height: 36px; padding: 0 14px; font: 500 14px var(--sans); color: var(--muted); background: transparent; border: 1px dashed #4a4f63; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .vazio.prox { color: var(--accent); border-color: var(--accent); }
+  .vazio:hover { color: var(--fg); border-color: var(--muted); }
   /* Each cell spans the scoreboard's three rows (label, number, line), so the rows align across cells. */
   .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 2px; align-items: end; }
   .cel .n { align-self: start; }
   .cel.b { border-color: var(--b); }
-  .cel.tempo { border-color: var(--accent); }
   .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   .cel .p { font-family: var(--serif); font-size: clamp(40px, 5.6vw, 64px); line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .cel.tempo .p { font-family: var(--mono); font-size: clamp(30px, 4.2vw, 48px); line-height: 1.05; }
   .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .grafico { position: relative; margin: 10px 0 0; }
@@ -81,6 +86,23 @@
   .mapa { margin: 14px 0 0; }
   .mapa canvas { display: block; width: 100%; height: clamp(320px, 58vw, 560px); }
   .mapa { position: relative; }
+  /* Wide screens with a map (Brasil, estado): the map on the left for the whole panel height;
+     the scale, scoreboard, controls and curve stacked on the right. */
+  @media (min-width: 1100px) {
+    main:has(#mapawrap:not([hidden])) { max-width: 1440px; }
+    .painel:has(#mapawrap:not([hidden])) { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 40px;
+      grid-template-areas: "f f" "m e" "m p" "m c" "m g" "m ." "a a"; grid-template-rows: auto auto auto auto auto 1fr auto; }
+    .painel:has(#mapawrap:not([hidden])) .duas { display: contents; }
+    .painel:has(#mapawrap:not([hidden])) .filtros { grid-area: f; }
+    .painel:has(#mapawrap:not([hidden])) .escopo { grid-area: e; }
+    .painel:has(#mapawrap:not([hidden])) .placar { grid-area: p; }
+    .painel:has(#mapawrap:not([hidden])) .ctrl { grid-area: c; }
+    .painel:has(#mapawrap:not([hidden])) #mapawrap { grid-area: m; margin: 0; }
+    .painel:has(#mapawrap:not([hidden])) .mapa canvas { height: 540px; }
+    .painel:has(#mapawrap:not([hidden])) .grafico { grid-area: g; margin: 8px 0 0; }
+    .painel:has(#mapawrap:not([hidden])) .antes { grid-area: a; }
+    .painel:has(#mapawrap:not([hidden])) .cel .p { font-size: 52px; }
+  }
   .mapcont { position: absolute; top: 4px; left: 0; font: 12px var(--mono); color: var(--muted); pointer-events: none; }
   .mapcont b { color: var(--fg); font-weight: 500; }
   #mapa { cursor: crosshair; touch-action: manipulation; }
@@ -108,10 +130,11 @@
   .rot { font: 500 13px var(--mono); }
 
   .antes { margin: 4px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
-  .ctrl { display: flex; gap: 14px; align-items: center; margin: 12px 0 0; padding: 16px 0 0; border-top: 1px solid var(--line); }
+  .ctrl { display: flex; gap: 14px; align-items: center; margin: 16px 0 4px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .prog { font: 500 15px var(--mono); color: var(--fg); white-space: nowrap; }
+  .prog small { color: var(--muted); font-size: 13px; }
   .ctrl #play { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; min-width: 168px; }
   .ctrl input[type=range] { flex: 1; accent-color: var(--accent); }
-  .dica { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
 
   .fim { margin: 28px 0 0; max-width: 900px; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
   .fim .of { display: block; font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 8px; }
@@ -130,13 +153,13 @@
     .filtros { flex-wrap: wrap; }
     .filtros .caminho { flex-basis: 100%; }
     .filtros .sec { padding: 0 12px; font-size: 13px; }
-    .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
-    .cel.tempo { grid-column: 1 / -1; grid-row: auto; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-    .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
+    .placar { gap: 16px 18px; }
+    .caminho { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .caminho .sep { display: none; }
+    .caminho select, .caminho .vazio { height: 44px; width: 100%; max-width: none; field-sizing: fixed; text-align: left; }
     .ctrl { flex-wrap: wrap; }
     .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
     .ctrl #play { flex: 1 1 auto; }
-    .dica { flex: 1 1 auto; text-align: right; }
     .mapcont { position: static; margin: 0 0 4px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -145,6 +168,8 @@
   .troca { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
   .troca-t { font: 500 12px var(--mono); fill: var(--accent); }
   .troca, .troca-t { opacity: 0; transition: opacity .25s; }
+  line.troca { fill: none; stroke-width: 1; }
+  line.troca.on { opacity: .5; }
   .troca.on, .troca-t.on { opacity: 1; }
   #svg { cursor: ew-resize; }
   .grafico { transition: opacity .2s; }
@@ -167,14 +192,20 @@
       <button id="link" type="button" class="sec">Compartilhar</button>
     </div>
 
-    <div class="placar" aria-live="polite">
-      <div class="cel tempo"><div class="n" id="horadia">Seções somadas</div><div class="p" id="hora">0%</div><div class="v" id="onde">Brasil</div></div>
+    <p class="escopo" id="onde">Brasil</p>
+    <div class="placar" id="placar" aria-live="polite">
       <div class="cel cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,00%</div><div class="v" id="va">0 votos</div></div>
       <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
     </div>
 
-    <p class="suasec" id="suasec" aria-live="polite" hidden></p>
+    <p class="compara" id="compara" aria-live="polite" hidden></p>
+    <div class="ctrl">
+      <button id="play" type="button">Pausar</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
+      <span class="prog"><b id="hora">0%</b> <small>das seções somadas</small></span>
+    </div>
 
+    <div class="duas">
     <div class="mapa" id="mapawrap" hidden>
       <p class="mapcont" id="mapcont"></p>
       <div class="dica-c" id="dicac" hidden></div>
@@ -185,13 +216,8 @@
     <div class="grafico">
       <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
     </div>
-    <p class="antes" id="antes"></p>
-
-    <div class="ctrl">
-      <button id="play" type="button">Pausar</button>
-      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
-      <span class="dica">ou arraste sobre o gráfico</span>
     </div>
+    <p class="antes" id="antes"></p>
   </section>
 
   <p class="fim" id="fim"></p>
@@ -214,6 +240,7 @@
   const $ = id => document.getElementById(id);
   const fmt = n => Math.round(n).toLocaleString("pt-BR");
   const pct = x => (x * 100).toFixed(2).replace(".", ",") + "%";  // two decimals, as the TSE shows
+  const pct1 = x => (x * 100).toFixed(1).replace(".", ",") + "%";
   const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
   const ARIA = "Votos válidos de cada candidato na apuração, pela parcela das seções somadas, na ordem em que o TSE recebeu os boletins de urna";
   const cache = {};
@@ -292,9 +319,10 @@
     serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
              antes: a > 0 ? ct[a - 1] : 0, marca};
     serie.barras = !!m;  // in a city, each bar is a section or an equal share of them
-    // A section enters at once, so the running count at seção scale is its zona's.
-    $("onde").textContent = estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
-      : estado.mun ? cidadeNome() : estado.uf ? UFNOME[estado.uf] : "Brasil";
+    const ufn = estado.uf && estado.uf !== "ZZ" ? `, ${estado.uf}` : "";
+    $("onde").innerHTML = estado.secao ? `Seção ${estado.secao} <span>· zona ${estado.zona} · ${cidadeNome()}${ufn}</span>`
+      : estado.zona ? `Zona ${estado.zona} <span>· ${cidadeNome()}${ufn}</span>`
+      : estado.mun ? `${cidadeNome()}<span>${ufn}</span>` : estado.uf ? UFNOME[estado.uf] : "Brasil";
     await mapaEscala(!m).catch(() => mapaEscala(false));
     document.body.classList.remove("carregando");
     desenhar();
@@ -332,6 +360,9 @@
         h.push(lista("secao", "Seção", "toda a zona", ss.map(x => [x, `seção ${x}`]), estado.secao));
       }
     }
+    // The levels not chosen yet show as empty slots, so the reader sees that zona and seção exist.
+    const vazios = [["mun", "cidade"], ["zona", "zona"], ["secao", "seção"]].slice(h.length - 1);
+    vazios.forEach(([k, rot], j) => h.push(`<button type="button" class="vazio${j ? "" : " prox"}" data-vazio="${k}">+ ${rot}</button>`));
     $("caminho").innerHTML = h.join('<span class="sep" aria-hidden="true">›</span>');
     $("acao").innerHTML = (c && !(dentro && nv === fundo())
       ? `<button type="button" class="volta" data-alvo="volta">${dentro ? "ir para" : "voltar para"} ${c.nome}</button>`
@@ -341,6 +372,15 @@
     const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
     if (a === "escolher") return trocarLugar();
     estado = vista(fundo());
+    montar().catch(falha);
+  });
+  // An empty slot opens the sheet to view another place; the reader's own place stays as it is.
+  $("caminho").addEventListener("click", async e => {
+    const k = e.target.closest("[data-vazio]")?.dataset.vazio; if (!k) return;
+    const r = await Lugar.folha({cidade: estado.mun, zona: estado.zona, secao: ""}, estado.mun ? "secao" : "",
+      {titulo: "Ver outro lugar", botao: "Ver"});
+    if (!r?.cidade) return;
+    estado = {uf: r.cidade.uf, mun: r.cidade.id, zona: r.lugar.zona, secao: r.lugar.secao};
     montar().catch(falha);
   });
   $("caminho").addEventListener("change", e => {
@@ -365,7 +405,7 @@
 
   // ---- chart
   let W = 1000, H = 440;
-  const L = 46, R = 40, T = 14, B = 30, BAR = 64;
+  const L = 46, R = 132, T = 44, B = 30, BAR = 64;
   const NS = "http://www.w3.org/2000/svg";
   const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
   let g = {};
@@ -410,10 +450,12 @@
     const tr = trocasEm(sa);
     g.trocas = tr.length > 4 ? [] : tr.map(i => {
       const c = el("circle", {class: "troca", r: 4.5, cx: x(i), cy: y(.5)}, svg);
-      const dir = x(i) > W - 170 ? "end" : "start", up = k => k % 2 ? 18 : -10;
-      const tx = el("text", {class: "troca-t", x: x(i) + (dir === "end" ? -8 : 8), y: y(.5) + up(tr.indexOf(i)), "text-anchor": dir}, svg);
-      tx.textContent = `${NOMES[sa[i] > .5 ? "13" : "22"]} passa à frente`;
-      return {i, c, tx};
+      // the label sits above the plot, off the lines; close ones alternate between two rows
+      const dir = x(i) > W - R - 150 ? "end" : "start", ty = tr.indexOf(i) % 2 ? 30 : 12;
+      const ln = el("line", {class: "marca troca", x1: x(i), x2: x(i), y1: ty + 5, y2: y(.5) - 6}, svg);
+      const tx = el("text", {class: "troca-t", x: x(i) + (dir === "end" ? 4 : -4), y: ty, "text-anchor": dir}, svg);
+      tx.textContent = `${(Math.round(serie.x[i] * 1000) / 10).toLocaleString("pt-BR")}% · ${NOMES[sa[i] > .5 ? "13" : "22"]} à frente`;
+      return {i, c, tx, ln};
     });
     g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
     g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
@@ -440,23 +482,27 @@
     g.da.setAttribute("cx", xa); g.da.setAttribute("cy", g.y(p));
     g.db.setAttribute("cx", xa); g.db.setAttribute("cy", g.y(1 - p));
     const ya = g.y(p), yb = g.y(1 - p), sep = Math.abs(ya - yb) < 16 ? 9 : 0;
-    const anc = xa > W - 120 ? "end" : "start";
-    g.ra.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.ra.setAttribute("text-anchor", anc); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep) - (anc === "end" ? 10 : 0));
-    g.rb.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.rb.setAttribute("text-anchor", anc); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep) + (anc === "end" ? 14 : 0));
+    // The labels go right of the dots, in the margin kept for them, with the share.
+    g.ra.setAttribute("x", xa + 10); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep));
+    g.rb.setAttribute("x", xa + 10); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep));
+    g.ra.textContent = `${NOMES["13"]} ${pct1(p)}`; g.rb.textContent = `${NOMES["22"]} ${pct1(1 - p)}`;
     g.barras.forEach((bb, k) => bb.classList.toggle("ja", k <= pos + 1e-9));
-    for (const q of g.trocas) { q.c.classList.toggle("on", q.i <= pos + 1e-9); q.tx.classList.toggle("on", q.i <= pos + 1e-9); }
-    const va = lerp(serie.ca), vb = lerp(serie.cb);
-    $("pa").textContent = pct(va + vb ? va / (va + vb) : 0);
-    $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
-    $("va").textContent = fmt(va) + " votos";
-    $("vb").textContent = fmt(vb) + " votos";
+    for (const q of g.trocas) for (const e of [q.c, q.tx, q.ln]) e.classList.toggle("on", q.i <= pos + 1e-9);
+    const va = lerp(serie.ca), vb = lerp(serie.cb), mk = serie.marca;
+    // At seção scale the scoreboard is the seção's own result; the curve and the line below are its zona's.
+    const [sa, sb] = mk ? mk.votos : [va, vb], dentro = !mk || lerp(serie.x) + 1e-9 >= mk.pos;
+    $("pa").textContent = pct(sa + sb ? sa / (sa + sb) : 0);
+    $("pb").textContent = pct(sa + sb ? sb / (sa + sb) : 0);
+    $("va").textContent = fmt(sa) + " votos";
+    $("vb").textContent = fmt(sb) + " votos";
+    $("placar").classList.toggle("espera", !dentro);
+    const cp = $("compara");
+    cp.hidden = !mk;
+    if (mk) cp.innerHTML = (dentro ? `Entrou na soma: ${fmt(mk.k)}ª de ${fmt(mk.de)} seções da zona.` : "Ainda não entrou na soma.")
+      + (mk.agregada ? ` Somada com a seção ${mk.agregada}.` : "")
+      + `<br>Zona ${estado.zona} até aqui: <span class="ca">${NOMES["13"]} ${pct(va + vb ? va / (va + vb) : 0)}</span> · <span class="cb">${NOMES["22"]} ${pct(va + vb ? vb / (va + vb) : 0)}</span>`;
     if (MP.on) { MP.q = lerp(serie.x); kick(); }
     $("hora").textContent = Math.round(lerp(serie.x) * 100) + "%";
-    const mk = serie.marca, ss = $("suasec");
-    ss.hidden = !mk;
-    if (mk) ss.textContent = lerp(serie.x) + 1e-9 >= mk.pos
-      ? `${noLugar() ? "Sua seção" : "Seção"} ${estado.secao}${mk.agregada ? ` (somada com a ${mk.agregada})` : ""}: ${NOMES["13"]} ${fmt(mk.votos[0])} · ${NOMES["22"]} ${fmt(mk.votos[1])}`
-      : `${noLugar() ? "Sua seção" : "A seção"} ${estado.secao} ainda não entrou na soma.`;
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
     $("antes").textContent = serie.antes
