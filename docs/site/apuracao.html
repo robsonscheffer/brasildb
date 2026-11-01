@@ -35,23 +35,26 @@
   body::after { content: ""; position: fixed; inset: 0; z-index: 19; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-  main { max-width: 1080px; margin: 0 auto; padding: calc(52px + 40px) var(--gx) 64px; position: relative; z-index: 1; }
+  main { max-width: 1200px; margin: 0 auto; padding: calc(52px + 40px) var(--gx) 64px; position: relative; z-index: 1; }
   .sobre { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 7vw, 84px); line-height: .98; margin: 0 0 14px; letter-spacing: -.01em; }
   .lead { color: var(--muted); max-width: 640px; margin: 0 0 28px; }
 
   .topo { max-width: 760px; margin: 0 0 28px; }
 
-  /* The panel: scale, readout, map, chart, controls. One frame, one grid. */
-  .painel { background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px 22px; }
+  /* The panel: one control card (levels, player, result), then two cards of one size, the map and
+     the curve. The same at every level and width, so a filter changes the data, not the page. */
+  .cartao { background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; min-width: 0; }
+  .controle { padding: 14px 20px; }
   /* The filter row: every control is 36px tall and centred on one line. */
-  .filtros { display: flex; align-items: center; gap: 12px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .filtros { display: flex; align-items: center; gap: 12px; padding: 0 0 14px; margin: 0 0 14px; border-bottom: 1px solid var(--line); }
   .filtros .acao { margin-left: auto; flex: none; }
   .filtros .sec { flex: none; height: 36px; padding: 0 16px; }
   .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
   .sec:hover { border-color: var(--muted); }
+  .limpar { font: 500 14px/36px var(--sans); color: var(--muted); background: none; border: 0; padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .limpar:hover { color: var(--fg); }
 
-  /* The scale: the reader's place as a path, Brasil > estado > cidade > zona > seção (P5 D5). */
   .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; min-width: 0; flex: 1 1 auto; }
   .caminho .sep { color: var(--muted); padding: 0 2px; line-height: 36px; }
   .caminho select { appearance: none; -webkit-appearance: none; field-sizing: content; box-sizing: border-box; height: 36px; max-width: 200px; margin: 0;
@@ -61,57 +64,54 @@
   .caminho select:has(option[value=""]:checked) { color: var(--muted); }
   .caminho select.on, .caminho select.on:has(option[value=""]:checked) { color: var(--bg); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23070a12' stroke-width='1.6'/%3E%3C/svg%3E"); border-color: var(--accent); }
   .caminho select option { color: var(--fg); background: var(--bg2); }
-  .acao .volta, .acao .escolha { font: 500 14px/36px var(--sans); color: var(--accent); background: none; border: 0; padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .nivel { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+  .nivel .x { flex: none; width: 28px; height: 28px; padding: 0; font: 18px/1 var(--sans); color: var(--muted); background: none; border: 0; border-radius: 50%; cursor: pointer; }
+  .nivel .x:hover { color: var(--fg); background: var(--line); }
+  .acao { display: flex; gap: 8px; }
+  .acao .volta { font: 500 14px/36px var(--sans); color: var(--accent); background: none; border: 0; padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
-  /* The readout: three cells built alike (label, number, detail). */
-  .escopo { margin: 0 0 12px; font: 600 17px var(--sans); color: var(--fg); }
-  .escopo span { color: var(--muted); font-weight: 400; }
-  .placar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin: 0; }
-  .placar.espera .p, .placar.espera .v { opacity: .3; }
-  .compara { margin: 10px 0 0; font: 14px/1.5 var(--mono); color: var(--muted); }
+  /* The player and the result in one row: play, slider, share counted | Lula, Bolsonaro, split bar. */
+  .linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 12px 32px; align-items: center; }
+  .tocador { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .play { flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--bg); font: 16px/44px var(--sans); cursor: pointer; }
+  .tocador input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .prog { flex: none; font: 500 15px var(--mono); color: var(--fg); white-space: nowrap; }
+  .prog small { color: var(--muted); font-size: 12px; }
+  .placar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .cand { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; }
+  .cand.b { justify-content: flex-end; }
+  .cand .n { font: 600 14px var(--sans); color: var(--a); }
+  .cand.b .n { color: var(--b); }
+  .cand .p { font-family: var(--serif); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .cand .v { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+  .split { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--b); overflow: hidden; }
+  .split i { display: block; height: 100%; width: 50%; background: var(--a); transition: width .15s; }
+  .placar.espera .p, .placar.espera .v, .placar.espera .split { opacity: .3; }
+  .compara { margin: 10px 0 0; font: 13px/1.5 var(--mono); color: var(--muted); }
   .compara .ca { color: var(--a); } .compara .cb { color: var(--b); }
   .vazio { height: 36px; padding: 0 14px; font: 500 14px var(--sans); color: var(--muted); background: transparent; border: 1px dashed #4a4f63; border-radius: 999px; cursor: pointer; white-space: nowrap; }
   .vazio.prox { color: var(--accent); border-color: var(--accent); }
   .vazio:hover { color: var(--fg); border-color: var(--muted); }
-  /* Each cell spans the scoreboard's three rows (label, number, line), so the rows align across cells. */
-  .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 2px; align-items: end; }
-  .cel .n { align-self: start; }
-  .cel.b { border-color: var(--b); }
-  .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  .cel .p { font-family: var(--serif); font-size: clamp(40px, 5.6vw, 64px); line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  .cartoes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 16px 0 0; }
+  @media (min-width: 1000px) { .cartoes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .ct { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+  .ct h2 { margin: 0; font: 600 15px var(--sans); color: var(--fg); white-space: nowrap; }
+  .ct h2 span { color: var(--muted); font-weight: 400; }
+  .ct p { margin: 0; font: 12px var(--mono); color: var(--muted); text-align: right; }
+  .ct b { color: var(--fg); font-weight: 500; }
   .grafico { position: relative; margin: 10px 0 0; }
   /* The map: each city a dot that lights up when its first section enters the sum. */
-  .mapa { margin: 14px 0 0; }
-  .mapa canvas { display: block; width: 100%; height: clamp(320px, 58vw, 560px); }
   .mapa { position: relative; }
-  /* Wide screens with a map (Brasil, estado): the map on the left for the whole panel height;
-     the scale, scoreboard, controls and curve stacked on the right. */
-  @media (min-width: 1100px) {
-    main:has(#mapawrap:not([hidden])) { max-width: 1440px; }
-    .painel:has(#mapawrap:not([hidden])) { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 40px;
-      grid-template-areas: "f f" "m e" "m p" "m c" "m g" "m ." "a a"; grid-template-rows: auto auto auto auto auto 1fr auto; }
-    .painel:has(#mapawrap:not([hidden])) .duas { display: contents; }
-    .painel:has(#mapawrap:not([hidden])) .filtros { grid-area: f; }
-    .painel:has(#mapawrap:not([hidden])) .escopo { grid-area: e; }
-    .painel:has(#mapawrap:not([hidden])) .placar { grid-area: p; }
-    .painel:has(#mapawrap:not([hidden])) .ctrl { grid-area: c; }
-    .painel:has(#mapawrap:not([hidden])) #mapawrap { grid-area: m; margin: 0; }
-    .painel:has(#mapawrap:not([hidden])) .mapa canvas { height: 540px; }
-    .painel:has(#mapawrap:not([hidden])) .grafico { grid-area: g; margin: 8px 0 0; }
-    .painel:has(#mapawrap:not([hidden])) .antes { grid-area: a; }
-    .painel:has(#mapawrap:not([hidden])) .cel .p { font-size: 52px; }
-  }
-  .mapcont { position: absolute; top: 4px; left: 0; font: 12px var(--mono); color: var(--muted); pointer-events: none; }
-  .mapcont b { color: var(--fg); font-weight: 500; }
+  .mapa canvas { display: block; width: 100%; height: 420px; }
+  .mapnota { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font: 14px var(--mono); color: var(--muted); }
   #mapa { cursor: crosshair; touch-action: manipulation; }
   .dica-c { position: absolute; z-index: 4; min-width: 190px; max-width: 260px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font: 13px var(--mono); color: var(--muted); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
   .dica-c.fixa { pointer-events: auto; }
   .dica-c strong { display: block; font: 600 15px var(--sans); color: var(--fg); margin: 0 0 4px; }
   .dica-c .ca { color: var(--a); } .dica-c .cb { color: var(--b); }
   .dica-c button { margin: 8px 0 0; font: 600 13px var(--sans); color: var(--bg); background: var(--fg); border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
-  .leg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
+  .leg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
   .escalac { display: inline-grid; grid-template-columns: auto minmax(120px, 220px) auto; align-items: center; gap: 8px; }
   .escalac .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--a), var(--mid) 50%, var(--b)); position: relative; }
   .escalac .bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
@@ -129,12 +129,8 @@
   .ponto-a { fill: var(--a); } .ponto-b { fill: var(--b); }
   .rot { font: 500 13px var(--mono); }
 
-  .antes { margin: 4px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
-  .ctrl { display: flex; gap: 14px; align-items: center; margin: 16px 0 4px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .prog { font: 500 15px var(--mono); color: var(--fg); white-space: nowrap; }
-  .prog small { color: var(--muted); font-size: 13px; }
-  .ctrl #play { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; min-width: 168px; }
-  .ctrl input[type=range] { flex: 1; accent-color: var(--accent); }
+  .antes { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+  .antes:empty { display: none; }
 
   .fim { margin: 28px 0 0; max-width: 900px; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
   .fim .of { display: block; font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 8px; }
@@ -147,20 +143,23 @@
   @media (max-width: 860px) {
     .metodo { grid-template-columns: minmax(0, 720px); }
   }
+  @media (max-width: 760px) {
+    .linha { grid-template-columns: minmax(0, 1fr); }
+    .placar { order: -1; }
+  }
   @media (max-width: 640px) {
     main { padding-top: calc(52px + 28px); }
-    .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
+    .cartao, .controle { padding: 12px 14px; border-radius: 14px; }
     .filtros { flex-wrap: wrap; }
     .filtros .caminho { flex-basis: 100%; }
     .filtros .sec { padding: 0 12px; font-size: 13px; }
-    .placar { gap: 16px 18px; }
     .caminho { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .caminho .sep { display: none; }
-    .caminho select, .caminho .vazio { height: 44px; width: 100%; max-width: none; field-sizing: fixed; text-align: left; }
-    .ctrl { flex-wrap: wrap; }
-    .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
-    .ctrl #play { flex: 1 1 auto; }
-    .mapcont { position: static; margin: 0 0 4px; }
+    .nivel { display: flex; }
+    .caminho select, .caminho .vazio { height: 44px; width: 100%; max-width: none; field-sizing: fixed; text-align: left; flex: 1; }
+    .cand .p { font-size: 28px; }
+    .cand .v { display: none; }
+    .mapa canvas { height: clamp(260px, 78vw, 380px); }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
@@ -172,8 +171,8 @@
   line.troca.on { opacity: .5; }
   .troca.on, .troca-t.on { opacity: 1; }
   #svg { cursor: ew-resize; }
-  .grafico { transition: opacity .2s; }
-  .carregando .grafico { opacity: .4; }
+  .grafico, .mapa { transition: opacity .2s; }
+  .carregando .grafico, .carregando .mapa { opacity: .4; }
 </style>
 </head>
 <body>
@@ -185,39 +184,46 @@
     <p class="lead">Cada seção entra na soma de uma vez, com todos os seus votos, na ordem em que o TSE recebeu os boletins de urna. Escolha a sua escala e veja a contagem, das primeiras seções às últimas.</p>
   </header>
 
-  <section class="painel" aria-label="Gráfico">
-    <div class="filtros">
-      <nav class="caminho" id="caminho" aria-label="Escala"></nav>
-      <span class="acao" id="acao"></span>
-      <button id="link" type="button" class="sec">Compartilhar</button>
+  <section class="painel" aria-label="A apuração">
+    <div class="cartao controle">
+      <div class="filtros">
+        <nav class="caminho" id="caminho" aria-label="Escala"></nav>
+        <span class="acao" id="acao"></span>
+        <button id="link" type="button" class="sec">Compartilhar</button>
+      </div>
+      <div class="linha">
+        <div class="tocador">
+          <button id="play" class="play" type="button" aria-label="Pausar">&#10074;&#10074;</button>
+          <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar na apuração">
+          <span class="prog"><b id="hora">0%</b> <small>somadas</small></span>
+        </div>
+        <div class="placar" id="placar" aria-live="polite">
+          <div class="cand"><span class="n" id="na">Lula</span><span class="p" id="pa">0,00%</span><span class="v" id="va">0</span></div>
+          <div class="cand b"><span class="v" id="vb">0</span><span class="p" id="pb">0,00%</span><span class="n" id="nb">Bolsonaro</span></div>
+          <div class="split" aria-hidden="true"><i id="splita"></i></div>
+        </div>
+      </div>
     </div>
 
-    <p class="escopo" id="onde">Brasil</p>
-    <div class="placar" id="placar" aria-live="polite">
-      <div class="cel cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,00%</div><div class="v" id="va">0 votos</div></div>
-      <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
+    <div class="cartoes">
+      <article class="cartao">
+        <header class="ct"><h2>Mapa <span id="mapsub"></span></h2><p id="mapcont"></p></header>
+        <div class="mapa" id="mapawrap">
+          <div class="dica-c" id="dicac" hidden></div>
+          <canvas id="mapa" role="img" aria-label="Mapa: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
+          <p class="mapnota" id="mapnota" hidden>O exterior não aparece no mapa.</p>
+        </div>
+        <p class="leg"><span class="escalac" aria-label="Cor da cidade: quem está à frente e por quanto"><span class="ta"><span id="lega">Lula</span> 75%</span><span class="bar"></span><span class="tb"><span id="legb">Bolsonaro</span> 75%</span></span><span><i></i>acaba de entrar na soma</span><span>tamanho: votos já somados</span></p>
+      </article>
+      <article class="cartao">
+        <header class="ct"><h2>Evolução <span id="evsub"></span></h2><p>arraste no gráfico</p></header>
+        <div class="grafico">
+          <svg id="svg" viewBox="0 0 1000 420" role="img"></svg>
+        </div>
+        <p class="compara" id="compara" hidden></p>
+        <p class="antes" id="antes"></p>
+      </article>
     </div>
-
-    <p class="compara" id="compara" aria-live="polite" hidden></p>
-    <div class="ctrl">
-      <button id="play" type="button">Pausar</button>
-      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
-      <span class="prog"><b id="hora">0%</b> <small>das seções somadas</small></span>
-    </div>
-
-    <div class="duas">
-    <div class="mapa" id="mapawrap" hidden>
-      <p class="mapcont" id="mapcont"></p>
-      <div class="dica-c" id="dicac" hidden></div>
-      <canvas id="mapa" role="img" aria-label="Mapa do Brasil: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
-      <p class="leg"><span class="escalac" aria-label="Cor da cidade: quem está à frente e por quanto"><span class="ta"><span id="lega">Lula</span> 75%</span><span class="bar"></span><span class="tb"><span id="legb">Bolsonaro</span> 75%</span></span><span><i></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
-    </div>
-
-    <div class="grafico">
-      <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
-    </div>
-    </div>
-    <p class="antes" id="antes"></p>
   </section>
 
   <p class="fim" id="fim"></p>
@@ -285,11 +291,11 @@
     document.body.classList.add("carregando");
     const br = await get("brasil.json");
     NOMES = br.nomes || NOMES;
-    $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
+    $("na").textContent = NOMES["13"]; $("nb").textContent = NOMES["22"];
     $("lega").textContent = NOMES["13"]; $("legb").textContent = NOMES["22"];
     const m = estado.mun ? await get(`mun/${estado.mun}.json`) : null;
     nomeCid = estado.mun ? (await Lugar.cidade(estado.mun))?.nome || "" : "";
-    let s, marca = null;
+    let s, marca = null, ordens = null;
     const ap = br.apuracao;
     if (!m) {
       s = deDict(estado.uf ? ap.ufs[estado.uf] : ap.brasil);
@@ -297,7 +303,7 @@
       // A section enters the sum at once: draw its zone, and mark where the section came in.
       const zonaToda = Object.entries(m.secoes).filter(([k]) => !estado.zona || k.startsWith(estado.zona + "-"));
       const r = apuracaoDe(zonaToda, ap.pontos);
-      s = r.s;
+      s = r.s; ordens = r.ss.map(q => q[1][1]);
       if (estado.secao) {
         // A section aggregated into another (agregadas) enters the sum with its principal's bulletin.
         const k0 = `${estado.zona}-${estado.secao}`, ag = agregadas[k0], k = ag ? `${estado.zona}-${ag}` : k0;
@@ -317,13 +323,13 @@
     const cum = v => { let c = 0; return v.map(y => (c += y)); };
     const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
     serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
-             antes: a > 0 ? ct[a - 1] : 0, marca};
+             antes: a > 0 ? ct[a - 1] : 0, marca, ordens};
     serie.barras = !!m;  // in a city, each bar is a section or an equal share of them
-    const ufn = estado.uf && estado.uf !== "ZZ" ? `, ${estado.uf}` : "";
-    $("onde").innerHTML = estado.secao ? `Seção ${estado.secao} <span>· zona ${estado.zona} · ${cidadeNome()}${ufn}</span>`
-      : estado.zona ? `Zona ${estado.zona} <span>· ${cidadeNome()}${ufn}</span>`
-      : estado.mun ? `${cidadeNome()}<span>${ufn}</span>` : estado.uf ? UFNOME[estado.uf] : "Brasil";
-    await mapaEscala(!m).catch(() => mapaEscala(false));
+    const ufNome = estado.uf ? UFNOME[estado.uf] : "Brasil";
+    $("mapsub").textContent = estado.mun ? `· ${ufNome}, ${cidadeNome()} em destaque` : `· ${ufNome}`;
+    $("evsub").textContent = estado.zona ? `· zona ${estado.zona}${estado.secao ? ", a seção entra de uma vez" : ""}`
+      : `· ${estado.mun ? cidadeNome() : ufNome}`;
+    await mapaEscala().catch(() => { MP.on = false; });
     document.body.classList.remove("carregando");
     desenhar();
     tocar();
@@ -360,22 +366,33 @@
         h.push(lista("secao", "Seção", "toda a zona", ss.map(x => [x, `seção ${x}`]), estado.secao));
       }
     }
+    // A chosen level gets a × that clears it and the levels below.
+    const ROT = {uf: "estado", mun: "cidade", zona: "zona", secao: "seção"};
+    const cel = h.map(x => {
+      const k = x.match(/data-nivel="(\w+)"/)[1];
+      return `<span class="nivel">${x}${estado[k] ? `<button type="button" class="x" data-limpa="${k}" aria-label="Limpar ${ROT[k]}" title="Limpar ${ROT[k]}">×</button>` : ""}</span>`;
+    });
     // The levels not chosen yet show as empty slots, so the reader sees that zona and seção exist.
     const vazios = [["mun", "cidade"], ["zona", "zona"], ["secao", "seção"]].slice(h.length - 1);
-    vazios.forEach(([k, rot], j) => h.push(`<button type="button" class="vazio${j ? "" : " prox"}" data-vazio="${k}">+ ${rot}</button>`));
-    $("caminho").innerHTML = h.join('<span class="sep" aria-hidden="true">›</span>');
-    $("acao").innerHTML = (c && !(dentro && nv === fundo())
-      ? `<button type="button" class="volta" data-alvo="volta">${dentro ? "ir para" : "voltar para"} ${c.nome}</button>`
-      : `<button type="button" class="escolha" data-alvo="escolher">${c ? "trocar lugar" : "Escolher o seu lugar"}</button>`);
+    vazios.forEach(([k, rot], j) => cel.push(`<span class="nivel"><button type="button" class="vazio${j ? "" : " prox"}" data-vazio="${k}">+ ${rot}</button></span>`));
+    $("caminho").innerHTML = cel.join('<span class="sep" aria-hidden="true">›</span>');
+    // The way back to the reader's place; choosing the place itself is in the top bar.
+    $("acao").innerHTML = (estado.uf ? '<button type="button" class="limpar" data-alvo="limpar">Limpar</button>' : "")
+      + (c && !(dentro && nv === fundo()) ? `<button type="button" class="volta" data-alvo="volta">${dentro ? "ir para" : "voltar para"} ${c.nome}</button>` : "");
   }
   $("acao").addEventListener("click", e => {
     const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
-    if (a === "escolher") return trocarLugar();
-    estado = vista(fundo());
+    estado = a === "limpar" ? {uf: "", mun: "", zona: "", secao: ""} : vista(fundo());
     montar().catch(falha);
   });
   // An empty slot opens the sheet to view another place; the reader's own place stays as it is.
   $("caminho").addEventListener("click", async e => {
+    const x = e.target.closest("[data-limpa]")?.dataset.limpa;
+    if (x) {
+      const k = ["uf", "mun", "zona", "secao"].indexOf(x);
+      estado = {uf: k > 0 ? estado.uf : "", mun: k > 1 ? estado.mun : "", zona: k > 2 ? estado.zona : "", secao: ""};
+      return montar().catch(falha);
+    }
     const k = e.target.closest("[data-vazio]")?.dataset.vazio; if (!k) return;
     const r = await Lugar.folha({cidade: estado.mun, zona: estado.zona, secao: ""}, estado.mun ? "secao" : "",
       {titulo: "Ver outro lugar", botao: "Ver"});
@@ -412,7 +429,8 @@
 
   function desenhar() {
     const svg = $("svg"); svg.innerHTML = "";
-    W = Math.max(300, svg.parentNode.clientWidth); H = Math.round(Math.min(440, Math.max(300, W * .5)));
+    // as tall as the map card's canvas, so the two cards match
+    W = Math.max(280, svg.parentNode.clientWidth); H = Math.max(260, cv.clientHeight);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     svg.setAttribute("aria-label", ARIA);
     const n = serie.x.length, x0 = serie.x[0] - serie.passo, x1 = serie.x[n - 1];
@@ -493,8 +511,8 @@
     const [sa, sb] = mk ? mk.votos : [va, vb], dentro = !mk || lerp(serie.x) + 1e-9 >= mk.pos;
     $("pa").textContent = pct(sa + sb ? sa / (sa + sb) : 0);
     $("pb").textContent = pct(sa + sb ? sb / (sa + sb) : 0);
-    $("va").textContent = fmt(sa) + " votos";
-    $("vb").textContent = fmt(sb) + " votos";
+    $("va").textContent = fmt(sa); $("vb").textContent = fmt(sb);
+    $("splita").style.width = (sa + sb ? 100 * sa / (sa + sb) : 50) + "%";
     $("placar").classList.toggle("espera", !dentro);
     const cp = $("compara");
     cp.hidden = !mk;
@@ -538,7 +556,10 @@
 
   // Play from where the reader is (or from the start at the end); the button pauses mid-way.
   let tocando = false;
-  function botao() { $("play").textContent = tocando ? "Pausar" : t >= 1 ? "Repetir a apuração" : "Continuar"; }
+  function botao() {
+    const [ic, rot] = tocando ? ["\u275A\u275A", "Pausar"] : t >= 1 ? ["\u21BB", "Repetir a apuração"] : ["\u25B6", "Continuar"];
+    $("play").textContent = ic; $("play").setAttribute("aria-label", rot); $("play").title = rot;
+  }
   function parar() { cancelAnimationFrame(anim); tocando = false; botao(); }
   function tocar(de = 0) {
     cancelAnimationFrame(anim);
@@ -585,15 +606,23 @@
   const tomDe = (a, b) => { const m = (a - b) / (a + b), k = Math.min(1, Math.abs(m) / .5); return mix(MID, m >= 0 ? CA : CB, Math.pow(k, .8)); };
   const mix = (u, v, k) => u.map((c, i) => Math.round(c + (v[i] - c) * k));
 
-  async function mapaEscala(on) {
-    MP.on = on && !!towns; $("mapawrap").hidden = !MP.on;
-    if (!MP.on) return;
+  // The map at every level: Brasil, the state, or the city's state zoomed to the city (abroad has none).
+  async function mapaEscala() {
+    const fora = estado.uf === "ZZ";
+    MP.on = !!towns && !fora; $("mapnota").hidden = !fora;
+    if (!MP.on) { cv.getContext("2d").clearRect(0, 0, cv.width, cv.height); $("mapcont").textContent = ""; return; }
     if (!MP.dados) [MP.dados, MP.borders] = await Promise.all([get("mapa.json"),
       fetch("data/borders.json").then(r => r.json()).catch(() => [])]);
     const d = MP.dados, P = d.pontos, uf = estado.uf, onde = new Map(towns.id.map((id, i) => [id, i]));
     // A state's count is the Brasil order within the state: turn its share into a Brasil point.
     MP.ponto = q => q * P;
-    if (uf) {
+    MP.foco = estado.mun ? onde.get(estado.mun) ?? null : null;
+    if (serie.ordens) {
+      // A city or zona's count: its k-th section is at its own place in the Brasil count.
+      const o = serie.ordens, n = o.length;
+      MP.ponto = q => { const k = q * n; if (k <= 0) return 0; const j = Math.min(n - 1, Math.ceil(k) - 1), ant = j ? o[j - 1] : 0;
+        return ((ant + (o[j] - ant) * Math.min(1, k - j)) - 1) * P / d.n + 1; };
+    } else if (uf) {
       const cum = [0]; d.secoes[uf].forEach(v => cum.push(cum[cum.length - 1] + v));
       const tot = cum[cum.length - 1];
       MP.ponto = q => { const alvo = q * tot; let k = 1; while (k < cum.length - 1 && cum[k] < alvo) k++;
@@ -615,7 +644,8 @@
     const dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
     let alvo = [-74.2, -34.6, 5.6, -34.0];
-    if (estado.uf && MP.cid.length) alvo = [Math.min(...MP.cid.map(c => c.lon)) - .3, Math.max(...MP.cid.map(c => c.lon)) + .3,
+    if (MP.foco != null) { const lo = towns.lon[MP.foco], la = towns.lat[MP.foco]; alvo = [lo - 2, lo + 2, la + 1.5, la - 1.5]; }
+    else if (estado.uf && MP.cid.length) alvo = [Math.min(...MP.cid.map(c => c.lon)) - .3, Math.max(...MP.cid.map(c => c.lon)) + .3,
       Math.max(...MP.cid.map(c => c.lat)) + .3, Math.min(...MP.cid.map(c => c.lat)) - .3];
     MP.dpr = dpr;
     if (anima && MP.limites && !CALMO && alvo.some((v, j) => v !== MP.limites[j])) MP.zoom = {de: MP.limites, para: alvo, t0: performance.now()};
@@ -669,10 +699,15 @@
       if (c.r < .2) continue;  // not counted yet: the state borders hold the shape
       const e = (now - c.born) / PULSO, tom = tomDe(a, b);
       const cor = e < 1 ? mix(BR, tom, Math.min(1, e * 1.4)) : tom;
-      ctx.fillStyle = `rgba(${cor},.86)`;
+      ctx.fillStyle = `rgba(${cor},${MP.foco == null || c.i === MP.foco ? .86 : .45})`;
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
       if (c.r > 2.5 * dpr) ctx.stroke();  // a thin dark rim keeps neighbouring big cities apart
       if (e < 1) { aneis.push([c, e]); ocupado = true; }
+    }
+    const fc = MP.foco != null && MP.cid.find(c => c.i === MP.foco);
+    if (fc) {  // the city on view, in the middle
+      ctx.strokeStyle = "rgba(255,180,60,.95)"; ctx.lineWidth = 2 * dpr;
+      ctx.beginPath(); ctx.arc(fc.x, fc.y, Math.max(4 * dpr, fc.r) + 5 * dpr, 0, 6.283); ctx.stroke();
     }
     if (MP.sel) {  // the city under the pointer, or the one tapped
       ctx.strokeStyle = "rgba(236,232,220,.95)"; ctx.lineWidth = 1.5 * dpr;
@@ -685,7 +720,7 @@
       ctx.strokeStyle = `rgba(236,232,220,${(.8 * Math.pow(1 - e, 1.4)).toFixed(3)})`;
       ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r) + (3 + 14 * f) * dpr, 0, 6.283); ctx.stroke();
     }
-    $("mapcont").innerHTML = `<b>${fmt(dentro)}</b> de ${fmt(MP.cid.length)} cidades com seções somadas`;
+    $("mapcont").innerHTML = `<b>${fmt(dentro)}</b> de ${fmt(MP.cid.length)} cidades`;
     if (ocupado) MP.raf = requestAnimationFrame(quadro);
   }
 
