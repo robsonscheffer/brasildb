@@ -11,12 +11,8 @@ WITH padrao_uf(sigla_uf, fuso, outro) AS (
            ('RO', -1, NULL), ('RR', -1, NULL), ('PE', 0, 1)
 ),
 primeiro_voto AS (
-    SELECT e.ano, e.turno, e.sigla_uf, e.id_municipio_tse, e.zona, e.secao,
-           min(e.data_hora) AS hora
-    FROM br_tse_urna_logs.eventos e
-    JOIN main.eleicoes el ON el.ano = e.ano AND el.turno = e.turno
-    WHERE e.tipo_evento = 'voto_computado'
-      AND CAST(e.data_hora AS DATE) = el.data
+    SELECT ano, turno, sigla_uf, id_municipio_tse, zona, secao, min(data_hora) AS hora
+    FROM main.votos  -- election-day votes, defined in 06_votos.sql
     GROUP BY ALL
 ),
 minutos AS (

@@ -32,6 +32,23 @@ br_tse_urna_logs:
       tipo_evento: VARCHAR    # see brasildb/tse/logparse.py EVENT_TYPES; NULL if none matches
       valor: VARCHAR          # bracket content for typed events, e.g. "biométrica", "Presidente"
 
+  votos:
+    source: derived from eventos by `brasildb derive-votos` (the main.votos_eventos view)
+    grain: one row per vote counted on election day; main.votos reads this table when present
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, data_hora]
+    columns:
+      ano: INTEGER
+      turno: INTEGER
+      sigla_uf: VARCHAR
+      id_municipio_tse: VARCHAR
+      zona: VARCHAR
+      secao: VARCHAR
+      data_hora: TIMESTAMP    # urna local clock, no time zone
+      arquivo_hash: VARCHAR
+      arquivo_membro: VARCHAR
+      linha: INTEGER
+
   secoes_coleta:
     source: collector state, one row per section listed in cs.json
     grain: one row per section per round
@@ -78,6 +95,26 @@ br_tse_eleicoes:
       id_local_votacao: VARCHAR    # NR_LOCAL_VOTACAO
       secao_instalada: BOOLEAN     # ST_SECAO_INSTALADA Sim/Não
       modelo_urna: VARCHAR         # DS_MODELO_URNA
+
+  votacao_secao:
+    source: CKAN resultados-<ano>, votacao_secao_<ano>_<UF|BR>.csv (latin-1, ";")
+    grain: section x cargo x votavel x turno; brancos (95) and nulos (96) are votaveis too
+    partition: [ano, turno, sigla_uf]
+    keys: [ano, turno, sigla_uf, id_municipio_tse, zona, secao, cargo, numero_votavel]
+    columns:
+      ano: INTEGER                 # ANO_ELEICAO
+      turno: INTEGER               # NR_TURNO
+      id_eleicao: VARCHAR          # CD_ELEICAO
+      sigla_uf: VARCHAR            # SG_UF
+      id_municipio_tse: VARCHAR    # CD_MUNICIPIO, zero-pad to 5
+      zona: VARCHAR                # NR_ZONA, zero-pad to 4
+      secao: VARCHAR               # NR_SECAO, zero-pad to 4
+      cargo: VARCHAR               # DS_CARGO
+      numero_votavel: VARCHAR      # NR_VOTAVEL: candidate or party number, 95 branco, 96 nulo
+      nome_votavel: VARCHAR        # NM_VOTAVEL
+      sequencial_candidato: VARCHAR  # SQ_CANDIDATO
+      votos: BIGINT                # QT_VOTOS
+      id_local_votacao: VARCHAR    # NR_LOCAL_VOTACAO
 
   boletim_urna_secao:
     source: CKAN resultados-<ano>-boletim-de-urna, bweb_<turno>t_<UF>_<stamp>.csv (latin-1, ";"),

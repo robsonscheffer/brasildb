@@ -1,11 +1,12 @@
--- One row per vote counted on election day (urna clock). Every vote count reads this view, not
--- eventos. Two cases in a section's archive would count a vote twice:
+-- One row per vote counted on election day (urna clock). Every vote count reads main.votos, not
+-- eventos. main.votos_eventos derives it from eventos (a full scan); `brasildb derive-votos`
+-- writes it to br_tse_urna_logs.votos once, and 07_votos_tabela.sql points main.votos there. Two cases in a section's archive would count a vote twice:
 -- a member whose setup lines name another section ("Seção Eleitoral: 0112" inside the archive
 -- of 0085) is that section's log, filed here too; it is dropped. A contingency urna names 0000
 -- and stays. A member that copies another member's lines (a replaced urna's card, "...ME.jez")
 -- repeats its vote seconds; one urna never logs two votes in the same second, so a second
 -- counts once per section.
-CREATE OR REPLACE VIEW main.votos AS
+CREATE OR REPLACE VIEW main.votos_eventos AS
 WITH carga AS (
     SELECT ano, turno, sigla_uf, id_municipio_tse, zona, secao, arquivo_hash, arquivo_membro,
            bool_or(regexp_extract(mensagem, 'Seção Eleitoral: (\d+)', 1) IN (secao, '0000')) AS propria
@@ -27,3 +28,5 @@ WHERE e.tipo_evento = 'voto_computado'
 QUALIFY row_number() OVER (PARTITION BY e.ano, e.turno, e.sigla_uf, e.id_municipio_tse, e.zona,
                                         e.secao, e.data_hora
                            ORDER BY e.arquivo_membro, e.linha) = 1;
+
+CREATE OR REPLACE VIEW main.votos AS SELECT * FROM main.votos_eventos;

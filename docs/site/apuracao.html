@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A noite da apuração</title>
+<meta name="description" content="A apuração do 2º turno na ordem em que o TSE recebeu os boletins de urna, no Brasil, no seu estado, na sua cidade, zona e seção.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #070a12;
+    --bg2: #0f1320;
+    --fg: #ece8dc;
+    --muted: #9a9ca6;
+    --line: #262a38;
+    --accent: #ffb43c;
+    --accent-dim: rgba(255,180,60,.16);
+    --a: #e2676b;           /* the two candidates: soft PT red and PL blue, as the press colours them */
+    --b: #5f93e3;
+    --mid: #787c8a;         /* an even city: neither hue */
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --gx: max(16px, env(safe-area-inset-left));
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 19; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  main { max-width: 1080px; margin: 0 auto; padding: 40px var(--gx) 64px; position: relative; z-index: 1; }
+  .sobre { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 7vw, 84px); line-height: .98; margin: 0 0 14px; letter-spacing: -.01em; }
+  .lead { color: var(--muted); max-width: 640px; margin: 0 0 28px; }
+
+  .topo { max-width: 760px; margin: 0 0 28px; }
+
+  /* The panel: scale, readout, map, chart, controls. One frame, one grid. */
+  .painel { background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px 22px; }
+  .barra { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 0 0 18px; }
+  .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+  .sec:hover { border-color: var(--muted); }
+
+  /* Scale picker: Brasil > estado > cidade > zona > seção. Each level narrows the next. */
+  .escala { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr 1fr; gap: 10px; padding: 0 0 20px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .escala label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .escala select, .escala input { width: 100%; font: 16px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; height: 44px; }
+  .escala select:disabled, .escala input:disabled { opacity: .4; }
+  .escala .cid { position: relative; }
+  .sug { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow: auto; text-transform: none; letter-spacing: 0; }
+  .sug li { padding: 7px 10px; border-radius: 6px; cursor: pointer; font: 15px var(--sans); color: var(--fg); }
+  .sug li[aria-selected="true"], .sug li:hover { background: var(--accent-dim); }
+  .sug li small { color: var(--muted); }
+
+  /* The readout: three cells built alike (label, number, detail). */
+  .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
+  .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; }
+  .cel.b { border-color: var(--b); }
+  .cel.tempo { border-color: var(--accent); }
+  .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .cel .p { font-family: var(--serif); font-size: clamp(40px, 5.6vw, 64px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .cel.tempo .p { font-family: var(--mono); font-size: clamp(30px, 4.2vw, 48px); line-height: 1.33; }
+  .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .grafico { position: relative; margin: 10px 0 0; }
+  /* The map: each city a dot that lights up when its first section enters the sum. */
+  .mapa { margin: 14px 0 0; }
+  .mapa canvas { display: block; width: 100%; height: clamp(320px, 58vw, 560px); }
+  .mapa { position: relative; }
+  .mapcont { position: absolute; top: 4px; left: 0; font: 12px var(--mono); color: var(--muted); pointer-events: none; }
+  .mapcont b { color: var(--fg); font-weight: 500; }
+  #mapa { cursor: crosshair; touch-action: manipulation; }
+  .dica-c { position: absolute; z-index: 4; min-width: 190px; max-width: 260px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font: 13px var(--mono); color: var(--muted); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .dica-c.fixa { pointer-events: auto; }
+  .dica-c strong { display: block; font: 600 15px var(--sans); color: var(--fg); margin: 0 0 4px; }
+  .dica-c .ca { color: var(--a); } .dica-c .cb { color: var(--b); }
+  .dica-c button { margin: 8px 0 0; font: 600 13px var(--sans); color: var(--bg); background: var(--fg); border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .leg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
+  .escalac { display: inline-grid; grid-template-columns: auto minmax(120px, 220px) auto; align-items: center; gap: 8px; }
+  .escalac .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--a), var(--mid) 50%, var(--b)); position: relative; }
+  .escalac .bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+  .escalac .ta { color: var(--a); } .escalac .tb { color: var(--b); }
+  .leg i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1.5px solid var(--fg); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+  .eixo text { font: 12px var(--mono); fill: var(--muted); }
+  .eixo line { stroke: var(--line); }
+  .meio { stroke: var(--muted); stroke-dasharray: 3 5; opacity: .6; }
+  .la { fill: none; stroke: var(--a); stroke-width: 2.5; stroke-linejoin: round; }
+  .lb { fill: none; stroke: var(--b); stroke-width: 2.5; stroke-linejoin: round; }
+  .barras rect { fill: var(--accent); opacity: .22; }
+  .barras rect.ja { opacity: .55; }
+  .cursor { stroke: var(--accent); stroke-width: 1; }
+  .ponto-a { fill: var(--a); } .ponto-b { fill: var(--b); }
+  .rot { font: 500 13px var(--mono); }
+
+  .antes { margin: 4px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
+  .ctrl { display: flex; gap: 14px; align-items: center; margin: 12px 0 0; padding: 16px 0 0; border-top: 1px solid var(--line); }
+  .ctrl #play { font: 600 15px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; min-width: 168px; }
+  .ctrl input[type=range] { flex: 1; accent-color: var(--accent); }
+  .dica { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+
+  .fim { margin: 28px 0 0; max-width: 900px; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; min-height: 2.4em; }
+  .fim .of { display: block; font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 8px; }
+
+  .metodo { margin: 48px 0 0; padding: 28px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 48px; }
+  .metodo h2 { font-family: var(--serif); font-weight: 400; color: var(--fg); font-size: 30px; margin: 0 0 10px; }
+  .metodo p { margin: 0 0 12px; }
+  .metodo .fonte { grid-column: 1 / -1; font-size: 14px; }
+
+  @media (max-width: 860px) {
+    .escala { grid-template-columns: 1fr 1fr; }
+    .metodo { grid-template-columns: minmax(0, 720px); }
+  }
+  @media (max-width: 640px) {
+    main { padding-top: 28px; }
+    .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
+    .barra { gap: 8px; }
+    .barra .sec { padding: 9px 12px; font-size: 13px; }
+    .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+    .cel.tempo { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
+    .ctrl { flex-wrap: wrap; }
+    .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
+    .ctrl #play { flex: 1 1 auto; }
+    .dica { flex: 1 1 auto; text-align: right; }
+    .mapcont { position: static; margin: 0 0 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .marca { stroke: var(--accent); stroke-dasharray: 4 4; }
+  .marca-t { font: 500 12px var(--mono); fill: var(--accent); }
+  .troca { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
+  .troca-t { font: 500 12px var(--mono); fill: var(--accent); }
+  .troca, .troca-t { opacity: 0; transition: opacity .25s; }
+  .troca.on, .troca-t.on { opacity: 1; }
+  #svg { cursor: ew-resize; }
+  .grafico { transition: opacity .2s; }
+  .carregando .grafico { opacity: .4; }
+</style>
+</head>
+<body>
+<main>
+  <header class="topo">
+    <p class="sobre">Apuração · 2º turno · 25 out 2026 · Presidente</p>
+    <h1>A noite da apuração</h1>
+    <p class="lead">Cada seção entra na soma de uma vez, com todos os seus votos, na ordem em que o TSE recebeu os boletins de urna. Escolha a sua escala e veja a contagem, das primeiras seções às últimas.</p>
+  </header>
+
+  <section class="painel" aria-label="Gráfico">
+    <div class="barra">
+      <button id="link" type="button" class="sec">Compartilhar</button>
+    </div>
+
+    <div class="escala">
+      <label>Estado
+        <select id="uf"><option value="">Brasil</option></select>
+      </label>
+      <label class="cid">Cidade
+        <input id="cidade" type="text" placeholder="Todas" autocomplete="off" disabled role="combobox" aria-expanded="false" aria-controls="sug">
+        <ul id="sug" class="sug" role="listbox" hidden></ul>
+      </label>
+      <label>Zona
+        <select id="zona" disabled><option value="">Todas</option></select>
+      </label>
+      <label>Seção
+        <select id="secao" disabled><option value="">Todas</option></select>
+      </label>
+    </div>
+
+    <div class="placar" aria-live="polite">
+      <div class="cel tempo"><div class="n" id="horadia">Seções somadas</div><div class="p" id="hora">0%</div><div class="v" id="onde">Brasil</div></div>
+      <div class="cel cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,00%</div><div class="v" id="va">0 votos</div></div>
+      <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
+    </div>
+
+    <div class="mapa" id="mapawrap" hidden>
+      <p class="mapcont" id="mapcont"></p>
+      <div class="dica-c" id="dicac" hidden></div>
+      <canvas id="mapa" role="img" aria-label="Mapa do Brasil: cada cidade aparece quando a sua primeira seção entra na soma e cresce com os votos já somados"></canvas>
+      <p class="leg"><span class="escalac" aria-label="Cor da cidade: quem está à frente e por quanto"><span class="ta"><span id="lega">Lula</span> 75%</span><span class="bar"></span><span class="tb"><span id="legb">Bolsonaro</span> 75%</span></span><span><i></i>acaba de entrar na soma</span><span>tamanho: votos já somados · sem o exterior</span></p>
+    </div>
+
+    <div class="grafico">
+      <svg id="svg" viewBox="0 0 1000 440" role="img"></svg>
+    </div>
+    <p class="antes" id="antes"></p>
+
+    <div class="ctrl">
+      <button id="play" type="button">Pausar</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avançar no tempo">
+      <span class="dica">ou arraste sobre o gráfico</span>
+    </div>
+  </section>
+
+  <p class="fim" id="fim"></p>
+
+  <section class="metodo">
+    <div>
+      <h2>A apuração</h2>
+      <p>A curva da apuração soma as seções na ordem em que o TSE recebeu cada boletim de urna, cada uma de uma vez, com todos os seus votos. A hora de recebimento está nos <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">arquivos de boletim de urna do TSE</a>. O eixo é a parcela das seções já somadas, não a hora.</p>
+      <p>Conferimos essa ordem com o <a href="https://evolucao-totalizacao.tse.jus.br/painel/index.html">painel de evolução da totalização do TSE</a>, que mostra a cada 5 minutos quantas seções de cada cidade já estavam somadas. Em todas as cidades, cada contagem do painel bate com as seções que o TSE recebeu até 8 minutos antes. Lula começa à frente, Bolsonaro passa à frente com 14,0% das seções e Lula retoma a liderança com 47,5%, como no painel.</p>
+    </div>
+    <p class="fonte">Percentuais sobre votos válidos (sem brancos e nulos). Fontes: votação por seção e boletins de urna, TSE. <a href="como.html">Como contamos</a>.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const D = "data/apuracao/";
+  const CALMO = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = id => document.getElementById(id);
+  const fmt = n => Math.round(n).toLocaleString("pt-BR");
+  const pct = x => (x * 100).toFixed(2).replace(".", ",") + "%";  // two decimals, as the TSE shows
+  const UFNOME = {AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",ZZ:"Exterior"};
+  const ARIA = "Votos válidos de cada candidato na apuração, pela parcela das seções somadas, na ordem em que o TSE recebeu os boletins de urna";
+  const cache = {};
+  const get = p => cache[p] || (cache[p] = fetch(D + p).then(r => { if (!r.ok) throw new Error(p); return r.json(); }));
+
+  let NOMES = {"13": "Lula", "22": "Bolsonaro"};
+  let towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
+  const deDict = d => ["13", "22", "95", "96"].map(k => d[k]);
+
+  function cidadeNome() {
+    if (!towns || !estado.mun) return "";
+    const i = towns.id.indexOf(estado.mun);
+    return i < 0 ? estado.mun : towns.nome[i];
+  }
+  function nomeEscala() {
+    if (estado.secao) return `na seção ${estado.secao}, zona ${estado.zona}`;
+    if (estado.zona) return `na zona ${estado.zona} de ${cidadeNome()}`;
+    if (estado.mun) return `em ${cidadeNome()}`;
+    if (estado.uf) return estado.uf === "ZZ" ? "no exterior" : `em ${UFNOME[estado.uf]}`;
+    return "no Brasil";
+  }
+
+  // ---- series: x is the share of sections counted (0..1) at the end of each step, with the
+  // per-step votes of 13, 22, 95 and 96.
+  // The count for a city or zone: its sections in the order the TSE received their bulletins
+  // (s[1], the place in the Brasil count), one step per section, or PONTOS steps when there are more.
+  function apuracaoDe(secoes, pontos) {
+    const ss = [...secoes].sort((p, q) => p[1][1] - q[1][1]);
+    const n = Math.min(ss.length, pontos), out = [0, 1, 2, 3].map(() => new Array(n).fill(0));
+    ss.forEach(([, s], k) => s[0].forEach((v, j) => { out[j][Math.floor(k * n / ss.length)] += v; }));
+    return {s: out, n, ss};
+  }
+
+  async function montar() {
+    document.body.classList.add("carregando");
+    const br = await get("brasil.json");
+    NOMES = br.nomes || NOMES;
+    $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
+    $("lega").textContent = NOMES["13"]; $("legb").textContent = NOMES["22"];
+    const m = estado.mun ? await get(`mun/${estado.mun}.json`) : null;
+    if (m) preencherZonas(m);
+    let s, marca = null;
+    const ap = br.apuracao;
+    if (!m) {
+      s = deDict(estado.uf ? ap.ufs[estado.uf] : ap.brasil);
+    } else {
+      // A section enters the sum at once: draw its zone, and mark where the section came in.
+      const zonaToda = Object.entries(m.secoes).filter(([k]) => !estado.zona || k.startsWith(estado.zona + "-"));
+      const r = apuracaoDe(zonaToda, ap.pontos);
+      s = r.s;
+      if (estado.secao) {
+        const k = `${estado.zona}-${estado.secao}`, i = r.ss.findIndex(([q]) => q === k);
+        marca = {pos: (Math.floor(i * r.n / r.ss.length) + 1) / r.n, k: i + 1, de: r.ss.length, votos: m.secoes[k][0]};
+      }
+    }
+    const passo = 1 / s[0].length;
+    const x = s[0].map((_, i) => (i + 1) * passo);  // each point is the end of its step
+    // The line starts once a share of this scale's votes is in: a few early votes (abroad) give
+    // shares that swing on a handful of people. They stay in the running total.
+    const tot = s[0].map((_, i) => s.reduce((a, v) => a + v[i], 0));
+    const total = tot.reduce((p, q) => p + q, 0);
+    let acc = 0, a = tot.findIndex(v => (acc += v) >= total * .003);
+    if (marca) a = 0;
+    const b = tot.length - 1 - [...tot].reverse().findIndex(v => v > 0);
+    const cum = v => { let c = 0; return v.map(y => (c += y)); };
+    const ca = cum(s[0]), cb = cum(s[1]), ct = cum(tot);
+    serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
+             antes: a > 0 ? ct[a - 1] : 0, marca};
+    serie.barras = !!m;  // in a city, each bar is a section or an equal share of them
+    $("onde").textContent = estado.secao ? `Seção ${estado.secao} · zona ${estado.zona}` : estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
+      : estado.mun ? cidadeNome() : estado.uf ? UFNOME[estado.uf] : "Brasil";
+    await mapaEscala(!m).catch(() => mapaEscala(false));
+    document.body.classList.remove("carregando");
+    desenhar();
+    tocar();
+    const q = new URLSearchParams();
+    for (const k of ["uf", "mun", "zona", "secao"]) if (estado[k]) q.set(k === "mun" ? "cidade" : k, estado[k]);
+    history.replaceState(null, "", q.toString() ? "?" + q : location.pathname);
+  }
+
+  let zonasDe = "";
+  function preencherZonas(m) {
+    if (zonasDe === m.id) return;
+    zonasDe = m.id;
+    const zs = [...new Set(Object.keys(m.secoes).map(k => k.slice(0, 4)))].sort();
+    $("zona").innerHTML = '<option value="">Todas</option>' + zs.map(z => `<option${z === estado.zona ? " selected" : ""}>${z}</option>`).join("");
+    $("zona").disabled = false;
+    secoesDe(m);
+  }
+  function secoesDe(m) {
+    const ss = Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).sort();
+    $("secao").innerHTML = '<option value="">Todas</option>' + ss.map(s => `<option${s === estado.secao ? " selected" : ""}>${s}</option>`).join("");
+    $("secao").disabled = !estado.zona;
+  }
+
+  // ---- chart
+  let W = 1000, H = 440;
+  const L = 46, R = 40, T = 14, B = 30, BAR = 64;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
+  let g = {};
+
+  function desenhar() {
+    const svg = $("svg"); svg.innerHTML = "";
+    W = Math.max(300, svg.parentNode.clientWidth); H = Math.round(Math.min(440, Math.max(300, W * .5)));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("aria-label", ARIA);
+    const n = serie.x.length, x0 = serie.x[0] - serie.passo, x1 = serie.x[n - 1];
+    const xm = m => L + (W - L - R) * (m - x0) / (x1 - x0);
+    const x = i => xm(serie.x[i]);
+    const sa = serie.ca.map((a, i) => a + serie.cb[i] ? a / (a + serie.cb[i]) : .5);
+    // The first sections swing on few votes: they stay on the line but do not set the scale.
+    const skip = serie.marca ? 0 : Math.floor(n * .02);
+    let dev = Math.min(.5, Math.max(.05, ...sa.slice(skip).map(p => Math.abs(p - .5))));
+    dev = Math.min(.5, Math.ceil(dev * 50) / 50);
+    const yTop = T, yBot = H - B - (serie.barras ? BAR : 0) - 22;
+    const y = p => Math.max(yTop - 6, Math.min(yBot + 6, yTop + (yBot - yTop) * (1 - (p - (.5 - dev)) / (2 * dev))));
+    const eixo = el("g", {class: "eixo"}, svg);
+    for (const p of [.5 - dev, .5, .5 + dev]) {
+      el("line", {x1: L, x2: W - R, y1: y(p), y2: y(p), class: p === .5 ? "meio" : ""}, eixo);
+      el("text", {x: L - 8, y: y(p) + 4, "text-anchor": "end"}, eixo).textContent = Math.round(p * 100) + "%";
+    }
+    // ticks on the share of sections counted
+    for (let q = Math.ceil(x0 * 4) / 4; q <= x1 + 1e-9; q += .25)
+      el("text", {x: xm(q), y: H - 8, "text-anchor": q >= 1 ? "end" : "middle"}, eixo).textContent = Math.round(q * 100) + "%";
+    if (!serie.barras) serie.tot = serie.tot.map(() => 0);
+    const mx = Math.max(1, ...serie.tot), bw = Math.max(1.5, (W - L - R) / Math.max(n, (x1 - x0) / serie.passo) * .7);
+    const barras = el("g", {class: "barras"}, svg);
+    g.barras = serie.tot.map((v, i) => el("rect", {x: xm(serie.x[i] - serie.passo / 2) - bw / 2, width: bw, y: H - B - 4 - BAR * v / mx, height: BAR * v / mx}, barras));
+    if (serie.marca) {
+      const mm = serie.marca.pos;
+      g.marca = el("line", {class: "marca", x1: xm(mm), x2: xm(mm), y1: T, y2: H - B}, svg);
+      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = "sua seção";
+    }
+    const pts = f => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
+    g.pa = pts(p => p); g.pb = pts(p => 1 - p);
+    g.la = el("polyline", {class: "la", points: ""}, svg);
+    g.lb = el("polyline", {class: "lb", points: ""}, svg);
+    // where the lead changes sides, shown once the line gets there (at most four)
+    const tr = trocasEm(sa);
+    g.trocas = tr.length > 4 ? [] : tr.map(i => {
+      const c = el("circle", {class: "troca", r: 4.5, cx: x(i), cy: y(.5)}, svg);
+      const dir = x(i) > W - 170 ? "end" : "start", up = k => k % 2 ? 18 : -10;
+      const tx = el("text", {class: "troca-t", x: x(i) + (dir === "end" ? -8 : 8), y: y(.5) + up(tr.indexOf(i)), "text-anchor": dir}, svg);
+      tx.textContent = `${NOMES[sa[i] > .5 ? "13" : "22"]} passa à frente`;
+      return {i, c, tx};
+    });
+    g.cur = el("line", {class: "cursor", y1: T, y2: H - B}, svg);
+    g.da = el("circle", {r: 5, class: "ponto-a"}, svg);
+    g.db = el("circle", {r: 5, class: "ponto-b"}, svg);
+    g.ra = el("text", {class: "rot", fill: "var(--a)"}, svg); g.ra.textContent = NOMES["13"];
+    g.rb = el("text", {class: "rot", fill: "var(--b)"}, svg); g.rb.textContent = NOMES["22"];
+    Object.assign(g, {x, y, sa, n});
+    pintar(1);
+  }
+
+  function pintar(f) {
+    t = f;
+    const n = g.n, pos = f * (n - 1), i = Math.floor(pos), r = pos - i;
+    const lerp = arr => i >= n - 1 ? arr[n - 1] : arr[i] + (arr[i + 1] - arr[i]) * r;
+    const cut = (pts, p) => {
+      const out = pts.slice(0, i + 1);
+      if (i < n - 1) out.push(`${(g.x(i) + (g.x(i + 1) - g.x(i)) * r).toFixed(1)},${g.y(p).toFixed(1)}`);
+      return out.join(" ");
+    };
+    const p = lerp(g.sa), xa = i >= n - 1 ? g.x(n - 1) : g.x(i) + (g.x(i + 1) - g.x(i)) * r;
+    g.la.setAttribute("points", cut(g.pa, p));
+    g.lb.setAttribute("points", cut(g.pb, 1 - p));
+    g.cur.setAttribute("x1", xa); g.cur.setAttribute("x2", xa);
+    g.da.setAttribute("cx", xa); g.da.setAttribute("cy", g.y(p));
+    g.db.setAttribute("cx", xa); g.db.setAttribute("cy", g.y(1 - p));
+    const ya = g.y(p), yb = g.y(1 - p), sep = Math.abs(ya - yb) < 16 ? 9 : 0;
+    const anc = xa > W - 120 ? "end" : "start";
+    g.ra.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.ra.setAttribute("text-anchor", anc); g.ra.setAttribute("y", ya + 4 + (ya <= yb ? -sep : sep) - (anc === "end" ? 10 : 0));
+    g.rb.setAttribute("x", xa > W - 120 ? xa - 10 : xa + 10); g.rb.setAttribute("text-anchor", anc); g.rb.setAttribute("y", yb + 4 + (yb < ya ? -sep : sep) + (anc === "end" ? 14 : 0));
+    g.barras.forEach((bb, k) => bb.classList.toggle("ja", k <= pos + 1e-9));
+    for (const q of g.trocas) { q.c.classList.toggle("on", q.i <= pos + 1e-9); q.tx.classList.toggle("on", q.i <= pos + 1e-9); }
+    const va = lerp(serie.ca), vb = lerp(serie.cb);
+    $("pa").textContent = pct(va + vb ? va / (va + vb) : 0);
+    $("pb").textContent = pct(va + vb ? vb / (va + vb) : 0);
+    $("va").textContent = fmt(va) + " votos";
+    $("vb").textContent = fmt(vb) + " votos";
+    if (MP.on) { MP.q = lerp(serie.x); kick(); }
+    $("hora").textContent = Math.round(lerp(serie.x) * 100) + "%";
+    $("scrub").value = Math.round(f * 1000);
+    $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
+    $("antes").textContent = serie.antes
+      ? `A linha começa com ${(Math.round((serie.x[0] - serie.passo) * 1000) / 10).toLocaleString("pt-BR")}% das seções somadas. Antes disso, ${fmt(serie.antes)} votos já tinham entrado na soma; eles já estão no total.`
+      : "";
+  }
+
+  // indices where the leader differs from the last point that had one
+  function trocasEm(sa) {
+    const out = []; let ant = "";
+    sa.forEach((p, k) => { const l = p > .5 ? "a" : p < .5 ? "b" : ""; if (l && ant && l !== ant) out.push(k); if (l) ant = l; });
+    return out;
+  }
+  function trocas() { return trocasEm(g.sa).length; }
+  function fimTexto(va, vb) {
+    const onde = nomeEscala();
+    if (serie.marca) {
+      const [a, b] = serie.marca.votos;
+      const ven = a === b ? "empate" : `${NOMES[a > b ? "13" : "22"]} venceu`;
+      return `Sua seção foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a entrar na soma, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona, na ordem em que o TSE recebeu os boletins de urna.</span>`;
+    }
+    if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
+    const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb), tr = trocas();
+    const lid = tr ? ` Na apuração, a liderança trocou de lado ${tr === 1 ? "uma vez" : tr + " vezes"}.` : " Liderou a apuração do começo ao fim.";
+    return `${ven} venceu ${onde}, com ${pct(pv)} dos válidos.${lid}<span class="of">O resultado é o oficial do TSE. A ordem é a do TSE: a hora em que recebeu cada boletim de urna.</span>`;
+  }
+
+  function falha() {
+    document.body.classList.remove("carregando");
+    $("antes").textContent = "Não foi possível carregar esta escala. Tente outra.";
+  }
+
+  // Play from where the reader is (or from the start at the end); the button pauses mid-way.
+  let tocando = false;
+  function botao() { $("play").textContent = tocando ? "Pausar" : t >= 1 ? "Repetir a apuração" : "Continuar"; }
+  function parar() { cancelAnimationFrame(anim); tocando = false; botao(); }
+  function tocar(de = 0) {
+    cancelAnimationFrame(anim);
+    if (CALMO) { pintar(1); tocando = false; botao(); return; }
+    // With the map, start slow: most cities light up within the first tenth of the sections.
+    const dur = (MP.on ? 16000 : 6000) * (1 - de), t0 = performance.now();
+    const curva = MP.on ? f => Math.pow(f, 1.5) : f => 1 - Math.pow(1 - f, 1.6);
+    tocando = true; botao();
+    const passo = now => {
+      const f = Math.max(0, Math.min(1, (now - t0) / dur));
+      pintar(de + (1 - de) * (f < 1 ? curva(f) : 1));
+      if (f < 1) anim = requestAnimationFrame(passo); else { tocando = false; botao(); }
+    };
+    anim = requestAnimationFrame(passo);
+  }
+
+  $("play").onclick = () => tocando ? parar() : tocar(t >= 1 ? 0 : t);
+  $("scrub").oninput = e => { parar(); pintar(e.target.value / 1000); botao(); };
+  // drag or tap on the chart to move along it
+  const svgEl = $("svg");
+  const naPosicao = e => {
+    if (!g.n) return;
+    const r = svgEl.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const a = g.x(0), b = g.x(g.n - 1);
+    pintar(Math.max(0, Math.min(1, (px - a) / (b - a)))); botao();
+  };
+  svgEl.addEventListener("pointerdown", e => { parar(); svgEl.setPointerCapture(e.pointerId); naPosicao(e); });
+  svgEl.addEventListener("pointermove", e => { if (svgEl.hasPointerCapture(e.pointerId)) naPosicao(e); });
+  $("link").onclick = async () => {
+    const url = location.href, b = $("link");
+    try {
+      if (navigator.share) await navigator.share({title: document.title, url});
+      else { await navigator.clipboard.writeText(url); b.textContent = "Link copiado"; setTimeout(() => { b.textContent = "Compartilhar"; }, 1800); }
+    } catch (_) { /* closed the share sheet */ }
+  };
+  addEventListener("resize", () => { if (serie) { if (MP.on) layout(); desenhar(); pintar(t); } });
+
+  // ---- map. A city appears when its first section enters the sum and grows with the votes
+  // counted so far; its tone is who leads there at that moment. The amber ring: it just came in.
+  const MP = {on: false, q: 0, pAnt: 0, dados: null, borders: [], cid: [], raf: 0, last: 0, sel: null, fixa: false};
+  const cv = $("mapa"), PULSO = 900;
+  // A city's tone: the leader's hue, full at 75% of the valid votes, grey at an even split.
+  const CA = [226, 103, 107], CB = [95, 147, 227], MID = [120, 124, 138], BR = [236, 232, 220];
+  const tomDe = (a, b) => { const m = (a - b) / (a + b), k = Math.min(1, Math.abs(m) / .5); return mix(MID, m >= 0 ? CA : CB, Math.pow(k, .8)); };
+  const mix = (u, v, k) => u.map((c, i) => Math.round(c + (v[i] - c) * k));
+
+  async function mapaEscala(on) {
+    MP.on = on && !!towns; $("mapawrap").hidden = !MP.on;
+    if (!MP.on) return;
+    if (!MP.dados) [MP.dados, MP.borders] = await Promise.all([get("mapa.json"),
+      fetch("data/borders.json").then(r => r.json()).catch(() => [])]);
+    const d = MP.dados, P = d.pontos, uf = estado.uf, onde = new Map(towns.id.map((id, i) => [id, i]));
+    // A state's count is the Brasil order within the state: turn its share into a Brasil point.
+    MP.ponto = q => q * P;
+    if (uf) {
+      const cum = [0]; d.secoes[uf].forEach(v => cum.push(cum[cum.length - 1] + v));
+      const tot = cum[cum.length - 1];
+      MP.ponto = q => { const alvo = q * tot; let k = 1; while (k < cum.length - 1 && cum[k] < alvo) k++;
+        return k - 1 + Math.min(1, (alvo - cum[k - 1]) / Math.max(1, cum[k] - cum[k - 1])); };
+    }
+    MP.cid = [];
+    d.id.forEach((id, j) => {
+      const i = onde.get(id); if (i == null || (uf && towns.uf[i] !== uf)) return;
+      const e = d.c[j]; let tot = 0; for (let k = 0; k < e.length; k += 3) tot += e[k + 1] + e[k + 2];
+      MP.cid.push({i, lat: towns.lat[i], lon: towns.lon[i], e, tot, first: e[0], r: 0, born: -1e9, a: 0, b: 0});
+    });
+    MP.cid.sort((a, b) => b.tot - a.tot);  // big dots first, small ones stay visible on top
+    MP.pAnt = 0; MP.sel = null; $("dicac").hidden = true;
+    layout(true);
+  }
+
+  // On a new scale the view glides from the old bounds to the new ones; a resize just snaps.
+  function layout(anima = false) {
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
+    let alvo = [-74.2, -34.6, 5.6, -34.0];
+    if (estado.uf && MP.cid.length) alvo = [Math.min(...MP.cid.map(c => c.lon)) - .3, Math.max(...MP.cid.map(c => c.lon)) + .3,
+      Math.max(...MP.cid.map(c => c.lat)) + .3, Math.min(...MP.cid.map(c => c.lat)) - .3];
+    MP.dpr = dpr;
+    if (anima && MP.limites && !CALMO && alvo.some((v, j) => v !== MP.limites[j])) MP.zoom = {de: MP.limites, para: alvo, t0: performance.now()};
+    else { MP.zoom = null; projetar(alvo); } MP.rmax = Math.min(cv.width, cv.height) * (estado.uf ? .05 : .045);
+    MP.tmax = Math.sqrt(Math.max(1, ...MP.cid.map(c => c.tot)));
+    kick();
+  }
+
+  function projetar(lim) {
+    MP.limites = lim;
+    const [lo0, lo1, la0, la1] = lim, KX = Math.cos(15 * Math.PI / 180), pad = 10 * MP.dpr;
+    const w = cv.width - 2 * pad, h = cv.height - 2 * pad, mw = (lo1 - lo0) * KX, mh = la0 - la1, s = Math.min(w / mw, h / mh);
+    const ox = pad + (w - mw * s) / 2, oy = pad + (h - mh * s) / 2;
+    MP.X = lon => ox + (lon - lo0) * KX * s; MP.Y = lat => oy + (la0 - lat) * s;
+    for (const c of MP.cid) { c.x = MP.X(c.lon); c.y = MP.Y(c.lat); }
+  }
+
+  function kick() { if (!MP.raf && MP.on) { MP.last = performance.now(); MP.raf = requestAnimationFrame(quadro); } }
+
+  function quadro(now) {
+    MP.raf = 0;
+    const ctx = cv.getContext("2d"), dpr = MP.dpr, dt = now - MP.last; MP.last = now;
+    const p = MP.ponto(MP.q), pa = MP.pAnt, vem = p > pa && p - pa < MP.dados.pontos * .04;
+    MP.pAnt = p;
+    const k = CALMO ? 1 : 1 - Math.exp(-dt / 140);
+    if (MP.zoom) {
+      const z = Math.min(1, (now - MP.zoom.t0) / 700), e = z < .5 ? 4 * z * z * z : 1 - Math.pow(-2 * z + 2, 3) / 2;
+      const {de, para} = MP.zoom;
+      projetar(de.map((v, j) => v + (para[j] - v) * e));
+      if (z >= 1) MP.zoom = null;
+    }
+    let ocupado = !!MP.zoom;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.strokeStyle = "rgba(236,232,220,.14)"; ctx.lineWidth = dpr; ctx.beginPath();
+    for (const ring of MP.borders) { ring.forEach(([lo, la], j) => j ? ctx.lineTo(MP.X(lo), MP.Y(la)) : ctx.moveTo(MP.X(lo), MP.Y(la))); ctx.closePath(); }
+    ctx.stroke();
+    const rmin = .9 * dpr, aneis = [];
+    ctx.strokeStyle = "rgba(15,19,32,.85)"; ctx.lineWidth = .8 * dpr;
+    let dentro = 0;
+    for (const c of MP.cid) {
+      let a = 0, b = 0;
+      for (let j = 0; j < c.e.length; j += 3) {
+        const w = Math.min(1, p - c.e[j]); if (w <= 0) break;
+        a += c.e[j + 1] * w; b += c.e[j + 2] * w;
+      }
+      if (vem && c.first >= pa && c.first < p && !CALMO) c.born = now;
+      if (a + b > 0) dentro++;
+      c.a = a; c.b = b;
+      const alvo = a + b > 0 ? rmin + (MP.rmax - rmin) * Math.sqrt(a + b) / MP.tmax : 0;
+      c.r += (alvo - c.r) * k; if (Math.abs(alvo - c.r) > .05) ocupado = true; else c.r = alvo;
+      if (c.r < .2) continue;  // not counted yet: the state borders hold the shape
+      const e = (now - c.born) / PULSO, tom = tomDe(a, b);
+      const cor = e < 1 ? mix(BR, tom, Math.min(1, e * 1.4)) : tom;
+      ctx.fillStyle = `rgba(${cor},.86)`;
+      ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r), 0, 6.283); ctx.fill();
+      if (c.r > 2.5 * dpr) ctx.stroke();  // a thin dark rim keeps neighbouring big cities apart
+      if (e < 1) { aneis.push([c, e]); ocupado = true; }
+    }
+    if (MP.sel) {  // the city under the pointer, or the one tapped
+      ctx.strokeStyle = "rgba(236,232,220,.95)"; ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath(); ctx.arc(MP.sel.x, MP.sel.y, Math.max(3 * dpr, MP.sel.r) + 3 * dpr, 0, 6.283); ctx.stroke();
+      dicaCidade();
+    }
+    ctx.lineWidth = 1.2 * dpr;
+    for (const [c, e] of aneis) {
+      const f = 1 - Math.pow(1 - e, 3);
+      ctx.strokeStyle = `rgba(236,232,220,${(.8 * Math.pow(1 - e, 1.4)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(rmin, c.r) + (3 + 14 * f) * dpr, 0, 6.283); ctx.stroke();
+    }
+    $("mapcont").innerHTML = `<b>${fmt(dentro)}</b> de ${fmt(MP.cid.length)} cidades com seções somadas`;
+    if (ocupado) MP.raf = requestAnimationFrame(quadro);
+  }
+
+  // Hover or tap a city: its name, the share of its votes already in, and each candidate's share.
+  function dicaCidade() {
+    const c = MP.sel, d = $("dicac"), i = c.i, v = c.a + c.b;
+    const corpo = v > 0
+      ? `<span class="ca">${NOMES["13"]} ${pct(c.a / v)}</span><br><span class="cb">${NOMES["22"]} ${pct(c.b / v)}</span><br>${Math.min(100, Math.round(100 * v / c.tot))}% dos votos da cidade já somados`
+      : "Nenhuma seção somada ainda.";
+    d.innerHTML = `<strong>${towns.nome[i]} · ${towns.uf[i]}</strong>${corpo}${MP.fixa ? '<br><button type="button" id="vercid">Ver a apuração da cidade</button>' : ""}`;
+    d.classList.toggle("fixa", MP.fixa); d.hidden = false;
+    const W0 = cv.parentNode.clientWidth, x = c.x / MP.dpr, y = cv.offsetTop + c.y / MP.dpr, w = d.offsetWidth, h = d.offsetHeight;
+    d.style.left = Math.max(0, Math.min(W0 - w, x - w / 2)) + "px";
+    d.style.top = (y - h - 14 < cv.offsetTop ? y + 16 : y - h - 14) + "px";
+    const b = $("vercid");
+    if (b) b.onclick = () => {
+      estado = {uf: towns.uf[i], mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
+      ufSel.value = estado.uf; $("cidade").disabled = false; $("cidade").value = towns.nome[i];
+      montar().catch(falha);
+    };
+  }
+  function cidadeEm(e) {
+    const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * MP.dpr, y = (e.clientY - r.top) * MP.dpr;
+    let best = null, bd = 14 * MP.dpr;
+    for (const c of MP.cid) { const d = Math.hypot(c.x - x, c.y - y) - Math.max(0, c.r); if (d < bd) { bd = d; best = c; } }
+    return best;
+  }
+  cv.addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse" || MP.fixa) return;
+    const c = cidadeEm(e);
+    if (c !== MP.sel) { MP.sel = c; if (!c) $("dicac").hidden = true; kick(); }
+  });
+  cv.addEventListener("pointerleave", () => { if (!MP.fixa && MP.sel) { MP.sel = null; $("dicac").hidden = true; kick(); } });
+  cv.addEventListener("click", e => {
+    const c = cidadeEm(e);
+    MP.fixa = !!c && !(MP.fixa && c === MP.sel); MP.sel = MP.fixa ? c : null;
+    if (!MP.sel) $("dicac").hidden = true;
+    kick();
+  });
+
+  // ---- pickers
+  const ufSel = $("uf");
+  Object.keys(UFNOME).sort((a, b) => UFNOME[a].localeCompare(UFNOME[b], "pt-BR")).forEach(u => ufSel.add(new Option(UFNOME[u], u)));
+  ufSel.onchange = () => {
+    estado = {uf: ufSel.value, mun: "", zona: "", secao: ""};
+    $("cidade").value = ""; $("cidade").disabled = !estado.uf || estado.uf === "ZZ";
+    $("zona").disabled = $("secao").disabled = true; zonasDe = "";
+    $("zona").innerHTML = $("secao").innerHTML = '<option value="">Todas</option>';
+    montar().catch(falha);
+  };
+  $("zona").onchange = async () => {
+    estado.zona = $("zona").value; estado.secao = "";
+    secoesDe(await get(`mun/${estado.mun}.json`)); montar().catch(falha);
+  };
+  $("secao").onchange = () => { estado.secao = $("secao").value; montar().catch(falha); };
+
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  let sugs = [], ativo = -1;
+  $("cidade").oninput = () => {
+    const q = norm($("cidade").value.trim()), ul = $("sug");
+    if (!towns || q.length < 2) { ul.hidden = true; return; }
+    sugs = [];
+    for (let i = 0; i < towns.id.length && sugs.length < 8; i++)
+      if (towns.uf[i] === estado.uf && norm(towns.nome[i]).startsWith(q)) sugs.push(i);
+    ativo = sugs.length ? 0 : -1;
+    ul.innerHTML = sugs.map((i, k) => `<li role="option" data-k="${k}" aria-selected="${k === ativo}">${towns.nome[i]} <small>${towns.uf[i]}</small></li>`).join("");
+    ul.hidden = !sugs.length; $("cidade").setAttribute("aria-expanded", String(!ul.hidden));
+  };
+  const escolher = k => {
+    const i = sugs[k]; if (i == null) return;
+    $("cidade").value = towns.nome[i]; $("sug").hidden = true;
+    estado = {uf: estado.uf, mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
+    montar().catch(falha);
+  };
+  $("sug").onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); escolher(+li.dataset.k); } };
+  $("cidade").onkeydown = e => {
+    const ul = $("sug"); if (ul.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); ativo = (ativo + (e.key === "ArrowDown" ? 1 : -1) + sugs.length) % sugs.length;
+      [...ul.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === ativo)));
+    } else if (e.key === "Enter") { e.preventDefault(); escolher(ativo); }
+    else if (e.key === "Escape") ul.hidden = true;
+  };
+  $("cidade").onblur = () => setTimeout(() => { $("sug").hidden = true; }, 100);
+
+  // ---- start: a shared link keeps its view and scale
+  (async () => {
+    const q = new URLSearchParams(location.search);
+    towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
+    const uf = (q.get("uf") || "").toUpperCase();
+    if (UFNOME[uf]) {
+      estado.uf = uf; ufSel.value = uf; $("cidade").disabled = uf === "ZZ";
+      const mun = q.get("cidade") || "";
+      if (mun && towns && towns.id.includes(mun)) {
+        estado.mun = mun; $("cidade").value = cidadeNome();
+        estado.zona = q.get("zona") || ""; estado.secao = estado.zona ? q.get("secao") || "" : "";
+      }
+    }
+    montar().catch(() => {
+      if (estado.zona) { estado.zona = estado.secao = ""; montar().catch(falha); } else falha();
+    });
+  })();
+})();
+</script>
+</body>
+</html>

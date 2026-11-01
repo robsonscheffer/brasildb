@@ -13,11 +13,17 @@ import pytest
 import respx
 import yaml
 
-from brasildb.tse.csv_tables import fetch_zip_member, read_detalhe_votacao_secao, read_municipio
+from brasildb.tse.csv_tables import (
+    fetch_zip_member,
+    read_detalhe_votacao_secao,
+    read_municipio,
+    read_votacao_secao,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 DETALHE = FIXTURES / "detalhe_votacao_secao_2026_BR_rr_sample.csv"
 MUNICIPIO = FIXTURES / "municipio_tse_ibge_rr.csv"
+VOTACAO = FIXTURES / "votacao_secao_2026_BR_rr_sample.csv"
 CATALOG = Path(__file__).parents[1] / "catalog.yaml"
 
 ARROW_FOR = {
@@ -47,12 +53,28 @@ def test_catalog_types_are_mapped():
     """Every type the loaders use has an Arrow mapping in this test file."""
     used = set(_catalog_columns("br_tse_eleicoes", "detalhes_votacao_secao").values())
     used |= set(_catalog_columns("br_bd_diretorios_brasil", "municipio").values())
+    used |= set(_catalog_columns("br_tse_eleicoes", "votacao_secao").values())
     assert used <= set(ARROW_FOR)
 
 
 def test_detalhe_columns_match_catalog_names_types_and_order():
     table = read_detalhe_votacao_secao(str(DETALHE))
     assert _schema_pairs(table) == _expected_pairs("br_tse_eleicoes", "detalhes_votacao_secao")
+
+
+def test_votacao_columns_match_catalog_names_types_and_order():
+    table = read_votacao_secao(str(VOTACAO))
+    assert _schema_pairs(table) == _expected_pairs("br_tse_eleicoes", "votacao_secao")
+
+
+def test_votacao_values_are_padded_and_typed():
+    rows = read_votacao_secao(str(VOTACAO)).to_pylist()
+    assert {(r["sigla_uf"], r["id_municipio_tse"], r["zona"], r["secao"]) for r in rows} == {
+        ("RR", "03085", "0008", "0001")
+    }
+    assert {r["turno"] for r in rows} == {1, 2}
+    assert all(isinstance(r["votos"], int) and r["votos"] > 0 for r in rows)
+    assert {"95", "13"} <= {r["numero_votavel"] for r in rows if r["turno"] == 1}
 
 
 def test_municipio_columns_match_catalog_names_types_and_order():

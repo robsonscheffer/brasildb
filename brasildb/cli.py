@@ -239,6 +239,32 @@ def cmd_load_turnout(a) -> None:
         print(f"loaded {name}")
 
 
+def cmd_load_votes(a) -> None:
+    s = config.load()
+    for member in a.members:  # e.g. BR, RR
+        name = f"votacao_secao_{a.ano}_{member.upper()}.csv"
+        url = f"{CKAN_CDN}/votacao_secao/votacao_secao_{a.ano}_{member.upper()}.zip"
+        path = csv_tables.fetch_zip_member(url, name, f"{s.raw}/ckan")
+        lake.write_table(s.lake, "br_tse_eleicoes", "votacao_secao",
+                         csv_tables.read_votacao_secao(str(path)), f"votacao-{member.upper()}")
+        print(f"loaded {name}")
+
+
+def cmd_derive_votos(a) -> None:
+    """Write main.votos_eventos to br_tse_urna_logs.votos, one state at a time."""
+    s = config.load()
+    con = open_db(s)
+    ufs = [u.upper() for u in a.ufs if re.fullmatch(r"[A-Za-z]{2}", u)] or [u for (u,) in con.execute(
+        "SELECT DISTINCT sigla_uf FROM br_tse_urna_logs.eventos WHERE ano = ? AND turno = ? ORDER BY 1",
+        [a.ano, a.turno]).fetchall()]
+    for uf in ufs:
+        t0 = time.time()
+        data = con.sql(f"SELECT * FROM main.votos_eventos WHERE ano = {int(a.ano)} "
+                       f"AND turno = {int(a.turno)} AND sigla_uf = '{uf}'").to_arrow_table()
+        data = data.cast(arrow_schema("br_tse_urna_logs", "votos"))
+        lake.write_table(s.lake, "br_tse_urna_logs", "votos", data, f"votos-{a.turno}-{uf}")
+        print(f"{uf}: {data.num_rows} votes, {time.time() - t0:.0f}s", flush=True)
+
 CKAN_API = "https://dadosabertos.tse.jus.br/api/3/action"
 BWEB = re.compile(r"/(?P<nome>bweb_(?P<turno>\d)t_(?P<uf>[A-Z]{2})_(?P<stamp>\d+))\.zip\.sha512$")
 
@@ -333,13 +359,24 @@ def main(argv=None) -> None:
     t.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
     t.set_defaults(fn=cmd_load_turnout)
 
+    v = sub.add_parser("load-votes", help="load votacao_secao (votes per votavel) from CKAN")
+    v.add_argument("--ano", type=int, default=2026)
+    v.add_argument("--members", nargs="+", default=["BR"], help="BR (president) and/or UF codes")
+    v.set_defaults(fn=cmd_load_votes)
+
+    d = sub.add_parser("derive-votos", help="write the votes view to br_tse_urna_logs.votos")
+    d.add_argument("--ano", type=int, default=2026)
+    d.add_argument("--turno", type=int, required=True)
+    d.add_argument("--ufs", nargs="*", default=[], help="states to derive; default all")
+    d.set_defaults(fn=cmd_derive_votos)
+
     b = sub.add_parser("load-bu", help="load each section's times from the TSE BU files (CKAN)")
     b.add_argument("--ano", type=int, default=2026)
     b.add_argument("--turno", type=int, required=True)
     b.add_argument("--ufs", nargs="*", default=[], help="states to load, e.g. AC ZZ; default all")
     b.set_defaults(fn=cmd_load_bu)
 
-    m = sub.add_parser("load-municipios",help="load the TSE to IBGE municipality codes")
+    m = sub.add_parser("load-municipios", help="load the TSE to IBGE municipality codes")
     m.set_defaults(fn=cmd_load_municipios)
 
     q = sub.add_parser("sql", help="run SQL over the lake (views and checks loaded)")

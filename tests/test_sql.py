@@ -291,3 +291,12 @@ def test_model_of_an_urna_switched_on_the_day_before(con):
     l.add("RS", "77777", "0001", "0001", _ts(DIA, "09:00"), "modelo_urna", "UE2020", membro="a.jez/logd.dat")
     con.executemany(f"INSERT INTO br_tse_urna_logs.eventos VALUES ({','.join('?' * 16)})", l.rows)
     assert _q(con, "SELECT modelo FROM main.secao_dia WHERE id_municipio_tse = '77777'") == [("UE2015",)]
+
+
+def test_votos_reads_the_derived_table_when_present(con):
+    antes = _q(con, "SELECT * FROM main.votos_hora ORDER BY ALL")
+    con.execute("CREATE TABLE br_tse_urna_logs.votos AS SELECT * FROM main.votos_eventos")
+    sqlrun.apply(con, SQL / "views")
+    sql = con.execute("SELECT sql FROM duckdb_views() WHERE view_name = 'votos'").fetchone()[0]
+    assert "br_tse_urna_logs.votos" in sql
+    assert _q(con, "SELECT * FROM main.votos_hora ORDER BY ALL") == antes
