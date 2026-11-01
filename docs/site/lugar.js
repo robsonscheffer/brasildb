@@ -180,12 +180,19 @@
   const PAGINAS = [["index.html", "Início"], ["apuracao.html", "A apuração"], ["como.html", "Como contamos"]];
   function barra(el, opts) {
     el.classList.add("lg-barra");
-    el.innerHTML = `<a class="lg-nome" href="index.html">O Brasil votando</a>
-      <nav class="lg-nav" aria-label="Páginas">${PAGINAS.map(([p, t]) =>
+    el.innerHTML = `<button type="button" class="lg-menu" aria-expanded="false" aria-controls="lg-nav">Menu</button>
+      <a class="lg-nome" href="index.html">O Brasil votando</a>
+      <nav class="lg-nav" id="lg-nav" aria-label="Páginas">${PAGINAS.map(([p, t]) =>
         `<a href="${p}" data-p="${p}"${p === opts.pagina ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>
       <button type="button" class="lg-chip" aria-haspopup="dialog"></button>`;
     const chip = el.querySelector(".lg-chip");
     chip.addEventListener("click", () => opts.onTrocar?.());
+    // Phones: the pages fold into a menu under the bar.
+    const menu = el.querySelector(".lg-menu");
+    const abrir = on => { el.classList.toggle("aberta", on); menu.setAttribute("aria-expanded", String(on)); };
+    menu.addEventListener("click", e => { e.stopPropagation(); abrir(!el.classList.contains("aberta")); });
+    document.addEventListener("click", e => { if (!el.contains(e.target)) abrir(false); });
+    el.addEventListener("keydown", e => { if (e.key === "Escape" && el.classList.contains("aberta")) { e.stopPropagation(); abrir(false); menu.focus(); } });
     const api = {
       async mostrar(lugar) {
         const c = await cidade(lugar?.cidade);
