@@ -60,12 +60,14 @@
 
   /* The readout: three cells built alike (label, number, detail). */
   .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
-  .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; }
+  /* Each cell spans the scoreboard's three rows (label, number, line), so the rows align across cells. */
+  .cel { border-top: 2px solid var(--a); padding-top: 10px; min-width: 0; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 2px; align-items: end; }
+  .cel .n { align-self: start; }
   .cel.b { border-color: var(--b); }
   .cel.tempo { border-color: var(--accent); }
   .cel .n { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   .cel .p { font-family: var(--serif); font-size: clamp(40px, 5.6vw, 64px); line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .cel.tempo .p { font-family: var(--mono); font-size: clamp(30px, 4.2vw, 48px); line-height: 1.33; }
+  .cel.tempo .p { font-family: var(--mono); font-size: clamp(30px, 4.2vw, 48px); line-height: 1.05; }
   .cel .v { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .grafico { position: relative; margin: 10px 0 0; }
@@ -122,7 +124,7 @@
     .barra { gap: 8px; }
     .barra .sec { padding: 9px 12px; font-size: 13px; }
     .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
-    .cel.tempo { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .cel.tempo { grid-column: 1 / -1; grid-row: auto; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
     .ctrl { flex-wrap: wrap; }
     .ctrl input[type=range] { order: -1; flex: 1 1 100%; }
