@@ -181,7 +181,7 @@
   const PAGINAS = [["index.html", "Início"], ["apuracao.html", "A apuração"], ["como.html", "Como contamos"]];
   function barra(el, opts) {
     el.classList.add("lg-barra");
-    el.innerHTML = `<button type="button" class="lg-menu" aria-expanded="false" aria-controls="lg-nav">Menu</button>
+    el.innerHTML = `<button type="button" class="lg-menu" aria-expanded="false" aria-controls="lg-nav" aria-label="Menu"><span></span></button>
       <a class="lg-nome" href="index.html">O Brasil votando</a>
       <nav class="lg-nav" id="lg-nav" aria-label="Páginas">${PAGINAS.map(([p, t]) =>
         `<a href="${p}" data-p="${p}"${p === opts.pagina ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>

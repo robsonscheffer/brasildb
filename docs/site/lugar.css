@@ -8,7 +8,15 @@
 .lg-nav a { color: var(--muted); text-decoration: none; white-space: nowrap; }
 .lg-nav a:hover, .lg-nav a[aria-current="page"] { color: var(--fg); }
 .lg-nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 6px; }
-.lg-menu { display: none; font: 500 14px var(--sans); color: var(--fg); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+/* Phones: a hamburger, three bars that turn into an X while the menu is open. */
+.lg-menu { display: none; position: relative; width: 40px; height: 40px; margin-left: -8px; padding: 0; background: none; border: 0; border-radius: 8px; cursor: pointer; }
+.lg-menu span, .lg-menu span::before, .lg-menu span::after { position: absolute; left: 10px; width: 20px; height: 2px; border-radius: 1px; background: var(--fg); transition: transform .2s, background .2s; }
+.lg-menu span { top: 19px; }
+.lg-menu span::before, .lg-menu span::after { content: ""; left: 0; }
+.lg-menu span::before { top: -6px; } .lg-menu span::after { top: 6px; }
+.lg-barra.aberta .lg-menu span { background: transparent; }
+.lg-barra.aberta .lg-menu span::before { transform: translateY(6px) rotate(45deg); }
+.lg-barra.aberta .lg-menu span::after { transform: translateY(-6px) rotate(-45deg); }
 .lg-chip { margin-left: auto; min-width: 0; max-width: 52%; display: flex; align-items: baseline; overflow: hidden; white-space: nowrap;
   font: 500 15px var(--sans); color: var(--fg); background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
 .lg-chip:hover { border-color: var(--muted); }
