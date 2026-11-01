@@ -215,7 +215,10 @@
   .hits li { padding: 10px 20px; cursor: pointer; }
   .hits li span { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: 10px; }
   .hits li.on, .hits li:hover { background: var(--accent-dim); }
-  .mais .par { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 10px; }
+  .urna-aqui { margin-top: 12px; max-width: 360px; }
+  .urna-aqui input { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 16px; outline: none; }
+  .urna-aqui input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .mais .par, .urna-aqui { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 10px; }
   .mais input { font-size: 18px; padding: 12px 16px; }
   .mais small { display: block; margin-top: 8px; font-size: 14px; }
   /* The question inside the map: a stepper over the reader's column (U9). Town, hour, answer. */
@@ -1099,19 +1102,23 @@ const ready = (async () => {
     afterAnswer().then(() => $("hora").querySelector("button")?.focus({ preventScroll: true }));
   }
   for (const id of ["zona", "secao"]) $(id).addEventListener("change", () => { if (state.town) afterAnswer(); });
+  // The same two fields inline in the close (fold 05), for a reader who skipped them: they fill
+  // the question's fields, so the URL, the card and every fold follow.
+  const urnaAqui = e => {
+    const box = e.target.closest?.(".urna-aqui"); if (!box || !state.town) return;
+    const [z, n] = [...box.querySelectorAll("input")].map(i => i.value.trim());
+    if (!z || !n) return;
+    $("zona").value = z; $("secao").value = n; afterAnswer();
+  };
+  document.addEventListener("change", urnaAqui);
+  document.addEventListener("keydown", e => { if (e.key === "Enter") urnaAqui(e); });
   // After the answer, Avançar plays the day in order from 8h; "Pular" does the same without answering.
   $("pular").addEventListener("click", () => irMapa(null));
   $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; afterAnswer().then(() => input.focus({ preventScroll: true })); });
   $("trocar-hora").addEventListener("click", () => { state.hora = null; saveURL(); renderHoras(); tick(); $("hora").querySelector("button")?.focus({ preventScroll: true }); });
   $("ver-urna").addEventListener("click", () => { const m = $("mais"); m.hidden = !m.hidden; $("ver-urna").setAttribute("aria-expanded", !m.hidden); if (!m.hidden) $("zona").focus({ preventScroll: true }); });
-  // Every link to the question lands on it inside the map, also links drawn later in the steps.
-  // A link marked data-urna also opens the zona and seção fields.
-  document.addEventListener("click", e => {
-    const a = e.target.closest('a[href="#onde-votou"]'); if (!a) return;
-    e.preventDefault();
-    if (a.hasAttribute("data-urna")) { $("mais").hidden = false; $("ver-urna").setAttribute("aria-expanded", "true"); }
-    irPergunta(true, a.hasAttribute("data-urna"));
-  });
+  // Every link to the question lands on it inside the map.
+  for (const a of document.querySelectorAll('a[href="#onde-votou"]')) a.addEventListener("click", e => { e.preventDefault(); irPergunta(true); });
 }
 // The closing urna's steps, in the order the section files give their seconds (fim_log).
 const FIM = ["Operador selecionou: Encerrar votação", "Procedimento de encerramento confirmado",
@@ -1173,13 +1180,11 @@ async function afterAnswer() {
 /* ---------- 5. The map ---------- */
 // The map holds the question from ABRE to PQ1, then plays the day from 8h.
 const PQ1 = 0.12, DIA = 0.86;
-const irPergunta = (suave, urna = false) => {
+const irPergunta = suave => {
   const el = $("dia-no-mapa");
   if (CALMO) { $("onde-votou").scrollIntoView(); }
   else scrollTo({ top: Math.round(el.offsetTop + (ABRE + 0.02) * (el.offsetHeight - innerHeight)), behavior: suave ? "smooth" : "auto" });
-  const alvo = () => !state.town ? $("cidade") : state.hora == null ? $("hora").querySelector("button") : urna ? $("zona") : $("hora").querySelector("button");
-  // The question is inert until the scroll reaches it: focus once it is live, for up to 4 s.
-  if (suave) { let n = 0; const foco = () => $("onde-votou").inert && n++ < 40 ? setTimeout(foco, 100) : alvo()?.focus({ preventScroll: true }); setTimeout(foco, 300); }
+  if (suave) setTimeout(() => (state.town ? $("hora").querySelector("button") : $("cidade"))?.focus({ preventScroll: true }), 700);
 };
 if (location.hash === "#onde-votou") { irPergunta(false); addEventListener("load", () => irPergunta(false), { once: true }); }
 // q is the map progress to land on; null is 8h.
@@ -1491,7 +1496,10 @@ renderHoras();
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
     const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
-    const tipica = mi.exata ? "" : ' Esta é a urna típica da cidade. <a href="#onde-votou" data-urna>Digite zona e seção</a> para ver a sua.';
+    const falta = state.zona && !state.sec ? ` Ainda não temos a seção ${state.secao} da zona ${state.zona}.` : "";
+    const tipica = mi.exata ? "" : ` Esta é a urna típica da cidade.${falta} Digite zona e seção, do título de eleitor ou do e-Título, para ver a sua:`
+      + `<span class="par urna-aqui"><input data-campo="zona" inputmode="numeric" placeholder="Zona" aria-label="Zona" value="${state.zona}">`
+      + `<input data-campo="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção" value="${state.secao}"></span>`;
     const its = [
       { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `${state.sec ? `Os ${state.sec.votos} votos da seção` : "Os votos do dia"} já estão somados na urna, cada um na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
