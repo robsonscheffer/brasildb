@@ -51,6 +51,8 @@
   /* The scale: the reader's place as a path, Brasil > estado > cidade > zona > seção (P5 D5). */
   .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
   .caminho .sep { color: var(--muted); padding: 0 2px; }
+  .caminho select { font: 500 15px var(--sans); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; cursor: pointer; }
+  .caminho select.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
   .caminho button { font: 500 15px var(--sans); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
   .caminho button:hover { color: var(--fg); border-color: var(--line); }
   .caminho button[aria-current="true"] { color: var(--bg); background: var(--accent); }
@@ -217,8 +219,9 @@
   const deDict = d => ["13", "22", "95", "96"].map(k => d[k]);
 
   // The reader's place (lugar.js: cidade, zona, secao) and the scale on view (estado). The view
-  // is a level of the place's path, or a city picked on the map (`outra`), which leaves the place.
-  let lugar = {cidade: "", zona: "", secao: ""}, lugarC = null, agregadas = {}, outra = false, nomeCid = "";
+  // is a level of the place's path, or any other city, zona or seção (map, lists): those only
+  // change the view, and the path offers the way back (P5 Q1).
+  let lugar = {cidade: "", zona: "", secao: ""}, lugarC = null, agregadas = {}, nomeCid = "";
   const cidadeNome = () => nomeCid || estado.mun;
   const NIVEIS = ["brasil", "uf", "cidade", "zona", "secao"];
   const fundo = () => !lugarC ? "brasil" : lugar.secao ? "secao" : lugar.zona ? "zona" : "cidade";
@@ -291,36 +294,61 @@
     document.body.classList.remove("carregando");
     desenhar();
     tocar();
-    caminho();
+    caminho(m);
     const nv = nivelDe(estado);
-    Lugar.escrever(lugar, outra ? {} : lugarC ? {ver: nv === fundo() ? "" : nv} : {uf: estado.uf});
+    Lugar.escrever(lugar, !lugarC ? {uf: estado.uf} : noLugar() ? {ver: nv === fundo() ? "" : nv} : {});
   }
 
-  // ---- the path: the place's levels as tabs; a city from the map shows its own path and a way back.
-  function caminho() {
-    const nav = $("caminho"), c = lugarC, nv = nivelDe(estado), passos = [];
-    const add = (rot, alvo) => passos.push({rot, alvo});
-    add("Brasil", "brasil");
-    if (outra) {
-      add(UFNOME[estado.uf], "o-uf"); add(cidadeNome(), "o-cidade");
-    } else if (c) {
-      add(UFNOME[c.uf], "uf"); add(Lugar.rotulo(c).replace(/, [^,]+$/, ""), "cidade");
-      if (lugar.zona) add(`zona ${lugar.zona}`, "zona");
-      if (lugar.secao) add(`seção ${lugar.secao}`, "secao");
-    } else if (estado.uf) add(UFNOME[estado.uf], "o-uf");
-    const atual = outra ? (estado.mun ? "o-cidade" : estado.uf ? "o-uf" : "brasil") : c ? nv : (estado.uf ? "o-uf" : "brasil");
-    nav.innerHTML = passos.map((p, k) => `${k ? '<span class="sep" aria-hidden="true">›</span>' : ""}<button type="button" data-alvo="${p.alvo}"${p.alvo === atual ? ' aria-current="true"' : ""}>${p.rot}</button>`).join("")
-      + (outra && c ? `<button type="button" class="volta" data-alvo="volta">voltar para ${Lugar.rotulo(c).replace(/, [^,]+$/, "")}</button>`
-        : `<button type="button" class="escolha" data-alvo="escolher">${c ? "trocar lugar" : "Escolher o seu lugar"}</button>`);
+  // ---- the path: Brasil > estado > cidade, then the city's zonas and a zona's seções as lists.
+  // On the place's path the tabs reach down to the place; elsewhere, "voltar" returns to it.
+  function noLugar() {
+    const c = lugarC;
+    return !!c && (!estado.uf || estado.uf === c.uf) && (!estado.mun || estado.mun === c.id)
+      && (!estado.zona || estado.zona === lugar.zona) && (!estado.secao || estado.secao === lugar.secao);
+  }
+  const ufVista = () => estado.uf || (noLugar() ? lugarC.uf : "");
+  const munVista = () => estado.mun || (noLugar() ? lugarC.id : "");
+  function caminho(m) {
+    const c = lugarC, dentro = noLugar(), nv = nivelDe(estado), uf = ufVista(), mun = munVista();
+    const sep = '<span class="sep" aria-hidden="true">›</span>';
+    const tab = (rot, alvo) => `<button type="button" data-alvo="${alvo}"${nv === alvo ? ' aria-current="true"' : ""}>${rot}</button>`;
+    const sua = (v, meu) => meu ? `${v} · sua` : v;
+    const lista = (nivel, todas, vs, v, meu) => `<select data-nivel="${nivel}" aria-label="Ver ${nivel === "zona" ? "zona" : "seção"}"${nv === nivel ? ' class="on"' : ""}>`
+      + `<option value="">${todas}</option>` + vs.map(x => `<option value="${x}"${x === v ? " selected" : ""}>${nivel === "zona" ? "zona" : "seção"} ${sua(x, x === meu)}</option>`).join("") + "</select>";
+    const h = [tab("Brasil", "brasil")];
+    if (uf) h.push(tab(UFNOME[uf], "uf"));
+    if (mun) h.push(tab(mun === c?.id ? c.nome : cidadeNome(), "cidade"));
+    const meuMun = c && estado.mun === c.id;
+    if (estado.mun && m) {
+      const zs = [...new Set(Object.keys(m.secoes).map(k => k.slice(0, 4)).concat(meuMun && lugar.zona ? [lugar.zona] : []))].sort();
+      h.push(lista("zona", "todas as zonas", zs, estado.zona, meuMun ? lugar.zona : ""));
+      if (estado.zona) {
+        const meuZ = meuMun && estado.zona === lugar.zona;
+        const ss = [...new Set(Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).concat(meuZ && lugar.secao ? [lugar.secao] : []))].sort();
+        h.push(lista("secao", "toda a zona", ss, estado.secao, meuZ ? lugar.secao : ""));
+      }
+    } else if (dentro && !estado.mun) {
+      if (lugar.zona) h.push(tab(`zona ${lugar.zona}`, "zona"));
+      if (lugar.secao) h.push(tab(`seção ${lugar.secao}`, "secao"));
+    }
+    $("caminho").innerHTML = h.join(sep) + (c && !dentro
+      ? `<button type="button" class="volta" data-alvo="volta">voltar para ${c.nome}</button>`
+      : `<button type="button" class="escolha" data-alvo="escolher">${c ? "trocar lugar" : "Escolher o seu lugar"}</button>`);
   }
   $("caminho").addEventListener("click", e => {
     const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
     if (a === "escolher") return trocarLugar();
-    if (a === "volta") { outra = false; estado = vista(fundo()); }
-    else if (a === "o-uf") estado = {uf: estado.uf, mun: "", zona: "", secao: ""};
-    else if (a === "o-cidade") return;
-    else if (a === "brasil") { outra = false; estado = vista("brasil"); }
-    else { outra = false; estado = vista(a); }
+    const uf = ufVista(), mun = munVista();
+    if (a === "volta") estado = vista(fundo());
+    else if (a === "brasil") estado = {uf: "", mun: "", zona: "", secao: ""};
+    else if (a === "uf") estado = {uf, mun: "", zona: "", secao: ""};
+    else if (a === "cidade") estado = {uf, mun, zona: "", secao: ""};
+    else estado = vista(a);  // the place's zona or seção, from above the city
+    montar().catch(falha);
+  });
+  $("caminho").addEventListener("change", e => {
+    const n = e.target.dataset.nivel, v = e.target.value;
+    estado = n === "zona" ? {...estado, zona: v, secao: ""} : {...estado, secao: v};
     montar().catch(falha);
   });
   async function usarLugar(l) {
@@ -332,7 +360,7 @@
   async function trocarLugar() {
     const r = await Lugar.folha(lugar);
     if (!r) return;
-    await usarLugar(r.lugar); outra = false; estado = vista(fundo());
+    await usarLugar(r.lugar); estado = vista(fundo());
     montar().catch(falha);
   }
   const barra = Lugar.barra($("barra-site"), {pagina: "apuracao.html", onTrocar: trocarLugar});
@@ -374,7 +402,7 @@
     if (serie.marca) {
       const mm = serie.marca.pos;
       g.marca = el("line", {class: "marca", x1: xm(mm), x2: xm(mm), y1: T, y2: H - B}, svg);
-      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = "sua seção";
+      el("text", {class: "marca-t", x: xm(mm) + (xm(mm) > W - 150 ? -6 : 6), y: H - B - BAR - 6, "text-anchor": xm(mm) > W - 150 ? "end" : "start"}, svg).textContent = noLugar() ? "sua seção" : `seção ${estado.secao}`;
     }
     const pts = f => sa.map((p, i) => `${x(i).toFixed(1)},${y(f(p)).toFixed(1)}`);
     g.pa = pts(p => p); g.pb = pts(p => 1 - p);
@@ -429,8 +457,8 @@
     const mk = serie.marca, ss = $("suasec");
     ss.hidden = !mk;
     if (mk) ss.textContent = lerp(serie.x) + 1e-9 >= mk.pos
-      ? `Sua seção ${estado.secao}${mk.agregada ? ` (somada com a ${mk.agregada})` : ""}: ${NOMES["13"]} ${fmt(mk.votos[0])} · ${NOMES["22"]} ${fmt(mk.votos[1])}`
-      : `Sua seção ${estado.secao} ainda não entrou na soma.`;
+      ? `${noLugar() ? "Sua seção" : "Seção"} ${estado.secao}${mk.agregada ? ` (somada com a ${mk.agregada})` : ""}: ${NOMES["13"]} ${fmt(mk.votos[0])} · ${NOMES["22"]} ${fmt(mk.votos[1])}`
+      : `${noLugar() ? "Sua seção" : "A seção"} ${estado.secao} ainda não entrou na soma.`;
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
     $("antes").textContent = serie.antes
@@ -450,7 +478,8 @@
     if (serie.marca) {
       const [a, b] = serie.marca.votos;
       const ven = a === b ? "empate" : `${NOMES[a > b ? "13" : "22"]} venceu`;
-      return `Sua seção foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a entrar na soma, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da sua zona, na ordem em que o TSE recebeu os boletins de urna.</span>`;
+      const sua = noLugar();
+      return `${sua ? "Sua seção" : `A seção ${estado.secao}`} foi a ${fmt(serie.marca.k)}ª de ${fmt(serie.marca.de)} da zona a entrar na soma, com todos os votos de uma vez: ${NOMES["13"]} ${fmt(a)}, ${NOMES["22"]} ${fmt(b)}. ${ven[0].toUpperCase() + ven.slice(1)} ${onde}.<span class="of">A curva é a da ${sua ? "sua " : ""}zona, na ordem em que o TSE recebeu os boletins de urna.</span>`;
     }
     if (va === vb) return `Empate ${onde}.<span class="of">Resultado oficial do TSE.</span>`;
     const ven = NOMES[va > vb ? "13" : "22"], pv = Math.max(va, vb) / (va + vb), tr = trocas();
@@ -630,8 +659,6 @@
     const b = $("vercid");
     if (b) b.onclick = () => {
       estado = {uf: towns.uf[i], mun: towns.id[i], zona: "", secao: ""};
-      outra = !lugarC || towns.id[i] !== lugarC.id;
-      if (!outra) estado = vista("cidade");
       montar().catch(falha);
     };
   }
