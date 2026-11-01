@@ -1104,8 +1104,14 @@ const ready = (async () => {
   $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; afterAnswer().then(() => input.focus({ preventScroll: true })); });
   $("trocar-hora").addEventListener("click", () => { state.hora = null; saveURL(); renderHoras(); tick(); $("hora").querySelector("button")?.focus({ preventScroll: true }); });
   $("ver-urna").addEventListener("click", () => { const m = $("mais"); m.hidden = !m.hidden; $("ver-urna").setAttribute("aria-expanded", !m.hidden); if (!m.hidden) $("zona").focus({ preventScroll: true }); });
-  // Every link to the question lands on it inside the map.
-  for (const a of document.querySelectorAll('a[href="#onde-votou"]')) a.addEventListener("click", e => { e.preventDefault(); irPergunta(true); });
+  // Every link to the question lands on it inside the map, also links drawn later in the steps.
+  // A link marked data-urna also opens the zona and seção fields.
+  document.addEventListener("click", e => {
+    const a = e.target.closest('a[href="#onde-votou"]'); if (!a) return;
+    e.preventDefault();
+    if (a.hasAttribute("data-urna")) { $("mais").hidden = false; $("ver-urna").setAttribute("aria-expanded", "true"); }
+    irPergunta(true, a.hasAttribute("data-urna"));
+  });
 }
 // The closing urna's steps, in the order the section files give their seconds (fim_log).
 const FIM = ["Operador selecionou: Encerrar votação", "Procedimento de encerramento confirmado",
@@ -1167,11 +1173,13 @@ async function afterAnswer() {
 /* ---------- 5. The map ---------- */
 // The map holds the question from ABRE to PQ1, then plays the day from 8h.
 const PQ1 = 0.12, DIA = 0.86;
-const irPergunta = suave => {
+const irPergunta = (suave, urna = false) => {
   const el = $("dia-no-mapa");
   if (CALMO) { $("onde-votou").scrollIntoView(); }
   else scrollTo({ top: Math.round(el.offsetTop + (ABRE + 0.02) * (el.offsetHeight - innerHeight)), behavior: suave ? "smooth" : "auto" });
-  if (suave) setTimeout(() => (state.town ? $("hora").querySelector("button") : $("cidade"))?.focus({ preventScroll: true }), 700);
+  const alvo = () => !state.town ? $("cidade") : state.hora == null ? $("hora").querySelector("button") : urna ? $("zona") : $("hora").querySelector("button");
+  // The question is inert until the scroll reaches it: focus once it is live, for up to 4 s.
+  if (suave) { let n = 0; const foco = () => $("onde-votou").inert && n++ < 40 ? setTimeout(foco, 100) : alvo()?.focus({ preventScroll: true }); setTimeout(foco, 300); }
 };
 if (location.hash === "#onde-votou") { irPergunta(false); addEventListener("load", () => irPergunta(false), { once: true }); }
 // q is the map progress to land on; null is 8h.
@@ -1483,7 +1491,7 @@ renderHoras();
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
     const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
-    const tipica = mi.exata ? "" : " Esta é a urna típica da cidade: digite zona e seção para ver a sua.";
+    const tipica = mi.exata ? "" : ' Esta é a urna típica da cidade. <a href="#onde-votou" data-urna>Digite zona e seção</a> para ver a sua.';
     const its = [
       { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `${state.sec ? `Os ${state.sec.votos} votos da seção` : "Os votos do dia"} já estão somados na urna, cada um na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
