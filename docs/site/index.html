@@ -1114,6 +1114,8 @@ const ready = (async () => {
   $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; listas(); afterAnswer().then(() => input.focus({ preventScroll: true })); });
   $("trocar-hora").addEventListener("click", () => { state.hora = null; saveURL(); renderHoras(); tick(); $("hora").querySelector("button")?.focus({ preventScroll: true }); });
   $("ver-urna").addEventListener("click", () => { const m = $("mais"); m.hidden = !m.hidden; $("ver-urna").setAttribute("aria-expanded", !m.hidden); if (!m.hidden) $("zona").focus({ preventScroll: true }); });
+  // Links to the other pages carry the reader's place (P5 D6), set as they are followed.
+  document.addEventListener("click", e => { const a = e.target.closest("a[data-com-lugar]"); if (a) a.href = Lugar.href(a.dataset.comLugar, { cidade: state.town?.id, zona: state.zona, secao: state.secao }); });
   // Fold 05 and the card ask for more of the place through the sheet.
   document.addEventListener("click", e => { const a = e.target.closest("[data-lugar]"); if (a) { e.preventDefault(); abrirFolha(a.dataset.lugar); } });
   // Every link to the question lands on it inside the map.
@@ -1588,7 +1590,7 @@ renderHoras();
       { t: A + nac.findIndex(x => x >= CH.total / 2), h: `${at(nac.findIndex(x => x >= CH.total / 2))} · Brasil`, titulo: "Metade das seções já entrou na soma.", texto: "" },
       { t: A + ufs[0].fim, h: ufs[0].uf, uf: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[0].fim))}.` },
       { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, uf: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[ufs.length - 1].fim))}.` },
-      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções somadas.`, texto: `A última entrou às ${hfala(CH.fim)}.` },
+      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções somadas.`, texto: `A última entrou às ${hfala(CH.fim)}. <a href="apuracao.html" data-com-lugar="apuracao.html">Veja os votos de cada candidato na ordem da apuração</a>.` },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
     tabela(el, "Apuração por estado: seções somadas", ["Estado", "Todas somadas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));
