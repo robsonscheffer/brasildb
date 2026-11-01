@@ -22,6 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="lugar.css">
 <style>
   :root {
     --bg: #070a12;
@@ -37,6 +38,7 @@
     --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     --gx: max(20px, env(safe-area-inset-left));
     --nav: 84px; /* the band at the bottom that holds the bar; the stages end above it */
+    --barra: 52px;          /* the shared top bar (lugar.css) */
     --topo: 64px;           /* the clock's measured bottom; tick() keeps it fresh */
     color-scheme: dark;
   }
@@ -83,15 +85,15 @@
     .trilha a span { display: none; }
     .trilha .nome { display: block; grid-column: 1 / -1; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-align: right; margin-top: 2px; }
     .relogio .rd { display: none; }
-    .relogio { top: max(36px, calc(env(safe-area-inset-top) + 26px)); }
-    .relogio.grande { top: max(54px, calc(env(safe-area-inset-top) + 44px)); }
+    .relogio { top: calc(var(--barra) + max(36px, calc(env(safe-area-inset-top) + 26px))); }
+    .relogio.grande { top: calc(var(--barra) + max(54px, calc(env(safe-area-inset-top) + 44px))); }
   }
   /* The rewind cue: when a fold starts earlier than the last one ended, the clock says so (U5). */
   .rew { position: fixed; z-index: 9; left: var(--gx); top: calc(var(--topo) + 6px); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); opacity: 0; transform: translateY(-4px); transition: opacity .3s, transform .3s; pointer-events: none; }
   .rew.on { opacity: 1; transform: none; }
 
   /* The one clock. It runs the whole day; it grows when a scene is about time. */
-  .relogio { position: fixed; z-index: 9; top: max(14px, env(safe-area-inset-top)); left: var(--gx); pointer-events: none; opacity: 0; transition: opacity .4s; }
+  .relogio { position: fixed; z-index: 9; top: calc(var(--barra) + max(14px, env(safe-area-inset-top))); left: var(--gx); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .relogio.on { opacity: 1; }
   .relogio .rt { font-family: var(--mono); font-size: 15px; color: var(--accent); line-height: 1; transition: font-size .35s; }
   .relogio .rs { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 5px; transition: font-size .35s; }
@@ -202,13 +204,13 @@
 
   /* 6. The question */
   .campo { position: relative; margin-top: 32px; }
-  .campo input, .mais input { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; font: inherit; font-size: 22px; outline: none; transition: border-color .2s, box-shadow .2s; }
-  .campo input:focus, .mais input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
+  .campo input, .mais input, .mais select { width: 100%; background: var(--bg2); color: var(--fg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; font: inherit; font-size: 22px; outline: none; transition: border-color .2s, box-shadow .2s; }
+  .campo input:focus, .mais input:focus, .mais select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim); }
   .campo input::placeholder, .mais input::placeholder { color: var(--muted); }
   .mais { margin-top: 10px; color: var(--muted); }
   @media (max-width: 640px) {
     .campo input { font-size: 17px; padding: 15px 14px; }
-    .mais .par input { font-size: 16px; padding: 12px 14px; }
+    .mais .par input, .mais .par select { font-size: 16px; padding: 12px 14px; }
   }
   .hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px 0; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; z-index: 5; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
   .hits:empty { display: none; }
@@ -216,7 +218,8 @@
   .hits li span { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: 10px; }
   .hits li.on, .hits li:hover { background: var(--accent-dim); }
   .mais .par { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 10px; }
-  .mais input { font-size: 18px; padding: 12px 16px; }
+  .mais input, .mais select { font-size: 18px; padding: 12px 16px; }
+  .mais select:disabled { opacity: .5; }
   .mais small { display: block; margin-top: 8px; font-size: 14px; }
   /* The question inside the map: a stepper over the reader's column (U9). Town, hour, answer. */
   .pq { position: absolute; z-index: 3; left: 60%; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; padding: calc(var(--topo, 64px) + 12px) 150px 40px 28px; background: var(--bg); border-left: 1px solid var(--line); opacity: 0; pointer-events: none; transition: opacity .35s; overflow-y: auto; }
@@ -442,6 +445,7 @@
 </head>
 <body>
 <a class="pula" href="#onde-votou">Pular para "Onde você votou"</a>
+<header id="barra-site"></header>
 <a class="pula" href="#compartilhamento">Pular para o cartão</a>
 <div class="sr" id="falado" aria-live="polite" aria-atomic="true"></div>
 <div class="relogio" id="relogio"><div class="rd">25 out 2026</div><div class="rt num" id="rt">08:00</div><div class="rs num" id="rs"></div></div>
@@ -529,8 +533,8 @@
         <button class="pq-link" id="ver-urna" type="button" aria-expanded="false" aria-controls="mais">Ver a sua urna</button>
         <div class="mais" id="mais" hidden>
           <div class="par">
-            <input id="zona" inputmode="numeric" placeholder="Zona" aria-label="Zona">
-            <input id="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção">
+            <select id="zona" aria-label="Zona" disabled><option value="">Zona</option></select>
+            <select id="secao" aria-label="Seção" disabled><option value="">Seção</option></select>
           </div>
           <small>Estão no título de eleitor ou no app e-Título.</small>
         </div>
@@ -598,7 +602,7 @@
   <canvas id="card" width="1080" height="1350" role="img" aria-label="Seu cartão: o seu voto foi um dos 128.236.074, com a sua cidade e hora."></canvas>
   <div class="info">
     <ul id="cartao-linhas"></ul>
-    <p id="cartao-vazio">Escolha sua cidade para pôr o seu ponto no cartão. <a href="#onde-votou">Escolher cidade</a></p>
+    <p id="cartao-vazio">Escolha sua cidade para pôr o seu ponto no cartão. <a href="#onde-votou" data-lugar="cidade">Escolher cidade</a></p>
   </div>
   <div class="acoes">
     <button class="btn" id="share">Baixar imagem</button>
@@ -612,6 +616,7 @@
   <p>Dados: logs das urnas e boletins do TSE (<a href="https://dadosabertos.tse.jus.br/">dados abertos</a>), segundo turno de 2026. <a href="como.html#fontes">Fontes e método</a>. <a href="explorar/">Explorar o mapa</a>. Código e tabelas: <a href="https://github.com/robsonscheffer/brasildb">brasildb</a>.</p>
 </footer>
 
+<script src="lugar.js"></script>
 <script type="module">
 const $ = id => document.getElementById(id);
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -900,7 +905,11 @@ function saveURL() {
   if (state.secao) q.set("secao", state.secao);
   if (state.hora != null) q.set("hora", state.hora);
   history.replaceState(null, "", q.toString() ? `?${q}` : location.pathname);
+  barra.mostrar({ cidade: state.town?.id, zona: state.zona, secao: state.secao });
 }
+// The shared top bar (lugar.js): its chip opens the place sheet.
+const barra = Lugar.barra($("barra-site"), { pagina: "index.html", onTrocar: () => abrirFolha() });
+barra.mostrar(Lugar.ler());
 // The reader's urna, or their town's typical urna when no section was typed.
 function minha() {
   if (state.sec) return { fecha: state.sec.encerramento, chega: state.sec.chegada, quem: "sua urna", exata: true };
@@ -1096,16 +1105,52 @@ const ready = (async () => {
   function pick(i) {
     state.town = lugarDe(i);
     input.value = rot(state.town); hits.innerHTML = ""; ids = [];
-    afterAnswer().then(() => $("hora").querySelector("button")?.focus({ preventScroll: true }));
+    listas().then(afterAnswer).then(() => $("hora").querySelector("button")?.focus({ preventScroll: true }));
   }
-  for (const id of ["zona", "secao"]) $(id).addEventListener("change", () => { if (state.town) afterAnswer(); });
+  $("zona").addEventListener("change", async () => { await listas($("zona").value, ""); if (state.town) afterAnswer(); });
+  $("secao").addEventListener("change", () => { if (state.town) afterAnswer(); });
   // After the answer, Avançar plays the day in order from 8h; "Pular" does the same without answering.
   $("pular").addEventListener("click", () => irMapa(null));
-  $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; afterAnswer().then(() => input.focus({ preventScroll: true })); });
+  $("trocar-cidade").addEventListener("click", () => { state.town = null; input.value = ""; listas(); afterAnswer().then(() => input.focus({ preventScroll: true })); });
   $("trocar-hora").addEventListener("click", () => { state.hora = null; saveURL(); renderHoras(); tick(); $("hora").querySelector("button")?.focus({ preventScroll: true }); });
   $("ver-urna").addEventListener("click", () => { const m = $("mais"); m.hidden = !m.hidden; $("ver-urna").setAttribute("aria-expanded", !m.hidden); if (!m.hidden) $("zona").focus({ preventScroll: true }); });
+  // Links to the other pages carry the reader's place (P5 D6), set as they are followed.
+  document.addEventListener("click", e => { const a = e.target.closest("a[data-com-lugar]"); if (a) a.href = Lugar.href(a.dataset.comLugar, { cidade: state.town?.id, zona: state.zona, secao: state.secao }); });
+  // Fold 05 and the card ask for more of the place through the sheet.
+  document.addEventListener("click", e => { const a = e.target.closest("[data-lugar]"); if (a) { e.preventDefault(); abrirFolha(a.dataset.lugar); } });
   // Every link to the question lands on it inside the map.
-  for (const a of document.querySelectorAll('a[href="#onde-votou"]')) a.addEventListener("click", e => { e.preventDefault(); irPergunta(true); });
+  for (const a of document.querySelectorAll('a[href="#onde-votou"]:not([data-lugar])')) a.addEventListener("click", e => { e.preventDefault(); irPergunta(true); });
+}
+// Zona and seção are lists of the town's sections (data/lugares), so no number can miss.
+async function listas(zona = state.zona, secao = state.secao) {
+  const zs = $("zona"), ss = $("secao"), t = state.town;
+  const opcoes = (sel, nome, vs, v) => { sel.innerHTML = `<option value="">${nome}</option>` + vs.map(x => `<option${x === v ? " selected" : ""}>${x}</option>`).join(""); };
+  if (!t) { opcoes(zs, "Zona", []); opcoes(ss, "Seção", []); zs.disabled = ss.disabled = true; return; }
+  const l = await Lugar.secoes({ id: t.id, uf: t.uf });
+  if (state.town !== t) return;
+  const nomes = Object.keys(l.zonas).sort();
+  if (!nomes.includes(zona)) zona = "";
+  opcoes(zs, "Zona", nomes, zona); zs.disabled = !nomes.length;
+  opcoes(ss, "Seção", l.zonas[zona] || [], secao); ss.disabled = !zona;
+}
+// The place sheet (lugar.js), from the top bar's chip, fold 05 or the card. The hour stays.
+async function abrirFolha(foco) {
+  const r = await Lugar.folha({ cidade: state.town?.id, zona: state.zona, secao: state.secao }, foco);
+  if (!r) return;
+  if (!r.cidade) { // Limpar: no place; the hour stays
+    state.town = null; $("cidade").value = ""; await listas();
+    $("mais").hidden = true; $("ver-urna").setAttribute("aria-expanded", "false");
+    return afterAnswer();
+  }
+  await carregarLugares();
+  const i = byId.get(r.lugar.cidade), k = EXT.cidades.findIndex(c => c.id === r.lugar.cidade);
+  if (i == null && k < 0) return;
+  state.town = lugarDe(i ?? towns.id.length + k);
+  $("cidade").value = rot(state.town);
+  await listas(r.lugar.zona, r.lugar.secao);
+  const aberto = !!r.lugar.zona;
+  $("mais").hidden = !aberto; $("ver-urna").setAttribute("aria-expanded", String(aberto));
+  await afterAnswer();
 }
 // The closing urna's steps, in the order the section files give their seconds (fim_log).
 const FIM = ["Operador selecionou: Encerrar votação", "Procedimento de encerramento confirmado",
@@ -1158,7 +1203,7 @@ async function afterAnswer() {
   if (i == null && k < 0) return;
   state.town = lugarDe(i ?? towns.id.length + k);
   $("cidade").value = `${rot(state.town)}`;
-  $("zona").value = q.get("zona") || ""; $("secao").value = q.get("secao") || "";
+  const lq = Lugar.ler(); await listas(lq.zona, lq.secao);
   if (q.get("zona")) { $("mais").hidden = false; $("ver-urna").setAttribute("aria-expanded", "true"); }
   state.hora = q.has("hora") ? +q.get("hora") : null;
   await afterAnswer();
@@ -1483,7 +1528,7 @@ renderHoras();
     const a = seg(ls[0].hora), last = seg(ls[n - 1].hora), b = seg(mi.chega + ":00");
     const dur = Math.round((b - a) / 60), durTxt = dur >= 60 ? `${Math.floor(dur / 60)}h${String(dur % 60).padStart(2, "0")}` : `${dur} minutos`;
     const lugar = `${rot(tw)}${state.sec ? ` · zona ${state.zona} · seção ${state.secao}` : ""}${fora() ? " · hora local" : ""}`;
-    const tipica = mi.exata ? "" : " Esta é a urna típica da cidade: digite zona e seção para ver a sua.";
+    const tipica = mi.exata ? "" : " Esta é a urna típica da cidade. <a href=\"#\" data-lugar=\"secao\">Escolher a sua seção</a>.";
     const its = [
       { h: `${ls[0].hora.slice(0, 5)} · ${lugar}`, titulo: `${hfala(ls[0].hora)}. A urna <a class="termo" href="como.html#encerramento">encerra</a> a votação.`, texto: `${state.sec ? `Os ${state.sec.votos} votos da seção` : "Os votos do dia"} já estão somados na urna, cada um na hora em que entrou.${tipica}` },
       { h: "boletim de urna", titulo: `Ela imprime o <a class="termo" href="como.html#boletim">boletim de urna</a>.`, texto: "Quantos compareceram e o resultado da seção, em papel, colado na porta." },
@@ -1545,7 +1590,7 @@ renderHoras();
       { t: A + nac.findIndex(x => x >= CH.total / 2), h: `${at(nac.findIndex(x => x >= CH.total / 2))} · Brasil`, titulo: "Metade das seções já entrou na soma.", texto: "" },
       { t: A + ufs[0].fim, h: ufs[0].uf, uf: ufs[0].uf, titulo: `${ufs[0].uf} é o primeiro estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[0].fim))}.` },
       { t: A + ufs[ufs.length - 1].fim, h: ufs[ufs.length - 1].uf, uf: ufs[ufs.length - 1].uf, titulo: `${ufs[ufs.length - 1].uf} é o último estado completo.`, texto: `Todas as seções somadas às ${hfala(at(ufs[ufs.length - 1].fim))}.` },
-      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções somadas.`, texto: `A última entrou às ${hfala(CH.fim)}.` },
+      { t: A + n - 1, h: `${CH.fim} · Brasil`, titulo: `Todas as ${fmt(CH.total)} seções somadas.`, texto: `A última entrou às ${hfala(CH.fim)}. <a href="apuracao.html" data-com-lugar="apuracao.html">Veja os votos de cada candidato na ordem da apuração</a>.` },
     ];
     R = { A, n, nac, ufs, passos, key: null, ag: null };
     tabela(el, "Apuração por estado: seções somadas", ["Estado", "Todas somadas às"], ufs.map(u => [u.uf, hhmm(A + u.fim)]));

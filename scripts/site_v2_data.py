@@ -8,6 +8,7 @@
   uv run python scripts/site_v2_data.py exterior       # docs/site/data/exterior.json (cities abroad)
   uv run python scripts/site_v2_data.py urna           # docs/site/data/urna.json
   uv run python scripts/site_v2_data.py frames         # docs/site/data/frames.png (the map's pixels) and totals.json (the curves)
+  uv run python scripts/site_v2_data.py lugares        # docs/site/data/lugares/<UF>.json, after secoes and apuracao_data.py dados
 
 Round 2 of 2026 only. Every time is Brasilia time (P4 D4). Every file carries "mock": false.
 """
@@ -772,6 +773,43 @@ def secoes(con: duckdb.DuckDBPyConnection) -> None:
     print(f"secoes: {len(arquivos)} files, {len(dia)} sections; largest {maior[1]} {maior[0]} bytes")
 
 
+def faixas(nums: list[int]) -> list:
+    """Sorted section numbers as runs: a lone number, or [first, last] for 3 or more in a row."""
+    out, i = [], 0
+    while i < len(nums):
+        j = i
+        while j + 1 < len(nums) and nums[j + 1] == nums[j] + 1:
+            j += 1
+        out.extend([[nums[i], nums[j]]] if j - i >= 2 else nums[i:j + 1])
+        i = j + 1
+    return out
+
+
+def lugares(data: Path) -> dict[str, dict]:
+    """P5 D7: per state, {city: {zona: runs of section numbers}} for the place picker: every
+    section the home (secoes/) or the count page (apuracao/mun/) has. A city's "agregadas" maps
+    "zona-secao" of a section aggregated into another to its principal, as secoes/ does."""
+    secs: dict[tuple, set] = defaultdict(set)
+    agregadas: dict[tuple, dict] = defaultdict(dict)
+    for f in sorted(data.glob("secoes/*/*.json")):
+        d = json.loads(f.read_text())
+        for sec, row in d["secoes"].items():
+            secs[(d["uf"], d["municipio"], d["zona"])].add(int(sec))
+            if isinstance(row, str):
+                agregadas[(d["uf"], d["municipio"])][f"{d['zona']}-{sec}"] = row
+    for f in sorted(data.glob("apuracao/mun/*.json")):
+        d = json.loads(f.read_text())
+        for k in d["secoes"]:
+            zona, sec = k.split("-")
+            secs[(d["uf"], d["id"], zona)].add(int(sec))
+    out: dict[str, dict] = {}
+    for (uf, mun, zona), ss in sorted(secs.items()):
+        out.setdefault(uf, {}).setdefault(mun, {})[zona] = faixas(sorted(ss))
+    for (uf, mun), ag in agregadas.items():
+        out[uf][mun]["agregadas"] = dict(sorted(ag.items()))
+    return out
+
+
 FRAMES = ROOT / "docs/site/data"
 LEVELS = 16  # the page draws 16 brightness buckets: round(((pixel / 255) ** 1.4) * 16)
 GAMMA = 1.4  # v1 reads pixels the same way
@@ -846,7 +884,7 @@ def frames(con: duckdb.DuckDBPyConnection) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["cache", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames", "exterior"])
+    ap.add_argument("step", choices=["cache", "curiosidades", "chegada", "cidades", "secoes", "urna", "frames", "exterior", "lugares"])
     ap.add_argument("--only", nargs="*", help="cache: rebuild only these tables (fuso votos_minuto secao aptos coleta fim_log)")
     a = ap.parse_args()
     if a.step == "cache":
@@ -870,6 +908,11 @@ def main() -> None:
         dump(OUT / "urna.json", urna(con))
     elif a.step == "frames":
         frames(duckdb.connect(str(cache_path()), read_only=True))
+    elif a.step == "lugares":
+        por_uf = lugares(OUT)
+        for uf, cidades_uf in por_uf.items():
+            dump(OUT / "lugares" / f"{uf}.json", cidades_uf)
+        print(f"lugares: {len(por_uf)} states, {sum(map(len, por_uf.values()))} cities")
 
 
 if __name__ == "__main__":

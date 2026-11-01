@@ -129,7 +129,8 @@ def mapa(con: duckdb.DuckDBPyConnection) -> dict:
     """The count on the map: for each city (not abroad), the points of the Brasil count at which
     its sections enter and the votes of 13 and 22 they bring, flat as [point, 13, 22, ...]. The
     state count is the same order within the state, so `secoes` (sections entering per point, per
-    state) turns a Brasil point into the state's share."""
+    state) turns a Brasil point into the state's share. `n` (sections in the Brasil count, abroad
+    too) turns a section's place in that count into a point."""
     rows = con.execute(f"""
         SELECT o.sigla_uf, o.id_municipio_tse,
                CAST(floor((o.ordem_br - 1) * {PONTOS_MAPA} / o.n_br) AS INTEGER) AS p,
@@ -143,7 +144,8 @@ def mapa(con: duckdb.DuckDBPyConnection) -> dict:
     for uf, mun, pt, n, a, b in rows:
         cidades.setdefault(mun, []).extend([pt, int(a), int(b)])
         secoes.setdefault(uf, [0] * PONTOS_MAPA)[pt] += n
-    return {"pontos": PONTOS_MAPA, "id": list(cidades), "c": list(cidades.values()),
+    n = con.execute("SELECT any_value(n_br) FROM c_ordem").fetchone()[0]
+    return {"pontos": PONTOS_MAPA, "n": n, "id": list(cidades), "c": list(cidades.values()),
             "secoes": dict(sorted(secoes.items()))}
 
 
