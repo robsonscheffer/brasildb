@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="lugar.css">
 <style>
   :root {
     --bg: #070a12;
@@ -34,7 +35,7 @@
   body::after { content: ""; position: fixed; inset: 0; z-index: 19; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55)); }
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-  main { max-width: 1080px; margin: 0 auto; padding: 40px var(--gx) 64px; position: relative; z-index: 1; }
+  main { max-width: 1080px; margin: 0 auto; padding: calc(52px + 40px) var(--gx) 64px; position: relative; z-index: 1; }
   .sobre { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 7vw, 84px); line-height: .98; margin: 0 0 14px; letter-spacing: -.01em; }
   .lead { color: var(--muted); max-width: 640px; margin: 0 0 28px; }
@@ -47,16 +48,15 @@
   .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
   .sec:hover { border-color: var(--muted); }
 
-  /* Scale picker: Brasil > estado > cidade > zona > seção. Each level narrows the next. */
-  .escala { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr 1fr; gap: 10px; padding: 0 0 20px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
-  .escala label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .escala select, .escala input { width: 100%; font: 16px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; height: 44px; }
-  .escala select:disabled, .escala input:disabled { opacity: .4; }
-  .escala .cid { position: relative; }
-  .sug { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow: auto; text-transform: none; letter-spacing: 0; }
-  .sug li { padding: 7px 10px; border-radius: 6px; cursor: pointer; font: 15px var(--sans); color: var(--fg); }
-  .sug li[aria-selected="true"], .sug li:hover { background: var(--accent-dim); }
-  .sug li small { color: var(--muted); }
+  /* The scale: the reader's place as a path, Brasil > estado > cidade > zona > seção (P5 D5). */
+  .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .caminho .sep { color: var(--muted); padding: 0 2px; }
+  .caminho button { font: 500 15px var(--sans); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+  .caminho button:hover { color: var(--fg); border-color: var(--line); }
+  .caminho button[aria-current="true"] { color: var(--bg); background: var(--accent); }
+  .caminho .volta, .caminho .escolha { font: 500 14px var(--sans); color: var(--accent); background: none; border: 0; padding: 7px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .caminho .volta { margin-left: auto; }
+  .suasec { margin: 0 0 8px; font: 500 15px var(--sans); color: var(--accent); }
 
   /* The readout: three cells built alike (label, number, detail). */
   .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0 0 8px; }
@@ -114,11 +114,10 @@
   .metodo .fonte { grid-column: 1 / -1; font-size: 14px; }
 
   @media (max-width: 860px) {
-    .escala { grid-template-columns: 1fr 1fr; }
     .metodo { grid-template-columns: minmax(0, 720px); }
   }
   @media (max-width: 640px) {
-    main { padding-top: 28px; }
+    main { padding-top: calc(52px + 28px); }
     .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
     .barra { gap: 8px; }
     .barra .sec { padding: 9px 12px; font-size: 13px; }
@@ -144,6 +143,7 @@
 </style>
 </head>
 <body>
+<header id="barra-site"></header>
 <main>
   <header class="topo">
     <p class="sobre">Apuração · 2º turno · 25 out 2026 · Presidente</p>
@@ -156,27 +156,15 @@
       <button id="link" type="button" class="sec">Compartilhar</button>
     </div>
 
-    <div class="escala">
-      <label>Estado
-        <select id="uf"><option value="">Brasil</option></select>
-      </label>
-      <label class="cid">Cidade
-        <input id="cidade" type="text" placeholder="Todas" autocomplete="off" disabled role="combobox" aria-expanded="false" aria-controls="sug">
-        <ul id="sug" class="sug" role="listbox" hidden></ul>
-      </label>
-      <label>Zona
-        <select id="zona" disabled><option value="">Todas</option></select>
-      </label>
-      <label>Seção
-        <select id="secao" disabled><option value="">Todas</option></select>
-      </label>
-    </div>
+    <nav class="caminho" id="caminho" aria-label="Escala"></nav>
 
     <div class="placar" aria-live="polite">
       <div class="cel tempo"><div class="n" id="horadia">Seções somadas</div><div class="p" id="hora">0%</div><div class="v" id="onde">Brasil</div></div>
       <div class="cel cand"><div class="n" id="na">Lula · 13</div><div class="p" id="pa">0,00%</div><div class="v" id="va">0 votos</div></div>
       <div class="cel cand b"><div class="n" id="nb">Bolsonaro · 22</div><div class="p" id="pb">0,00%</div><div class="v" id="vb">0 votos</div></div>
     </div>
+
+    <p class="suasec" id="suasec" aria-live="polite" hidden></p>
 
     <div class="mapa" id="mapawrap" hidden>
       <p class="mapcont" id="mapcont"></p>
@@ -209,6 +197,7 @@
   </section>
 </main>
 
+<script src="lugar.js"></script>
 <script>
 (() => {
   const D = "data/apuracao/";
@@ -225,11 +214,17 @@
   let towns = null, estado = {uf: "", mun: "", zona: "", secao: ""}, serie = null, t = 1, anim = 0;
   const deDict = d => ["13", "22", "95", "96"].map(k => d[k]);
 
-  function cidadeNome() {
-    if (!towns || !estado.mun) return "";
-    const i = towns.id.indexOf(estado.mun);
-    return i < 0 ? estado.mun : towns.nome[i];
+  // The reader's place (lugar.js: cidade, zona, secao) and the scale on view (estado). The view
+  // is a level of the place's path, or a city picked on the map (`outra`), which leaves the place.
+  let lugar = {cidade: "", zona: "", secao: ""}, lugarC = null, agregadas = {}, outra = false, nomeCid = "";
+  const cidadeNome = () => nomeCid || estado.mun;
+  const NIVEIS = ["brasil", "uf", "cidade", "zona", "secao"];
+  const fundo = () => !lugarC ? "brasil" : lugar.secao ? "secao" : lugar.zona ? "zona" : "cidade";
+  function vista(nivel) {
+    const k = NIVEIS.indexOf(nivel), c = lugarC;
+    return {uf: k >= 1 && c ? c.uf : "", mun: k >= 2 && c ? c.id : "", zona: k >= 3 ? lugar.zona : "", secao: k >= 4 ? lugar.secao : ""};
   }
+  const nivelDe = e => e.secao ? "secao" : e.zona ? "zona" : e.mun ? "cidade" : e.uf ? "uf" : "brasil";
   function nomeEscala() {
     if (estado.secao) return `na seção ${estado.secao}, zona ${estado.zona}`;
     if (estado.zona) return `na zona ${estado.zona} de ${cidadeNome()}`;
@@ -256,7 +251,7 @@
     $("na").textContent = `${NOMES["13"]} · 13`; $("nb").textContent = `${NOMES["22"]} · 22`;
     $("lega").textContent = NOMES["13"]; $("legb").textContent = NOMES["22"];
     const m = estado.mun ? await get(`mun/${estado.mun}.json`) : null;
-    if (m) preencherZonas(m);
+    nomeCid = estado.mun ? (await Lugar.cidade(estado.mun))?.nome || "" : "";
     let s, marca = null;
     const ap = br.apuracao;
     if (!m) {
@@ -267,8 +262,10 @@
       const r = apuracaoDe(zonaToda, ap.pontos);
       s = r.s;
       if (estado.secao) {
-        const k = `${estado.zona}-${estado.secao}`, i = r.ss.findIndex(([q]) => q === k);
-        marca = {pos: (Math.floor(i * r.n / r.ss.length) + 1) / r.n, k: i + 1, de: r.ss.length, votos: m.secoes[k][0]};
+        // A section aggregated into another (agregadas) enters the sum with its principal's bulletin.
+        const k0 = `${estado.zona}-${estado.secao}`, ag = agregadas[k0], k = ag ? `${estado.zona}-${ag}` : k0;
+        const i = r.ss.findIndex(([q]) => q === k);
+        if (i >= 0) marca = {pos: (Math.floor(i * r.n / r.ss.length) + 1) / r.n, k: i + 1, de: r.ss.length, votos: m.secoes[k][0], agregada: ag || ""};
       }
     }
     const passo = 1 / s[0].length;
@@ -285,31 +282,58 @@
     serie = {x: x.slice(a, b + 1), passo, tot: tot.slice(a, b + 1), ca: ca.slice(a, b + 1), cb: cb.slice(a, b + 1),
              antes: a > 0 ? ct[a - 1] : 0, marca};
     serie.barras = !!m;  // in a city, each bar is a section or an equal share of them
-    $("onde").textContent = estado.secao ? `Seção ${estado.secao} · zona ${estado.zona}` : estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
+    // A section enters at once, so the running count at seção scale is its zona's.
+    $("onde").textContent = estado.zona ? `Zona ${estado.zona} · ${cidadeNome()}`
       : estado.mun ? cidadeNome() : estado.uf ? UFNOME[estado.uf] : "Brasil";
     await mapaEscala(!m).catch(() => mapaEscala(false));
     document.body.classList.remove("carregando");
     desenhar();
     tocar();
-    const q = new URLSearchParams();
-    for (const k of ["uf", "mun", "zona", "secao"]) if (estado[k]) q.set(k === "mun" ? "cidade" : k, estado[k]);
-    history.replaceState(null, "", q.toString() ? "?" + q : location.pathname);
+    caminho();
+    const nv = nivelDe(estado);
+    Lugar.escrever(lugar, outra ? {} : lugarC ? {ver: nv === fundo() ? "" : nv} : {uf: estado.uf});
   }
 
-  let zonasDe = "";
-  function preencherZonas(m) {
-    if (zonasDe === m.id) return;
-    zonasDe = m.id;
-    const zs = [...new Set(Object.keys(m.secoes).map(k => k.slice(0, 4)))].sort();
-    $("zona").innerHTML = '<option value="">Todas</option>' + zs.map(z => `<option${z === estado.zona ? " selected" : ""}>${z}</option>`).join("");
-    $("zona").disabled = false;
-    secoesDe(m);
+  // ---- the path: the place's levels as tabs; a city from the map shows its own path and a way back.
+  function caminho() {
+    const nav = $("caminho"), c = lugarC, nv = nivelDe(estado), passos = [];
+    const add = (rot, alvo) => passos.push({rot, alvo});
+    add("Brasil", "brasil");
+    if (outra) {
+      add(UFNOME[estado.uf], "o-uf"); add(cidadeNome(), "o-cidade");
+    } else if (c) {
+      add(UFNOME[c.uf], "uf"); add(Lugar.rotulo(c).replace(/, [^,]+$/, ""), "cidade");
+      if (lugar.zona) add(`zona ${lugar.zona}`, "zona");
+      if (lugar.secao) add(`seção ${lugar.secao}`, "secao");
+    } else if (estado.uf) add(UFNOME[estado.uf], "o-uf");
+    const atual = outra ? (estado.mun ? "o-cidade" : estado.uf ? "o-uf" : "brasil") : c ? nv : (estado.uf ? "o-uf" : "brasil");
+    nav.innerHTML = passos.map((p, k) => `${k ? '<span class="sep" aria-hidden="true">›</span>' : ""}<button type="button" data-alvo="${p.alvo}"${p.alvo === atual ? ' aria-current="true"' : ""}>${p.rot}</button>`).join("")
+      + (outra && c ? `<button type="button" class="volta" data-alvo="volta">voltar para ${Lugar.rotulo(c).replace(/, [^,]+$/, "")}</button>`
+        : !c ? `<button type="button" class="escolha" data-alvo="escolher">Escolher o seu lugar</button>` : "");
   }
-  function secoesDe(m) {
-    const ss = Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).sort();
-    $("secao").innerHTML = '<option value="">Todas</option>' + ss.map(s => `<option${s === estado.secao ? " selected" : ""}>${s}</option>`).join("");
-    $("secao").disabled = !estado.zona;
+  $("caminho").addEventListener("click", e => {
+    const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
+    if (a === "escolher") return trocarLugar();
+    if (a === "volta") { outra = false; estado = vista(fundo()); }
+    else if (a === "o-uf") estado = {uf: estado.uf, mun: "", zona: "", secao: ""};
+    else if (a === "o-cidade") return;
+    else if (a === "brasil") { outra = false; estado = vista("brasil"); }
+    else { outra = false; estado = vista(a); }
+    montar().catch(falha);
+  });
+  async function usarLugar(l) {
+    lugar = l; lugarC = await Lugar.cidade(l.cidade);
+    if (!lugarC) lugar = {cidade: "", zona: "", secao: ""};
+    agregadas = lugarC ? (await Lugar.secoes(lugarC)).agregadas : {};
+    barra.mostrar(lugar);
   }
+  async function trocarLugar() {
+    const r = await Lugar.folha(lugar);
+    if (!r) return;
+    await usarLugar(r.lugar); outra = false; estado = vista(fundo());
+    montar().catch(falha);
+  }
+  const barra = Lugar.barra($("barra-site"), {pagina: "apuracao.html", onTrocar: trocarLugar});
 
   // ---- chart
   let W = 1000, H = 440;
@@ -400,6 +424,11 @@
     $("vb").textContent = fmt(vb) + " votos";
     if (MP.on) { MP.q = lerp(serie.x); kick(); }
     $("hora").textContent = Math.round(lerp(serie.x) * 100) + "%";
+    const mk = serie.marca, ss = $("suasec");
+    ss.hidden = !mk;
+    if (mk) ss.textContent = lerp(serie.x) + 1e-9 >= mk.pos
+      ? `Sua seção ${estado.secao}${mk.agregada ? ` (somada com a ${mk.agregada})` : ""}: ${NOMES["13"]} ${fmt(mk.votos[0])} · ${NOMES["22"]} ${fmt(mk.votos[1])}`
+      : `Sua seção ${estado.secao} ainda não entrou na soma.`;
     $("scrub").value = Math.round(f * 1000);
     $("fim").innerHTML = f >= 1 ? fimTexto(va, vb) : "";
     $("antes").textContent = serie.antes
@@ -598,8 +627,9 @@
     d.style.top = (y - h - 14 < cv.offsetTop ? y + 16 : y - h - 14) + "px";
     const b = $("vercid");
     if (b) b.onclick = () => {
-      estado = {uf: towns.uf[i], mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
-      ufSel.value = estado.uf; $("cidade").disabled = false; $("cidade").value = towns.nome[i];
+      estado = {uf: towns.uf[i], mun: towns.id[i], zona: "", secao: ""};
+      outra = !lugarC || towns.id[i] !== lugarC.id;
+      if (!outra) estado = vista("cidade");
       montar().catch(falha);
     };
   }
@@ -622,66 +652,16 @@
     kick();
   });
 
-  // ---- pickers
-  const ufSel = $("uf");
-  Object.keys(UFNOME).sort((a, b) => UFNOME[a].localeCompare(UFNOME[b], "pt-BR")).forEach(u => ufSel.add(new Option(UFNOME[u], u)));
-  ufSel.onchange = () => {
-    estado = {uf: ufSel.value, mun: "", zona: "", secao: ""};
-    $("cidade").value = ""; $("cidade").disabled = !estado.uf || estado.uf === "ZZ";
-    $("zona").disabled = $("secao").disabled = true; zonasDe = "";
-    $("zona").innerHTML = $("secao").innerHTML = '<option value="">Todas</option>';
-    montar().catch(falha);
-  };
-  $("zona").onchange = async () => {
-    estado.zona = $("zona").value; estado.secao = "";
-    secoesDe(await get(`mun/${estado.mun}.json`)); montar().catch(falha);
-  };
-  $("secao").onchange = () => { estado.secao = $("secao").value; montar().catch(falha); };
-
-  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  let sugs = [], ativo = -1;
-  $("cidade").oninput = () => {
-    const q = norm($("cidade").value.trim()), ul = $("sug");
-    if (!towns || q.length < 2) { ul.hidden = true; return; }
-    sugs = [];
-    for (let i = 0; i < towns.id.length && sugs.length < 8; i++)
-      if (towns.uf[i] === estado.uf && norm(towns.nome[i]).startsWith(q)) sugs.push(i);
-    ativo = sugs.length ? 0 : -1;
-    ul.innerHTML = sugs.map((i, k) => `<li role="option" data-k="${k}" aria-selected="${k === ativo}">${towns.nome[i]} <small>${towns.uf[i]}</small></li>`).join("");
-    ul.hidden = !sugs.length; $("cidade").setAttribute("aria-expanded", String(!ul.hidden));
-  };
-  const escolher = k => {
-    const i = sugs[k]; if (i == null) return;
-    $("cidade").value = towns.nome[i]; $("sug").hidden = true;
-    estado = {uf: estado.uf, mun: towns.id[i], zona: "", secao: ""}; zonasDe = "";
-    montar().catch(falha);
-  };
-  $("sug").onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); escolher(+li.dataset.k); } };
-  $("cidade").onkeydown = e => {
-    const ul = $("sug"); if (ul.hidden) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault(); ativo = (ativo + (e.key === "ArrowDown" ? 1 : -1) + sugs.length) % sugs.length;
-      [...ul.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === ativo)));
-    } else if (e.key === "Enter") { e.preventDefault(); escolher(ativo); }
-    else if (e.key === "Escape") ul.hidden = true;
-  };
-  $("cidade").onblur = () => setTimeout(() => { $("sug").hidden = true; }, 100);
-
-  // ---- start: a shared link keeps its view and scale
+  // ---- start: the place from the URL (old links with uf= still open), then the view
   (async () => {
     const q = new URLSearchParams(location.search);
     towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
-    const uf = (q.get("uf") || "").toUpperCase();
-    if (UFNOME[uf]) {
-      estado.uf = uf; ufSel.value = uf; $("cidade").disabled = uf === "ZZ";
-      const mun = q.get("cidade") || "";
-      if (mun && towns && towns.id.includes(mun)) {
-        estado.mun = mun; $("cidade").value = cidadeNome();
-        estado.zona = q.get("zona") || ""; estado.secao = estado.zona ? q.get("secao") || "" : "";
-      }
-    }
+    await usarLugar(Lugar.ler());
+    const ver = q.get("ver") || "", uf = (q.get("uf") || "").toUpperCase();
+    estado = lugarC ? vista(NIVEIS.includes(ver) && NIVEIS.indexOf(ver) <= NIVEIS.indexOf(fundo()) ? ver : fundo())
+      : {uf: UFNOME[uf] ? uf : "", mun: "", zona: "", secao: ""};
     montar().catch(() => {
-      if (estado.zona) { estado.zona = estado.secao = ""; montar().catch(falha); } else falha();
+      if (estado.zona) { estado = vista("cidade"); montar().catch(falha); } else falha();
     });
   })();
 })();
