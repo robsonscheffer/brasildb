@@ -44,18 +44,24 @@
 
   /* The panel: scale, readout, map, chart, controls. One frame, one grid. */
   .painel { background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px 22px; }
-  .filtros { display: flex; align-items: flex-start; gap: 12px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
-  .filtros .acao { margin-left: auto; flex: none; padding-top: 7px; }
-  .filtros .sec { flex: none; }
+  /* The filter row: every control is 36px tall and centred on one line. */
+  .filtros { display: flex; align-items: center; gap: 12px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .filtros .acao { margin-left: auto; flex: none; }
+  .filtros .sec { flex: none; height: 36px; padding: 0 16px; }
   .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
   .sec:hover { border-color: var(--muted); }
 
   /* The scale: the reader's place as a path, Brasil > estado > cidade > zona > seção (P5 D5). */
   .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; min-width: 0; flex: 1 1 auto; }
-  .caminho .sep { color: var(--muted); padding: 0 2px; }
-  .caminho select { field-sizing: content; max-width: 190px; text-overflow: ellipsis; font: 500 15px var(--sans); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; cursor: pointer; }
-  .caminho select.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-  .acao .volta, .acao .escolha { font: 500 14px var(--sans); color: var(--accent); background: none; border: 0; padding: 7px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .caminho .sep { color: var(--muted); padding: 0 2px; line-height: 36px; }
+  .caminho select { appearance: none; -webkit-appearance: none; field-sizing: content; box-sizing: border-box; height: 36px; max-width: 200px; margin: 0;
+    padding: 0 32px 0 14px; font: 500 15px/34px var(--sans); color: var(--fg); white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
+    background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a9ca6' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 13px center / 10px 6px; border: 1px solid var(--line); border-radius: 999px; }
+  .caminho select:hover { border-color: var(--muted); }
+  .caminho select:has(option[value=""]:checked) { color: var(--muted); }
+  .caminho select.on { color: var(--bg); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23070a12' stroke-width='1.6'/%3E%3C/svg%3E"); border-color: var(--accent); }
+  .caminho select option { color: var(--fg); background: var(--bg2); }
+  .acao .volta, .acao .escolha { font: 500 14px/36px var(--sans); color: var(--accent); background: none; border: 0; padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
   .suasec { margin: 0 0 8px; font: 500 15px var(--sans); color: var(--accent); }
 
   /* The readout: three cells built alike (label, number, detail). */
@@ -121,8 +127,9 @@
   @media (max-width: 640px) {
     main { padding-top: calc(52px + 28px); }
     .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
-    .filtros { flex-wrap: wrap; align-items: flex-start; }
-    .filtros .sec { padding: 9px 12px; font-size: 13px; }
+    .filtros { flex-wrap: wrap; }
+    .filtros .caminho { flex-basis: 100%; }
+    .filtros .sec { padding: 0 12px; font-size: 13px; }
     .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
     .cel.tempo { grid-column: 1 / -1; grid-row: auto; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
