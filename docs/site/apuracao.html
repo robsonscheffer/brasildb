@@ -44,20 +44,18 @@
 
   /* The panel: scale, readout, map, chart, controls. One frame, one grid. */
   .painel { background: var(--bg2); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px 22px; }
-  .barra { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 0 0 18px; }
+  .filtros { display: flex; align-items: flex-start; gap: 12px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .filtros .acao { margin-left: auto; flex: none; padding-top: 7px; }
+  .filtros .sec { flex: none; }
   .sec { font: 600 14px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
   .sec:hover { border-color: var(--muted); }
 
   /* The scale: the reader's place as a path, Brasil > estado > cidade > zona > seção (P5 D5). */
-  .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; padding: 0 0 18px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+  .caminho { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; min-width: 0; flex: 1 1 auto; }
   .caminho .sep { color: var(--muted); padding: 0 2px; }
-  .caminho select { font: 500 15px var(--sans); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; cursor: pointer; }
+  .caminho select { field-sizing: content; max-width: 190px; text-overflow: ellipsis; font: 500 15px var(--sans); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; cursor: pointer; }
   .caminho select.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-  .caminho button { font: 500 15px var(--sans); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
-  .caminho button:hover { color: var(--fg); border-color: var(--line); }
-  .caminho button[aria-current="true"] { color: var(--bg); background: var(--accent); }
-  .caminho .volta, .caminho .escolha { font: 500 14px var(--sans); color: var(--accent); background: none; border: 0; padding: 7px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-  .caminho .volta, .caminho .escolha { margin-left: auto; }
+  .acao .volta, .acao .escolha { font: 500 14px var(--sans); color: var(--accent); background: none; border: 0; padding: 7px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
   .suasec { margin: 0 0 8px; font: 500 15px var(--sans); color: var(--accent); }
 
   /* The readout: three cells built alike (label, number, detail). */
@@ -123,8 +121,8 @@
   @media (max-width: 640px) {
     main { padding-top: calc(52px + 28px); }
     .painel { background: transparent; border: 0; border-radius: 0; padding: 0; }
-    .barra { gap: 8px; }
-    .barra .sec { padding: 9px 12px; font-size: 13px; }
+    .filtros { flex-wrap: wrap; align-items: flex-start; }
+    .filtros .sec { padding: 9px 12px; font-size: 13px; }
     .placar { grid-template-columns: 1fr 1fr; gap: 16px 18px; }
     .cel.tempo { grid-column: 1 / -1; grid-row: auto; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .cel.tempo .p { order: -1; font-size: 30px; line-height: 1.1; }
@@ -156,11 +154,11 @@
   </header>
 
   <section class="painel" aria-label="Gráfico">
-    <div class="barra">
+    <div class="filtros">
+      <nav class="caminho" id="caminho" aria-label="Escala"></nav>
+      <span class="acao" id="acao"></span>
       <button id="link" type="button" class="sec">Compartilhar</button>
     </div>
-
-    <nav class="caminho" id="caminho" aria-label="Escala"></nav>
 
     <div class="placar" aria-live="polite">
       <div class="cel tempo"><div class="n" id="horadia">Seções somadas</div><div class="p" id="hora">0%</div><div class="v" id="onde">Brasil</div></div>
@@ -296,7 +294,9 @@
     tocar();
     caminho(m);
     const nv = nivelDe(estado);
-    Lugar.escrever(lugar, !lugarC ? {uf: estado.uf} : noLugar() ? {ver: nv === fundo() ? "" : nv} : {});
+    // ver: a level of the place's path, or any other view as UF-cidade-zona-seção, so a shared link keeps it.
+    const fora = [estado.uf, estado.mun, estado.zona, estado.secao].filter(Boolean).join("-");
+    Lugar.escrever(lugar, {ver: noLugar() ? (nv === fundo() ? "" : nv) : lugarC ? fora || "brasil" : fora});
   }
 
   // ---- the path: Brasil > estado > cidade, then the city's zonas and a zona's seções as lists.
@@ -306,49 +306,40 @@
     return !!c && (!estado.uf || estado.uf === c.uf) && (!estado.mun || estado.mun === c.id)
       && (!estado.zona || estado.zona === lugar.zona) && (!estado.secao || estado.secao === lugar.secao);
   }
-  const ufVista = () => estado.uf || (noLugar() ? lugarC.uf : "");
-  const munVista = () => estado.mun || (noLugar() ? lugarC.id : "");
+  let TODAS = null;  // every town (lugar.js), for the city list of a state
   function caminho(m) {
-    const c = lugarC, dentro = noLugar(), nv = nivelDe(estado), uf = ufVista(), mun = munVista();
-    const sep = '<span class="sep" aria-hidden="true">›</span>';
-    const tab = (rot, alvo) => `<button type="button" data-alvo="${alvo}"${nv === alvo ? ' aria-current="true"' : ""}>${rot}</button>`;
-    const sua = (v, meu) => meu ? `${v} · sua` : v;
-    const lista = (nivel, todas, vs, v, meu) => `<select data-nivel="${nivel}" aria-label="Ver ${nivel === "zona" ? "zona" : "seção"}"${nv === nivel ? ' class="on"' : ""}>`
-      + `<option value="">${todas}</option>` + vs.map(x => `<option value="${x}"${x === v ? " selected" : ""}>${nivel === "zona" ? "zona" : "seção"} ${sua(x, x === meu)}</option>`).join("") + "</select>";
-    const h = [tab("Brasil", "brasil")];
-    if (uf) h.push(tab(UFNOME[uf], "uf"));
-    if (mun) h.push(tab(mun === c?.id ? c.nome : cidadeNome(), "cidade"));
-    const meuMun = c && estado.mun === c.id;
+    const c = lugarC, dentro = noLugar(), nv = nivelDe(estado);
+    const meu = {uf: c?.uf || "", mun: c?.id || "", zona: "", secao: ""};
+    if (c && estado.mun === c.id) { meu.zona = lugar.zona; if (estado.zona === lugar.zona) meu.secao = lugar.secao; }
+    // One list per level: its value is the view; the reader's own place is marked "· sua".
+    const lista = (nivel, rot, todas, vs, v) => `<select data-nivel="${nivel}" aria-label="${rot}"${nivel === {brasil: "uf", uf: "uf", cidade: "mun", zona: "zona", secao: "secao"}[nv] ? ' class="on"' : ""}>`
+      + `<option value="">${todas}</option>` + vs.map(([x, nome]) => `<option value="${x}"${x === v ? " selected" : ""}>${nome}${x === meu[nivel] ? " · sua" : ""}</option>`).join("") + "</select>";
+    const h = [lista("uf", "Estado", "Brasil", Object.keys(UFNOME).sort((a, b) => UFNOME[a].localeCompare(UFNOME[b], "pt-BR")).map(u => [u, UFNOME[u]]), estado.uf)];
+    if (estado.uf && TODAS) h.push(lista("mun", "Cidade", estado.uf === "ZZ" ? "todo o exterior" : "todo o estado",
+      TODAS.filter(t => t.uf === estado.uf).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map(t => [t.id, estado.uf === "ZZ" ? `${t.nome}, ${t.pais}` : t.nome]), estado.mun));
     if (estado.mun && m) {
-      const zs = [...new Set(Object.keys(m.secoes).map(k => k.slice(0, 4)).concat(meuMun && lugar.zona ? [lugar.zona] : []))].sort();
-      h.push(lista("zona", "todas as zonas", zs, estado.zona, meuMun ? lugar.zona : ""));
+      const zs = [...new Set(Object.keys(m.secoes).map(k => k.slice(0, 4)).concat(meu.zona ? [meu.zona] : []))].sort();
+      h.push(lista("zona", "Zona", "todas as zonas", zs.map(z => [z, `zona ${z}`]), estado.zona));
       if (estado.zona) {
-        const meuZ = meuMun && estado.zona === lugar.zona;
-        const ss = [...new Set(Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).concat(meuZ && lugar.secao ? [lugar.secao] : []))].sort();
-        h.push(lista("secao", "toda a zona", ss, estado.secao, meuZ ? lugar.secao : ""));
+        const ss = [...new Set(Object.keys(m.secoes).filter(k => k.startsWith(estado.zona + "-")).map(k => k.slice(5)).concat(meu.secao ? [meu.secao] : []))].sort();
+        h.push(lista("secao", "Seção", "toda a zona", ss.map(x => [x, `seção ${x}`]), estado.secao));
       }
-    } else if (dentro && !estado.mun) {
-      if (lugar.zona) h.push(tab(`zona ${lugar.zona}`, "zona"));
-      if (lugar.secao) h.push(tab(`seção ${lugar.secao}`, "secao"));
     }
-    $("caminho").innerHTML = h.join(sep) + (c && !dentro
-      ? `<button type="button" class="volta" data-alvo="volta">voltar para ${c.nome}</button>`
+    $("caminho").innerHTML = h.join('<span class="sep" aria-hidden="true">›</span>');
+    $("acao").innerHTML = (c && !(dentro && nv === fundo())
+      ? `<button type="button" class="volta" data-alvo="volta">${dentro ? "ir para" : "voltar para"} ${c.nome}</button>`
       : `<button type="button" class="escolha" data-alvo="escolher">${c ? "trocar lugar" : "Escolher o seu lugar"}</button>`);
   }
-  $("caminho").addEventListener("click", e => {
+  $("acao").addEventListener("click", e => {
     const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
     if (a === "escolher") return trocarLugar();
-    const uf = ufVista(), mun = munVista();
-    if (a === "volta") estado = vista(fundo());
-    else if (a === "brasil") estado = {uf: "", mun: "", zona: "", secao: ""};
-    else if (a === "uf") estado = {uf, mun: "", zona: "", secao: ""};
-    else if (a === "cidade") estado = {uf, mun, zona: "", secao: ""};
-    else estado = vista(a);  // the place's zona or seção, from above the city
+    estado = vista(fundo());
     montar().catch(falha);
   });
   $("caminho").addEventListener("change", e => {
     const n = e.target.dataset.nivel, v = e.target.value;
-    estado = n === "zona" ? {...estado, zona: v, secao: ""} : {...estado, secao: v};
+    estado = n === "uf" ? {uf: v, mun: "", zona: "", secao: ""} : n === "mun" ? {uf: estado.uf, mun: v, zona: "", secao: ""}
+      : n === "zona" ? {...estado, zona: v, secao: ""} : {...estado, secao: v};
     montar().catch(falha);
   });
   async function usarLugar(l) {
@@ -684,11 +675,13 @@
   // ---- start: the place from the URL (old links with uf= still open), then the view
   (async () => {
     const q = new URLSearchParams(location.search);
-    towns = await fetch("data/towns.json").then(r => r.json()).catch(() => null);
+    [towns, TODAS] = await Promise.all([fetch("data/towns.json").then(r => r.json()).catch(() => null), Lugar.cidades().catch(() => null)]);
     await usarLugar(Lugar.ler());
     const ver = q.get("ver") || "", uf = (q.get("uf") || "").toUpperCase();
-    estado = lugarC ? vista(NIVEIS.includes(ver) && NIVEIS.indexOf(ver) <= NIVEIS.indexOf(fundo()) ? ver : fundo())
-      : {uf: UFNOME[uf] ? uf : "", mun: "", zona: "", secao: ""};
+    const [vu, vm = "", vz = "", vs = ""] = ver.split("-");
+    if (UFNOME[vu?.toUpperCase()]) estado = {uf: vu.toUpperCase(), mun: vm, zona: vm ? vz : "", secao: vm && vz ? vs : ""};
+    else if (lugarC) estado = vista(NIVEIS.includes(ver) && NIVEIS.indexOf(ver) <= NIVEIS.indexOf(fundo()) ? ver : fundo());
+    else estado = {uf: UFNOME[uf] ? uf : "", mun: "", zona: "", secao: ""};
     montar().catch(() => {
       if (estado.zona) { estado = vista("cidade"); montar().catch(falha); } else falha();
     });
