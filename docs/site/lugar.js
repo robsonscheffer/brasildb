@@ -152,18 +152,19 @@
 
   // ---- the sheet: the picker in a dialog. Resolves with {lugar, cidade}, or null when closed.
   // "Limpar" (only with a place set) resolves with an empty place and cidade null.
-  function folha(lugarAtual, foco) {
+  // opts: {titulo, botao} name the sheet for another use than the reader's own place.
+  function folha(lugarAtual, foco, opts = {}) {
     return new Promise(resolve => {
       const dlg = document.createElement("dialog");
       dlg.className = "lg-folha";
       dlg.setAttribute("aria-labelledby", "lg-folha-t");
-      dlg.innerHTML = `<div class="lg-folha-topo"><h2 id="lg-folha-t">O seu lugar</h2>
+      dlg.innerHTML = `<div class="lg-folha-topo"><h2 id="lg-folha-t">${esc(opts.titulo || "O seu lugar")}</h2>
         <button type="button" class="lg-x" aria-label="Fechar">×</button></div><div class="lg-corpo"></div>`;
       document.body.appendChild(dlg);
       let fim = null;
-      const s = seletor(dlg.querySelector(".lg-corpo"), {lugar: lugarAtual, botao: "Usar este lugar",
+      const s = seletor(dlg.querySelector(".lg-corpo"), {lugar: lugarAtual, botao: opts.botao || "Usar este lugar",
         onEscolher: (lugar, c) => { fim = {lugar, cidade: c}; dlg.close(); },
-        onLimpar: lugarAtual?.cidade ? () => { fim = {lugar: {cidade: "", zona: "", secao: ""}, cidade: null}; dlg.close(); } : null});
+        onLimpar: lugarAtual?.cidade && !opts.titulo ? () => { fim = {lugar: {cidade: "", zona: "", secao: ""}, cidade: null}; dlg.close(); } : null});
       dlg.querySelector(".lg-x").addEventListener("click", () => dlg.close());
       dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
       dlg.addEventListener("keydown", e => e.stopPropagation()); // the home's stepper keys stay out
