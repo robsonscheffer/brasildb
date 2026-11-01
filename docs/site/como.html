@@ -21,6 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="lugar.css">
 <style>
   :root {
     --bg: #070a12; --bg2: #0f1320; --fg: #ece8dc; --muted: #9a9ca6; --line: #262a38; --accent: #ffb43c;
@@ -30,7 +31,8 @@
     color-scheme: dark;
   }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
-  main { max-width: 680px; margin: 0 auto; padding: 10vh 16px 14vh; }
+  html { scroll-padding-top: 68px; }
+  main { max-width: 680px; margin: 0 auto; padding: calc(52px + 10vh) 16px 14vh; }
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 8vw, 68px); line-height: 1.02; margin: 14px 0 18px; }
   h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 5vw, 40px); line-height: 1.1; margin: 72px 0 8px; padding-top: 24px; border-top: 1px solid var(--line); }
   h3 { font-size: 19px; font-weight: 600; margin: 36px 0 4px; scroll-margin-top: 24px; }
@@ -56,7 +58,7 @@
   .aviso b { color: var(--fg); }
 </style>
 </head>
-<body><main>
+<body><header id="barra-site"></header><main>
 <span class="k">O Brasil votando · método</span>
 <h1>Como funciona e como fizemos</h1>
 <p class="lead">O que cada termo do site quer dizer, de onde vem cada número e onde os números não batem.</p>
@@ -170,5 +172,14 @@
 <p>O site não mostra em quem as pessoas votaram, nem resultados por candidato. Ele mostra quando o Brasil votou.</p>
 
 <p class="volta"><a href="./">Voltar para O Brasil votando</a></p>
-</main><!-- Cloudflare Web Analytics --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "178daf2ffd2549459e51cf7b3dd0f8fb"}'></script>
+</main>
+<script src="lugar.js"></script>
+<script>
+  // The place travels in the URL; como keeps it for the links back (P5 D6).
+  const barra = Lugar.barra(document.getElementById("barra-site"), {pagina: "como.html", onTrocar: async () => {
+    const r = await Lugar.folha(Lugar.ler()); if (r) { Lugar.escrever(r.lugar); barra.mostrar(r.lugar); }
+  }});
+  barra.mostrar(Lugar.ler());
+</script>
+<!-- Cloudflare Web Analytics --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "178daf2ffd2549459e51cf7b3dd0f8fb"}'></script>
 </body></html>
