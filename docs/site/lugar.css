@@ -37,7 +37,10 @@
 .lg-hits li span { color: var(--muted); }
 .lg-hits li[aria-selected="true"], .lg-hits li:hover { background: var(--accent-dim, rgba(255,180,60,.16)); }
 .lg-nota { color: var(--muted); font-size: 14px; }
-.lg-usar { justify-self: start; font: 600 16px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer; }
+.lg-acoes { display: flex; align-items: center; gap: 18px; }
+.lg-limpar { font: 500 15px var(--sans); color: var(--muted); background: none; border: 0; padding: 8px 2px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.lg-limpar:hover { color: var(--fg); }
+.lg-usar { font: 600 16px var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer; }
 .lg-usar:disabled { opacity: .4; cursor: default; }
 
 .lg-folha { width: min(520px, calc(100% - 32px)); margin: auto; padding: 20px 22px 24px; color: var(--fg); background: var(--bg2);

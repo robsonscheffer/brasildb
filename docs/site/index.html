@@ -1135,6 +1135,11 @@ async function listas(zona = state.zona, secao = state.secao) {
 async function abrirFolha(foco) {
   const r = await Lugar.folha({ cidade: state.town?.id, zona: state.zona, secao: state.secao }, foco);
   if (!r) return;
+  if (!r.cidade) { // Limpar: no place; the hour stays
+    state.town = null; $("cidade").value = ""; await listas();
+    $("mais").hidden = true; $("ver-urna").setAttribute("aria-expanded", "false");
+    return afterAnswer();
+  }
   await carregarLugares();
   const i = byId.get(r.lugar.cidade), k = EXT.cidades.findIndex(c => c.id === r.lugar.cidade);
   if (i == null && k < 0) return;

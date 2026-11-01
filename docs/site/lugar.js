@@ -85,7 +85,7 @@
         <label class="lg-campo">Seção <select disabled><option value="">—</option></select></label>
       </div>
       <small class="lg-nota">Cidade, zona e seção estão no título de eleitor e no app e-Título. A seção é opcional.</small>
-      ${opts.botao ? `<button type="button" class="lg-usar" disabled>${esc(opts.botao)}</button>` : ""}`;
+      ${opts.botao ? `<div class="lg-acoes"><button type="button" class="lg-usar" disabled>${esc(opts.botao)}</button>${opts.onLimpar ? '<button type="button" class="lg-limpar">Limpar</button>' : ""}</div>` : ""}`;
     const input = el.querySelector("input"), ul = el.querySelector(".lg-hits");
     const [zSel, sSel] = el.querySelectorAll("select"), usar = el.querySelector(".lg-usar");
     let c = null, lista = null, hits = [], ativo = -1;
@@ -138,6 +138,7 @@
     zSel.addEventListener("change", () => { preencherSecoes(""); mudou(); });
     sSel.addEventListener("change", mudou);
     usar?.addEventListener("click", () => { if (c) opts.onEscolher?.(lugar(), c); });
+    el.querySelector(".lg-limpar")?.addEventListener("click", () => opts.onLimpar());
     const pronto = (async () => {
       const l = opts.lugar;
       if (l?.cidade) await porCidade(await cidade(l.cidade), l.zona, l.secao);
@@ -150,6 +151,7 @@
   }
 
   // ---- the sheet: the picker in a dialog. Resolves with {lugar, cidade}, or null when closed.
+  // "Limpar" (only with a place set) resolves with an empty place and cidade null.
   function folha(lugarAtual, foco) {
     return new Promise(resolve => {
       const dlg = document.createElement("dialog");
@@ -160,7 +162,8 @@
       document.body.appendChild(dlg);
       let fim = null;
       const s = seletor(dlg.querySelector(".lg-corpo"), {lugar: lugarAtual, botao: "Usar este lugar",
-        onEscolher: (lugar, c) => { fim = {lugar, cidade: c}; dlg.close(); }});
+        onEscolher: (lugar, c) => { fim = {lugar, cidade: c}; dlg.close(); },
+        onLimpar: lugarAtual?.cidade ? () => { fim = {lugar: {cidade: "", zona: "", secao: ""}, cidade: null}; dlg.close(); } : null});
       dlg.querySelector(".lg-x").addEventListener("click", () => dlg.close());
       dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
       dlg.addEventListener("keydown", e => e.stopPropagation()); // the home's stepper keys stay out

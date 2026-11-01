@@ -55,7 +55,7 @@
   .caminho button:hover { color: var(--fg); border-color: var(--line); }
   .caminho button[aria-current="true"] { color: var(--bg); background: var(--accent); }
   .caminho .volta, .caminho .escolha { font: 500 14px var(--sans); color: var(--accent); background: none; border: 0; padding: 7px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-  .caminho .volta { margin-left: auto; }
+  .caminho .volta, .caminho .escolha { margin-left: auto; }
   .suasec { margin: 0 0 8px; font: 500 15px var(--sans); color: var(--accent); }
 
   /* The readout: three cells built alike (label, number, detail). */
@@ -309,7 +309,7 @@
     const atual = outra ? (estado.mun ? "o-cidade" : estado.uf ? "o-uf" : "brasil") : c ? nv : (estado.uf ? "o-uf" : "brasil");
     nav.innerHTML = passos.map((p, k) => `${k ? '<span class="sep" aria-hidden="true">›</span>' : ""}<button type="button" data-alvo="${p.alvo}"${p.alvo === atual ? ' aria-current="true"' : ""}>${p.rot}</button>`).join("")
       + (outra && c ? `<button type="button" class="volta" data-alvo="volta">voltar para ${Lugar.rotulo(c).replace(/, [^,]+$/, "")}</button>`
-        : !c ? `<button type="button" class="escolha" data-alvo="escolher">Escolher o seu lugar</button>` : "");
+        : `<button type="button" class="escolha" data-alvo="escolher">${c ? "trocar lugar" : "Escolher o seu lugar"}</button>`);
   }
   $("caminho").addEventListener("click", e => {
     const a = e.target.closest("button")?.dataset.alvo; if (!a) return;
